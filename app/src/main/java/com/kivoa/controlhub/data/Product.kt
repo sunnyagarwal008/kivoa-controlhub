@@ -21,3 +21,20 @@ data class ApiResponse(
     val count: Int,
     val data: List<Product>
 )
+
+
+data class Pagination(
+    val page: Int,
+    val limit: Int,
+    val totalItems: Int,
+    val totalPages: Int,
+    val hasNextPage: Boolean,
+    val hasPrevPage: Boolean
+)
+
+
+data class BrowseApiResponse(
+    val success: Boolean,
+    val pagination: Pagination,
+    val data: List<Product>
+)

@@ -1,14 +1,6 @@
 package com.kivoa.controlhub.ui.screens
 
-import android.net.Uri
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -38,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -46,7 +39,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -55,17 +47,24 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import coil.compose.SubcomposeAsyncImage
+import com.google.gson.Gson
+import com.kivoa.controlhub.Helper
 import com.kivoa.controlhub.R
+import com.kivoa.controlhub.Screen
+import com.kivoa.controlhub.ShimmerEffect
 import com.kivoa.controlhub.data.Product
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    viewModel: SearchViewModel = viewModel()
+    viewModel: SearchViewModel = viewModel(),
+    navController: NavController
 ) {
     val searchResults by viewModel.searchResults.collectAsState()
     val isSearching by viewModel.isSearching.collectAsState()
@@ -143,7 +142,11 @@ fun HomeScreen(
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(searchResults) { product ->
-                    ProductItem(product = product)
+                    ProductItem(product = product, onClick = {
+                        val productJson = Gson().toJson(product)
+                        val encodedUrl = URLEncoder.encode(productJson, StandardCharsets.UTF_8.toString())
+                        navController.navigate(Screen.ProductDetail.route + "/$encodedUrl")
+                    })
                 }
             }
         }
@@ -151,12 +154,12 @@ fun HomeScreen(
 }
 
 @Composable
-fun ProductItem(product: Product) {
+fun ProductItem(product: Product, onClick: () -> Unit) {
     var showZoomedImage by rememberSaveable { mutableStateOf(false) }
 
     if (showZoomedImage) {
         ZoomableImage(
-            imageUrl = getGoogleDriveImageUrl(product.imageUrl),
+            imageUrl = Helper.getGoogleDriveImageUrl(product.imageUrl),
             onDismiss = { showZoomedImage = false }
         )
     }
@@ -166,11 +169,12 @@ fun ProductItem(product: Product) {
             .fillMaxWidth()
             .padding(vertical = 8.dp)
             .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
-            .padding(8.dp),
+            .padding(8.dp)
+            .clickable { onClick() },
         verticalAlignment = Alignment.CenterVertically
     ) {
         SubcomposeAsyncImage(
-            model = getGoogleDriveImageUrl(product.imageUrl),
+            model = Helper.getGoogleDriveImageUrl(product.imageUrl),
             loading = {
                 ShimmerEffect(modifier = Modifier.size(96.dp))
             },
@@ -182,46 +186,25 @@ fun ProductItem(product: Product) {
         Spacer(modifier = Modifier.width(16.dp))
         Column {
             Text(text = "SKU: ${product.sku}")
-            Text(text = "MRP: ${product.mrp}")
-            Text(text = "Selling Price: ${product.sellingPrice}")
-            Text(text = "Inventory: ${product.quantity}")
-            Text(text = "Price Code: ${product.priceCode}")
+            Text(text = "MRP: ₹${product.mrp}")
+            Text(text = "Selling Price: ₹${product.sellingPrice}")
+            val quantity = product.quantity.toIntOrNull() ?: 0
+            val inStock = quantity > 0
+            val stockText = if (inStock) "In stock" else "Out of stock"
+            val stockColor = if (inStock) Color.Green else Color.Red
+
+            Text(
+                text = stockText,
+                color = stockColor
+            )
+            Text(text = "Product Code: ${product.priceCode}")
         }
     }
 }
 
 @Composable
-fun ShimmerEffect(modifier: Modifier = Modifier) {
-    val transition = rememberInfiniteTransition(label = "shimmer")
-    val translateAnim by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1000f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1200, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ), label = "shimmer-anim"
-    )
-
-    val brush = Brush.linearGradient(
-        colors = listOf(
-            Color.LightGray.copy(alpha = 0.9f),
-            Color.LightGray.copy(alpha = 0.4f),
-            Color.LightGray.copy(alpha = 0.9f)
-        ),
-        start = Offset.Zero,
-        end = Offset(x = translateAnim, y = translateAnim)
-    )
-
-    Spacer(
-        modifier = modifier
-            .background(brush, shape = RoundedCornerShape(8.dp))
-    )
-}
-
-
-@Composable
 private fun ZoomableImage(imageUrl: String, onDismiss: () -> Unit) {
-    var scale by remember { mutableStateOf(1f) }
+    var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
 
     Dialog(
@@ -231,7 +214,7 @@ private fun ZoomableImage(imageUrl: String, onDismiss: () -> Unit) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.8f))
+                .clickable { onDismiss() }
                 .pointerInput(Unit) {
                     detectTransformGestures { _, pan, zoom, _ ->
                         scale *= zoom
@@ -253,15 +236,5 @@ private fun ZoomableImage(imageUrl: String, onDismiss: () -> Unit) {
                     )
             )
         }
-    }
-}
-
-private fun getGoogleDriveImageUrl(url: String): String {
-    if (url.isBlank()) return ""
-    val fileId = url.toUri().getQueryParameter("id")
-    return if (fileId != null) {
-        "https://drive.google.com/uc?export=download&id=$fileId"
-    } else {
-        url
     }
 }
