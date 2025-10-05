@@ -96,7 +96,7 @@ class MainActivity : ComponentActivity() {
                         ) {
                             val productJson = it.arguments?.getString("productJson")
                             val product = Gson().fromJson(productJson, Product::class.java)
-                            ProductDetailScreen(navController = navController, product = product)
+                            ProductDetailScreen(product = product)
                         }
                     }
                 }

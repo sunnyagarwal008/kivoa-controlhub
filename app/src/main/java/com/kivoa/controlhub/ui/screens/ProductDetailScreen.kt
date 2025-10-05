@@ -23,7 +23,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import androidx.navigation.NavController
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import com.kivoa.controlhub.Helper
@@ -32,7 +31,6 @@ import com.kivoa.controlhub.ui.components.shimmer
 
 @Composable
 fun ProductDetailScreen(
-    navController: NavController,
     product: Product
 ) {
     var showZoomedImage by remember { mutableStateOf(false) }
@@ -88,21 +86,18 @@ fun ProductDetailScreen(
         ) {
             Text(text = "SKU: ${product.sku}", style = MaterialTheme.typography.titleLarge)
             Text(text = "Purchase Month: ${product.purchaseMonthYear}")
-            Text(text = "Price Code: ${product.priceCode}")
-            Text(text = "Buy Price: ₹${product.buyPrice}")
-            Text(text = "GST: ₹${product.gst}")
+            Text(text = "Product Code: ${product.priceCode}")
             Text(text = "MRP: ₹${product.mrp}")
             Text(text = "Discount: ₹${product.discount}")
             Text(text = "Selling Price: ₹${product.sellingPrice}")
             val quantity = product.quantity.toIntOrNull() ?: 0
-            val inStock = quantity > 0
-            val stockText = if (inStock) "In stock" else "Out of stock"
-            val stockColor = if (inStock) Color.Green else Color.Red
-
-            Text(
-                text = stockText,
-                color = stockColor
-            )
+            val outOfStock = quantity == 0
+            if (outOfStock) {
+                Text(
+                    text = "Out of stock",
+                    color = Color.Red,
+                )
+            }
         }
     }
 }

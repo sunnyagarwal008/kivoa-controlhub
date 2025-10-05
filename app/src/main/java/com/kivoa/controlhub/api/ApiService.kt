@@ -13,6 +13,8 @@ interface ApiService {
     suspend fun browse(
         @Query("category") category: String,
         @Query("page") page: Int,
-        @Query("excludeOutOfStock") excludeOutOfStock: Boolean
+        @Query("excludeOutOfStock") excludeOutOfStock: Boolean,
+        @Query("minPrice") minPrice: Int? = null,
+        @Query("maxPrice") maxPrice: Int? = null
     ): BrowseApiResponse
 }

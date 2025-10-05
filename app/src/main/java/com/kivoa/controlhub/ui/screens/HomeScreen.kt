@@ -189,14 +189,13 @@ fun ProductItem(product: Product, onClick: () -> Unit) {
             Text(text = "MRP: ₹${product.mrp}")
             Text(text = "Selling Price: ₹${product.sellingPrice}")
             val quantity = product.quantity.toIntOrNull() ?: 0
-            val inStock = quantity > 0
-            val stockText = if (inStock) "In stock" else "Out of stock"
-            val stockColor = if (inStock) Color.Green else Color.Red
-
-            Text(
-                text = stockText,
-                color = stockColor
-            )
+            val outOfStock = quantity == 0
+            if (outOfStock) {
+                Text(
+                    text = "Out of stock",
+                    color = Color.Red,
+                )
+            }
             Text(text = "Product Code: ${product.priceCode}")
         }
     }
