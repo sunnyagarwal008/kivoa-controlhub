@@ -88,7 +88,7 @@ fun ProductDetailScreen(
             Text(text = "Purchase Month: ${product.purchaseMonthYear}")
             Text(text = "Product Code: ${product.priceCode}")
             Text(text = "MRP: ₹${product.mrp}")
-            Text(text = "Discount: ₹${product.discount}")
+            Text(text = "Discount: ${product.discount}%")
             Text(text = "Selling Price: ₹${product.sellingPrice}")
             val quantity = product.quantity.toIntOrNull() ?: 0
             val outOfStock = quantity == 0

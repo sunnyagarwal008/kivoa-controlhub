@@ -13,24 +13,22 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -42,9 +40,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -90,97 +91,55 @@ fun BrowseScreen(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        Box(
+        Row(
             modifier = Modifier
-                .padding(horizontal = 8.dp, vertical = 4.dp)
-                .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Category Dropdown
-                var categoryExpanded by remember { mutableStateOf(false) }
-                Box(modifier = Modifier.weight(1f)) { // Use weight
-                    ExposedDropdownMenuBox(
-                        expanded = categoryExpanded,
-                        onExpandedChange = { categoryExpanded = it },
-                    ) {
-                        OutlinedTextField(
-                            modifier = Modifier.menuAnchor(),
-                            readOnly = true,
-                            value = browseViewModel.selectedCategory,
-                            onValueChange = {},
-                            label = { Text("Category", fontSize = 11.sp) },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
-                            textStyle = LocalTextStyle.current.copy(fontSize = 11.sp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                unfocusedContainerColor = Color.Transparent,
-                                focusedContainerColor = Color.Transparent,
-                            ),
-                            singleLine = true
-                        )
-                        ExposedDropdownMenu(
-                            expanded = categoryExpanded,
-                            onDismissRequest = { categoryExpanded = false },
-                        ) {
-                            categories.forEach { selectionOption ->
-                                DropdownMenuItem(
-                                    text = { Text(selectionOption, fontSize = 12.sp) },
-                                    onClick = {
-                                        browseViewModel.selectedCategory = selectionOption
-                                        categoryExpanded = false
-                                    },
-                                )
-                            }
-                        }
+
+            var categoryExpanded by remember { mutableStateOf(false) }
+
+            Box {
+                FilterChip(
+                    label = "Category: ${browseViewModel.selectedCategory}",
+                    onClick = { categoryExpanded = true })
+
+                DropdownMenu(
+                    expanded = categoryExpanded,
+                    onDismissRequest = { categoryExpanded = false })
+                {
+                    categories.forEach { category ->
+                        DropdownMenuItem(text = { Text(category) }, onClick = {
+                            browseViewModel.selectedCategory = category
+                            categoryExpanded = false
+                        })
                     }
                 }
+            }
 
-                // Price Range
-                Box(modifier = Modifier.weight(1f)) { // Use weight
-                    OutlinedTextField(
-                        modifier = Modifier.clickable { browseViewModel.showPriceFilterDialog = true },
-                        enabled = false,
-                        readOnly = true,
-                        value = "₹${browseViewModel.priceRange.start.toInt()}-₹${browseViewModel.priceRange.endInclusive.toInt()}",
-                        onValueChange = {},
-                        label = { Text("Price", fontSize = 11.sp) },
-                        textStyle = LocalTextStyle.current.copy(fontSize = 11.sp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            disabledContainerColor = Color.Transparent,
-                            disabledBorderColor = Color.LightGray,
-                            disabledTextColor = Color.Black,
-                            disabledLabelColor = Color.Gray
-                        ),
-                        singleLine = true
-                    )
-                }
+            FilterChip(
+                label = "Price: ₹${browseViewModel.priceRange.start.toInt()}-₹${browseViewModel.priceRange.endInclusive.toInt()}",
+                onClick = { browseViewModel.showPriceFilterDialog = true })
 
-                // Exclude out of stock switch
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(text = "In stock", fontSize = 11.sp)
-                    Switch(
-                        checked = browseViewModel.excludeOutOfStock,
-                        onCheckedChange = { browseViewModel.excludeOutOfStock = it }
-                    )
-                }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(text = "In stock", fontSize = 11.sp)
+                Switch(
+                    checked = browseViewModel.excludeOutOfStock,
+                    onCheckedChange = { browseViewModel.excludeOutOfStock = it })
             }
         }
-
 
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             contentPadding = PaddingValues(8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.weight(1f) // Use weight to take remaining space
+            modifier = Modifier.weight(1f)
         ) {
             if (lazyPagingItems.loadState.refresh == LoadState.Loading) {
                 items(10) {
@@ -221,6 +180,24 @@ fun BrowseScreen(
 }
 
 @Composable
+fun FilterChip(label: String, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .height(32.dp) // Reduced height
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.LightGray.copy(alpha = 0.5f))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 8.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(text = label, fontSize = 11.sp)
+            Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = "Dropdown")
+        }
+    }
+}
+
+@Composable
 fun PriceFilterDialog(viewModel: BrowseViewModel) {
     Dialog(onDismissRequest = { viewModel.showPriceFilterDialog = false }) {
         Surface(
@@ -247,13 +224,17 @@ fun PriceFilterDialog(viewModel: BrowseViewModel) {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ProductCard(product: Product, isSelected: Boolean, onClick: () -> Unit, onLongClick: () -> Unit) {
+    val haptic = LocalHapticFeedback.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(0.7f)
             .combinedClickable(
                 onClick = onClick,
-                onLongClick = onLongClick
+                onLongClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onLongClick()
+                }
             )
     ) {
         Box(modifier = Modifier.fillMaxSize()) {

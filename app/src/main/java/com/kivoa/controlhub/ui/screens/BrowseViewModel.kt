@@ -32,7 +32,7 @@ class BrowseViewModel : ViewModel() {
             val currentSelection = selectedProducts.toMutableSet()
             if (product in currentSelection) {
                 currentSelection.remove(product)
-            } else if (currentSelection.size < 5) {
+            } else if (currentSelection.size < 10) {
                 currentSelection.add(product)
             }
             selectedProducts = currentSelection
