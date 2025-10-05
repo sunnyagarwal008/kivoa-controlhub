@@ -1,8 +1,10 @@
 package com.kivoa.controlhub.ui.screens
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,13 +16,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -54,17 +61,35 @@ import com.kivoa.controlhub.data.Product
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun BrowseScreen(viewModel: BrowseViewModel = viewModel(), navController: NavController) {
+fun BrowseScreen(
+    browseViewModel: BrowseViewModel = viewModel(),
+    shareViewModel: ShareViewModel = viewModel(),
+    navController: NavController
+) {
     val categories = listOf("All products", "Necklace", "Ring", "Earring", "Bracelet")
-    val lazyPagingItems = viewModel.getProducts().collectAsLazyPagingItems()
+    val lazyPagingItems = browseViewModel.products.collectAsLazyPagingItems()
 
-    if (viewModel.showPriceFilterDialog) {
-        PriceFilterDialog(viewModel = viewModel)
+    if (browseViewModel.showPriceFilterDialog) {
+        PriceFilterDialog(viewModel = browseViewModel)
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    if (shareViewModel.shareState is ShareViewModel.ShareState.Processing) {
+        Dialog(onDismissRequest = {}) {
+            Surface(shape = RoundedCornerShape(16.dp), color = Color.White) {
+                Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Preparing images...")
+                    CircularProgressIndicator()
+                }
+            }
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
         Box(
             modifier = Modifier
                 .padding(horizontal = 8.dp, vertical = 4.dp)
@@ -87,7 +112,7 @@ fun BrowseScreen(viewModel: BrowseViewModel = viewModel(), navController: NavCon
                         OutlinedTextField(
                             modifier = Modifier.menuAnchor(),
                             readOnly = true,
-                            value = viewModel.selectedCategory,
+                            value = browseViewModel.selectedCategory,
                             onValueChange = {},
                             label = { Text("Category", fontSize = 11.sp) },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
@@ -106,7 +131,7 @@ fun BrowseScreen(viewModel: BrowseViewModel = viewModel(), navController: NavCon
                                 DropdownMenuItem(
                                     text = { Text(selectionOption, fontSize = 12.sp) },
                                     onClick = {
-                                        viewModel.selectedCategory = selectionOption
+                                        browseViewModel.selectedCategory = selectionOption
                                         categoryExpanded = false
                                     },
                                 )
@@ -118,10 +143,10 @@ fun BrowseScreen(viewModel: BrowseViewModel = viewModel(), navController: NavCon
                 // Price Range
                 Box(modifier = Modifier.weight(1f)) { // Use weight
                     OutlinedTextField(
-                        modifier = Modifier.clickable { viewModel.showPriceFilterDialog = true },
+                        modifier = Modifier.clickable { browseViewModel.showPriceFilterDialog = true },
                         enabled = false,
                         readOnly = true,
-                        value = "₹${viewModel.priceRange.start.toInt()}-₹${viewModel.priceRange.endInclusive.toInt()}",
+                        value = "₹${browseViewModel.priceRange.start.toInt()}-₹${browseViewModel.priceRange.endInclusive.toInt()}",
                         onValueChange = {},
                         label = { Text("Price", fontSize = 11.sp) },
                         textStyle = LocalTextStyle.current.copy(fontSize = 11.sp),
@@ -142,8 +167,8 @@ fun BrowseScreen(viewModel: BrowseViewModel = viewModel(), navController: NavCon
                 ) {
                     Text(text = "In stock", fontSize = 11.sp)
                     Switch(
-                        checked = viewModel.excludeOutOfStock,
-                        onCheckedChange = { viewModel.excludeOutOfStock = it }
+                        checked = browseViewModel.excludeOutOfStock,
+                        onCheckedChange = { browseViewModel.excludeOutOfStock = it }
                     )
                 }
             }
@@ -164,12 +189,25 @@ fun BrowseScreen(viewModel: BrowseViewModel = viewModel(), navController: NavCon
             }
 
             items(lazyPagingItems.itemCount) { index ->
-                lazyPagingItems[index]?.let {
-                    ProductCard(product = it, onClick = {
-                        val productJson = Gson().toJson(it)
-                        val encodedUrl = URLEncoder.encode(productJson, StandardCharsets.UTF_8.toString())
-                        navController.navigate(Screen.ProductDetail.route + "/$encodedUrl")
-                    })
+                lazyPagingItems[index]?.let { product ->
+                    ProductCard(
+                        product = product,
+                        isSelected = browseViewModel.selectedProducts.contains(product),
+                        onClick = {
+                            if (browseViewModel.selectionMode) {
+                                browseViewModel.onProductClicked(product)
+                            } else {
+                                val productJson = Gson().toJson(product)
+                                val encodedUrl =
+                                    URLEncoder.encode(
+                                        productJson,
+                                        StandardCharsets.UTF_8.toString()
+                                    )
+                                navController.navigate(Screen.ProductDetail.route + "/$encodedUrl")
+                            }
+                        },
+                        onLongClick = { browseViewModel.onProductLongClicked(product) }
+                    )
                 }
             }
 
@@ -206,13 +244,17 @@ fun PriceFilterDialog(viewModel: BrowseViewModel) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ProductCard(product: Product, onClick: () -> Unit) {
+fun ProductCard(product: Product, isSelected: Boolean, onClick: () -> Unit, onLongClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(0.7f)
-            .clickable { onClick() }
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             SubcomposeAsyncImage(
@@ -249,6 +291,22 @@ fun ProductCard(product: Product, onClick: () -> Unit) {
                     Text(
                         text = "Out of stock",
                         color = Color.Red
+                    )
+                }
+            }
+            if (isSelected) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.4f))
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = "Selected",
+                        tint = Color.White,
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .background(Color.Transparent, shape = CircleShape)
                     )
                 }
             }
