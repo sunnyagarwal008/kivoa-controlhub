@@ -1,27 +1,31 @@
 package com.kivoa.controlhub.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RangeSlider
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,6 +39,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.paging.LoadState
@@ -52,66 +58,97 @@ import java.nio.charset.StandardCharsets
 @Composable
 fun BrowseScreen(viewModel: BrowseViewModel = viewModel(), navController: NavController) {
     val categories = listOf("All products", "Necklace", "Ring", "Earring", "Bracelet")
-
     val lazyPagingItems = viewModel.getProducts().collectAsLazyPagingItems()
 
+    if (viewModel.showPriceFilterDialog) {
+        PriceFilterDialog(viewModel = viewModel)
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            // Category Dropdown
-            var expanded by remember { mutableStateOf(false) }
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = !expanded },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                OutlinedTextField(
-                    modifier = Modifier
-                        .menuAnchor()
-                        .fillMaxWidth(),
-                    readOnly = true,
-                    value = viewModel.selectedCategory,
-                    onValueChange = {},
-                    label = { Text("Category") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                )
-                ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false },
-                ) {
-                    categories.forEach { selectionOption ->
-                        DropdownMenuItem(
-                            text = { Text(selectionOption) },
-                            onClick = {
-                                viewModel.selectedCategory = selectionOption
-                                expanded = false
-                            },
-                        )
-                    }
-                }
-            }
-
-            // Price Range Slider
-            Text(text = "Price Range: ₹${viewModel.priceRange.start.toInt()} - ₹${viewModel.priceRange.endInclusive.toInt()}")
-            RangeSlider(
-                value = viewModel.priceRange,
-                onValueChange = { viewModel.priceRange = it },
-                valueRange = 100f..4000f,
-                steps = 38
-            )
-
-            // Exclude out of stock switch
+        Box(
+            modifier = Modifier
+                .padding(horizontal = 8.dp, vertical = 4.dp)
+                .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
+        ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "Exclude out of stock")
-                Spacer(modifier = Modifier.weight(1f))
-                Switch(
-                    checked = viewModel.excludeOutOfStock,
-                    onCheckedChange = { viewModel.excludeOutOfStock = it }
-                )
+                // Category Dropdown
+                var categoryExpanded by remember { mutableStateOf(false) }
+                Box(modifier = Modifier.weight(1f)) { // Use weight
+                    ExposedDropdownMenuBox(
+                        expanded = categoryExpanded,
+                        onExpandedChange = { categoryExpanded = it },
+                    ) {
+                        OutlinedTextField(
+                            modifier = Modifier.menuAnchor(),
+                            readOnly = true,
+                            value = viewModel.selectedCategory,
+                            onValueChange = {},
+                            label = { Text("Category", fontSize = 11.sp) },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
+                            textStyle = LocalTextStyle.current.copy(fontSize = 11.sp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedContainerColor = Color.Transparent,
+                            ),
+                            singleLine = true
+                        )
+                        ExposedDropdownMenu(
+                            expanded = categoryExpanded,
+                            onDismissRequest = { categoryExpanded = false },
+                        ) {
+                            categories.forEach { selectionOption ->
+                                DropdownMenuItem(
+                                    text = { Text(selectionOption, fontSize = 12.sp) },
+                                    onClick = {
+                                        viewModel.selectedCategory = selectionOption
+                                        categoryExpanded = false
+                                    },
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Price Range
+                Box(modifier = Modifier.weight(1f)) { // Use weight
+                    OutlinedTextField(
+                        modifier = Modifier.clickable { viewModel.showPriceFilterDialog = true },
+                        enabled = false,
+                        readOnly = true,
+                        value = "₹${viewModel.priceRange.start.toInt()}-₹${viewModel.priceRange.endInclusive.toInt()}",
+                        onValueChange = {},
+                        label = { Text("Price", fontSize = 11.sp) },
+                        textStyle = LocalTextStyle.current.copy(fontSize = 11.sp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledContainerColor = Color.Transparent,
+                            disabledBorderColor = Color.LightGray,
+                            disabledTextColor = Color.Black,
+                            disabledLabelColor = Color.Gray
+                        ),
+                        singleLine = true
+                    )
+                }
+
+                // Exclude out of stock switch
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(text = "In stock", fontSize = 11.sp)
+                    Switch(
+                        checked = viewModel.excludeOutOfStock,
+                        onCheckedChange = { viewModel.excludeOutOfStock = it }
+                    )
+                }
             }
         }
+
 
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
@@ -139,6 +176,30 @@ fun BrowseScreen(viewModel: BrowseViewModel = viewModel(), navController: NavCon
             if (lazyPagingItems.loadState.append == LoadState.Loading) {
                 item {
                     ShimmerEffect(modifier = Modifier.aspectRatio(0.7f))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PriceFilterDialog(viewModel: BrowseViewModel) {
+    Dialog(onDismissRequest = { viewModel.showPriceFilterDialog = false }) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = Color.White
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(text = "Price Range", fontSize = 20.sp)
+                RangeSlider(
+                    value = viewModel.priceRange,
+                    onValueChange = { viewModel.priceRange = it },
+                    valueRange = 0f..5000f,
+                    steps = 100
+                )
+                Text(text = "₹${viewModel.priceRange.start.toInt()}-₹${viewModel.priceRange.endInclusive.toInt()}")
+                Button(onClick = { viewModel.showPriceFilterDialog = false }) {
+                    Text("Done")
                 }
             }
         }

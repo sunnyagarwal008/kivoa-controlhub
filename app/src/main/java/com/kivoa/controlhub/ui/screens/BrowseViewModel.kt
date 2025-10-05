@@ -18,7 +18,9 @@ class BrowseViewModel : ViewModel() {
 
     var selectedCategory by mutableStateOf("All products")
     var excludeOutOfStock by mutableStateOf(true)
-    var priceRange by mutableStateOf(100f..4000f)
+    var priceRange by mutableStateOf(0f..5000f)
+    var showPriceFilterDialog by mutableStateOf(false)
+
 
     fun getProducts(): Flow<PagingData<Product>> {
         return Pager(
