@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -48,6 +49,7 @@ import com.google.gson.Gson
 import com.kivoa.controlhub.data.Product
 import com.kivoa.controlhub.ui.screens.BrowseScreen
 import com.kivoa.controlhub.ui.screens.BrowseViewModel
+import com.kivoa.controlhub.ui.screens.CreateScreen
 import com.kivoa.controlhub.ui.screens.HomeScreen
 import com.kivoa.controlhub.ui.screens.ProductDetailScreen
 import com.kivoa.controlhub.ui.screens.ShareViewModel
@@ -76,6 +78,7 @@ class MainActivity : ComponentActivity() {
                             val items = listOf(
                                 Screen.Search,
                                 Screen.Browse,
+                                Screen.Create,
                             )
                             items.forEach { screen ->
                                 NavigationBarItem(
@@ -103,6 +106,7 @@ class MainActivity : ComponentActivity() {
                     ) {
                         composable(Screen.Search.route) { HomeScreen(modifier = Modifier.fillMaxSize(), navController = navController) }
                         composable(Screen.Browse.route) { BrowseScreen(navController = navController, browseViewModel = browseViewModel, shareViewModel = shareViewModel) }
+                        composable(Screen.Create.route) { CreateScreen() }
                         composable(
                             route = Screen.ProductDetail.route + "/{productJson}",
                             arguments = listOf(navArgument("productJson") { type = NavType.StringType })
@@ -173,6 +177,7 @@ fun KivoaAppBar(screen: Screen, navController: NavController, browseViewModel: B
 sealed class Screen(val route: String, val icon: ImageVector? = null) {
     object Search : Screen("Search", Icons.Default.Search)
     object Browse : Screen("Browse", Icons.Default.ShoppingCart)
+    object Create : Screen("Create", Icons.Default.AddCircle)
     object ProductDetail : Screen("ProductDetail")
 
     companion object {
@@ -180,6 +185,7 @@ sealed class Screen(val route: String, val icon: ImageVector? = null) {
             return when (route?.substringBefore("/")) {
                 Search.route -> Search
                 Browse.route -> Browse
+                Create.route -> Create
                 ProductDetail.route -> ProductDetail
                 else -> Search
             }

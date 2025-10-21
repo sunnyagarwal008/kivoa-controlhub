@@ -13,6 +13,7 @@ import androidx.paging.cachedIn
 import com.kivoa.controlhub.api.RetrofitInstance
 import com.kivoa.controlhub.data.Product
 import com.kivoa.controlhub.data.ProductPagingSource
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapLatest
 
@@ -50,6 +51,7 @@ class BrowseViewModel : ViewModel() {
     }
 
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     val products: Flow<PagingData<Product>> = snapshotFlow {
         Triple(selectedCategory, excludeOutOfStock, priceRange)
     }.flatMapLatest { (category, exclude, price) ->
