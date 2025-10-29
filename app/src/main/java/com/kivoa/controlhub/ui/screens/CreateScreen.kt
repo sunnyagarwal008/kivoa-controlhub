@@ -42,12 +42,10 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -72,10 +70,17 @@ import coil.compose.rememberAsyncImagePainter
 import com.kivoa.controlhub.data.RawProduct
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
+import com.kivoa.controlhub.AppBarState
+import com.kivoa.controlhub.AppBarViewModel
+import androidx.compose.runtime.LaunchedEffect
+
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun CreateScreen(createViewModel: CreateViewModel = viewModel()) {
+fun CreateScreen(
+    createViewModel: CreateViewModel = viewModel(),
+    appBarViewModel: AppBarViewModel
+) {
     var tabIndex by remember { mutableStateOf(0) }
     val tabs = listOf("In Review", "Pending")
 
@@ -103,104 +108,98 @@ fun CreateScreen(createViewModel: CreateViewModel = viewModel()) {
         createViewModel.onImagesSelected(uris, context)
     }
 
-    Scaffold(
-        topBar = {
-            Column {
-                TopAppBar(
-                    title = {
-                        if (selectedProductUris.isNotEmpty()) {
-                            Text("Selected ${selectedProductUris.size} images")
+    LaunchedEffect(selectedProductUris.isNotEmpty(), tabIndex) {
+        appBarViewModel.setAppBarState(
+            AppBarState(
+                title = {
+                    if (selectedProductUris.isNotEmpty()) {
+                        Text("Selected ${selectedProductUris.size} images")
+                    } else {
+                        Text(tabs[tabIndex])
+                    }
+                },
+                navigationIcon = {
+                    if (selectedProductUris.isNotEmpty()) {
+                        IconButton(onClick = { selectedProductUris = persistentListOf() }) {
+                            Icon(Icons.Default.Close, "Clear selection")
+                        }
+                    }
+                },
+                actions = {
+                    if (selectedProductUris.isNotEmpty()) {
+                        IconButton(onClick = { showCreateProductFormsDialog = true }) {
+                            Icon(Icons.Default.Done, "Create Products")
+                        }
+                    }
+                }
+            )
+        )
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
+        TabRow(selectedTabIndex = tabIndex) {
+            tabs.forEachIndexed { index, title ->
+                Tab(text = { Text(title) },
+                    selected = tabIndex == index,
+                    onClick = { tabIndex = index }
+                )
+            }
+        }
+
+        when (tabIndex) {
+            0 -> {
+                // Content for "In Review" tab
+                Text("In Review Products")
+            }
+            1 -> {
+                PendingProductsTab(
+                    rawProducts = rawProducts,
+                    isLoading = isLoading,
+                    onImageClick = { uri ->
+                        selectedImageUri = uri
+                        showFullScreenImageDialog = true
+                    },
+                    selectedProductUris = selectedProductUris,
+                    onProductLongPress = { uri, isSelected ->
+                        selectedProductUris = if (isSelected) {
+                            selectedProductUris.add(uri)
                         } else {
-                            Text("Create")
-                        }
-                    },
-                    navigationIcon = {
-                        if (selectedProductUris.isNotEmpty()) {
-                            IconButton(onClick = { selectedProductUris = persistentListOf() }) {
-                                Icon(Icons.Default.Close, "Clear selection")
-                            }
-                        }
-                    },
-                    actions = {
-                        if (selectedProductUris.isNotEmpty()) {
-                            IconButton(onClick = { showCreateProductFormsDialog = true }) {
-                                Icon(Icons.Default.Done, "Create Products")
-                            }
+                            selectedProductUris.remove(uri)
                         }
                     }
                 )
-                if (selectedProductUris.isEmpty()) { // Conditionally show TabRow
-                    TabRow(selectedTabIndex = tabIndex) {
-                        tabs.forEachIndexed { index, title ->
-                            Tab(text = { Text(title) },
-                                selected = tabIndex == index,
-                                onClick = { tabIndex = index }
-                            )
-                        }
-                    }
-                }
-            }
-        },
-        floatingActionButton = {
-            FloatingActionButton(onClick = {
-                imagePickerLauncher.launch("image/*")
-            }) {
-                Icon(Icons.Default.Add, "Add new product images")
             }
         }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            when (tabIndex) {
-                0 -> {
-                    // Content for "In Review" tab
-                    Text("In Review Products")
-                }
-                1 -> {
-                    PendingProductsTab(
-                        rawProducts = rawProducts,
-                        isLoading = isLoading,
-                        onImageClick = { uri ->
-                            selectedImageUri = uri
-                            showFullScreenImageDialog = true
-                        },
-                        selectedProductUris = selectedProductUris,
-                        onProductLongPress = { uri, isSelected ->
-                            selectedProductUris = if (isSelected) {
-                                selectedProductUris.add(uri)
-                            } else {
-                                selectedProductUris.remove(uri)
-                            }
-                        }
-                    )
-                }
-            }
+        FloatingActionButton(onClick = {
+            imagePickerLauncher.launch("image/*")
+        }, modifier = Modifier.align(Alignment.End).padding(16.dp)) {
+            Icon(Icons.Default.Add, "Add new product images")
         }
+    }
 
-        if (showFullScreenImageDialog && selectedImageUri != null) {
-            FullScreenImageDialog(
-                imageUri = selectedImageUri!!,
-                onDismiss = { showFullScreenImageDialog = false }
-            )
-        }
+    if (showFullScreenImageDialog && selectedImageUri != null) {
+        FullScreenImageDialog(
+            imageUri = selectedImageUri!!,
+            onDismiss = { showFullScreenImageDialog = false }
+        )
+    }
 
-        if (showCreateProductFormsDialog) {
-            val selectedRawProducts = rawProducts.filter { product ->
-                selectedProductUris.contains(Uri.parse(product.imageUri))
-            }
-            CreateProductFormsDialog(
-                selectedRawProducts = selectedRawProducts,
-                onDismiss = { showCreateProductFormsDialog = false },
-                createViewModel = createViewModel,
-                onProductCreationSuccess = { // This lambda is called when products are successfully created
-                    showCreateProductFormsDialog = false
-                    selectedProductUris = persistentListOf()
-                }
-            )
+    if (showCreateProductFormsDialog) {
+        val selectedRawProducts = rawProducts.filter { product ->
+            selectedProductUris.contains(Uri.parse(product.imageUri))
         }
+        CreateProductFormsDialog(
+            selectedRawProducts = selectedRawProducts,
+            onDismiss = { showCreateProductFormsDialog = false },
+            createViewModel = createViewModel,
+            onProductCreationSuccess = { // This lambda is called when products are successfully created
+                showCreateProductFormsDialog = false
+                selectedProductUris = persistentListOf()
+            }
+        )
     }
 }
 
@@ -221,26 +220,24 @@ fun PendingProductsTab(
         if (rawProducts.isEmpty() && !isLoading) {
             Text("No pending products.", modifier = Modifier.padding(16.dp))
         }
-        if (selectedProductUris.isEmpty()) { // Conditionally show the tab content for PendingProductsTab
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(3),
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(4.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                items(rawProducts) { product ->
-                    val uri = Uri.parse(product.imageUri)
-                    val isSelected = selectedProductUris.contains(uri)
-                    PendingProductItem(
-                        product = product,
-                        onImageClick = onImageClick,
-                        isSelected = isSelected,
-                        onLongPress = {
-                            onProductLongPress(uri, !isSelected)
-                        }
-                    )
-                }
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(4.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            items(rawProducts) { product ->
+                val uri = Uri.parse(product.imageUri)
+                val isSelected = selectedProductUris.contains(uri)
+                PendingProductItem(
+                    product = product,
+                    onImageClick = onImageClick,
+                    isSelected = isSelected,
+                    onLongPress = {
+                        onProductLongPress(uri, !isSelected)
+                    }
+                )
             }
         }
     }

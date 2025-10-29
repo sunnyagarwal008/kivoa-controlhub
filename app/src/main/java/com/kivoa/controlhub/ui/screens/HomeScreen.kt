@@ -51,6 +51,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.SubcomposeAsyncImage
 import com.google.gson.Gson
+import com.kivoa.controlhub.AppBarState
+import com.kivoa.controlhub.AppBarViewModel
 import com.kivoa.controlhub.Helper
 import com.kivoa.controlhub.R
 import com.kivoa.controlhub.Screen
@@ -58,19 +60,41 @@ import com.kivoa.controlhub.ShimmerEffect
 import com.kivoa.controlhub.data.Product
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import androidx.compose.runtime.LaunchedEffect
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
     viewModel: SearchViewModel = viewModel(),
-    navController: NavController
+    navController: NavController,
+    appBarViewModel: AppBarViewModel
 ) {
     val searchResults by viewModel.searchResults.collectAsState()
     val isSearching by viewModel.isSearching.collectAsState()
     val skuNumber by viewModel.skuNumber.collectAsState()
     val selectedPrefix by viewModel.selectedPrefix.collectAsState()
     val prefixes = viewModel.skuPrefixes
+
+    LaunchedEffect(Unit) {
+        appBarViewModel.setAppBarState(
+            AppBarState(
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            painter = painterResource(id = R.drawable.kivoa_logo),
+                            contentDescription = "Kivoa Logo",
+                            modifier = Modifier.size(32.dp)
+                        )
+                        Text(Screen.Search.route, modifier = Modifier.padding(start = 8.dp))
+                    }
+                },
+                navigationIcon = { },
+                actions = { }
+            )
+        )
+    }
 
     Column(
         modifier = modifier

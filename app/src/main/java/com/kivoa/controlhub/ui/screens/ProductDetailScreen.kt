@@ -7,8 +7,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,15 +28,43 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
+import com.kivoa.controlhub.AppBarState
+import com.kivoa.controlhub.AppBarViewModel
 import com.kivoa.controlhub.Helper
 import com.kivoa.controlhub.data.Product
 import com.kivoa.controlhub.ui.components.shimmer
+import androidx.compose.runtime.LaunchedEffect
+import androidx.navigation.NavController
 
 @Composable
 fun ProductDetailScreen(
-    product: Product
+    product: Product,
+    navController: NavController,
+    shareViewModel: ShareViewModel,
+    appBarViewModel: AppBarViewModel
 ) {
     var showZoomedImage by remember { mutableStateOf(false) }
+
+    LaunchedEffect(product) {
+        appBarViewModel.setAppBarState(
+            AppBarState(
+                title = { Text("Product Detail") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.navigateUp() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { shareViewModel.shareProduct(product) }) {
+                        Icon(Icons.Default.Share, contentDescription = "Share")
+                    }
+                }
+            )
+        )
+    }
 
     if (showZoomedImage) {
         Dialog(onDismissRequest = { showZoomedImage = false }) {

@@ -19,8 +19,10 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -28,11 +30,13 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,6 +58,8 @@ import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.SubcomposeAsyncImage
 import com.google.gson.Gson
+import com.kivoa.controlhub.AppBarState
+import com.kivoa.controlhub.AppBarViewModel
 import com.kivoa.controlhub.Helper
 import com.kivoa.controlhub.Screen
 import com.kivoa.controlhub.ShimmerEffect
@@ -66,10 +72,45 @@ import java.nio.charset.StandardCharsets
 fun BrowseScreen(
     browseViewModel: BrowseViewModel = viewModel(),
     shareViewModel: ShareViewModel = viewModel(),
-    navController: NavController
+    navController: NavController,
+    appBarViewModel: AppBarViewModel
 ) {
     val categories = listOf("All products", "Necklace", "Ring", "Earring", "Bracelet")
     val lazyPagingItems = browseViewModel.products.collectAsLazyPagingItems()
+
+    LaunchedEffect(browseViewModel.selectionMode, browseViewModel.selectedProducts.size) {
+        appBarViewModel.setAppBarState(
+            AppBarState(
+                title = {
+                    if (browseViewModel.selectionMode) {
+                        Text("${browseViewModel.selectedProducts.size} selected")
+                    } else {
+                        Text(Screen.Browse.route)
+                    }
+                },
+                navigationIcon = {
+                    if (browseViewModel.selectionMode) {
+                        IconButton(onClick = {
+                            browseViewModel.selectionMode = false
+                            browseViewModel.selectedProducts = emptySet()
+                        }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back"
+                            )
+                        }
+                    }
+                },
+                actions = {
+                    if (browseViewModel.selectionMode) {
+                        IconButton(onClick = { shareViewModel.shareProducts(browseViewModel.selectedProducts) }) {
+                            Icon(Icons.Default.Share, contentDescription = "Share")
+                        }
+                    }
+                }
+            )
+        )
+    }
 
     if (browseViewModel.showPriceFilterDialog) {
         PriceFilterDialog(viewModel = browseViewModel)

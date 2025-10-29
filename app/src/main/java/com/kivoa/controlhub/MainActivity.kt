@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -26,6 +27,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -54,6 +57,23 @@ import com.kivoa.controlhub.ui.screens.HomeScreen
 import com.kivoa.controlhub.ui.screens.ProductDetailScreen
 import com.kivoa.controlhub.ui.screens.ShareViewModel
 import com.kivoa.controlhub.ui.theme.ControlHubTheme
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+
+data class AppBarState(
+    val title: @Composable () -> Unit = { },
+    val navigationIcon: @Composable () -> Unit = { },
+    val actions: @Composable RowScope.() -> Unit = { }
+)
+
+class AppBarViewModel : ViewModel() {
+    private val _appBarState = MutableStateFlow(AppBarState())
+    val appBarState: StateFlow<AppBarState> = _appBarState
+
+    fun setAppBarState(state: AppBarState) {
+        _appBarState.value = state
+    }
+}
 
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -69,10 +89,13 @@ class MainActivity : ComponentActivity() {
 
                 val browseViewModel: BrowseViewModel = viewModel()
                 val shareViewModel: ShareViewModel = viewModel()
+                val appBarViewModel: AppBarViewModel = viewModel()
+                val appBarState by appBarViewModel.appBarState.collectAsState()
                 var product by remember { mutableStateOf<Product?>(null) }
 
+
                 Scaffold(
-                    topBar = { KivoaAppBar(screen = currentScreen, navController = navController, browseViewModel = browseViewModel, shareViewModel = shareViewModel, product = product) },
+                    topBar = { KivoaAppBar(appBarState = appBarState) },
                     bottomBar = {
                         NavigationBar(modifier = Modifier.height(100.dp)) {
                             val items = listOf(
@@ -104,16 +127,16 @@ class MainActivity : ComponentActivity() {
                         startDestination = Screen.Search.route,
                         Modifier.padding(innerPadding)
                     ) {
-                        composable(Screen.Search.route) { HomeScreen(modifier = Modifier.fillMaxSize(), navController = navController) }
-                        composable(Screen.Browse.route) { BrowseScreen(navController = navController, browseViewModel = browseViewModel, shareViewModel = shareViewModel) }
-                        composable(Screen.Create.route) { CreateScreen() }
+                        composable(Screen.Search.route) { HomeScreen(modifier = Modifier.fillMaxSize(), navController = navController, appBarViewModel = appBarViewModel) }
+                        composable(Screen.Browse.route) { BrowseScreen(navController = navController, browseViewModel = browseViewModel, shareViewModel = shareViewModel, appBarViewModel = appBarViewModel) }
+                        composable(Screen.Create.route) { CreateScreen(appBarViewModel = appBarViewModel) }
                         composable(
                             route = Screen.ProductDetail.route + "/{productJson}",
                             arguments = listOf(navArgument("productJson") { type = NavType.StringType })
                         ) {
                             val productJson = it.arguments?.getString("productJson")
                             product = Gson().fromJson(productJson, Product::class.java)
-                            ProductDetailScreen(product = product!!)
+                            ProductDetailScreen(product = product!!, navController = navController, shareViewModel = shareViewModel, appBarViewModel = appBarViewModel)
                         }
                     }
                 }
@@ -124,53 +147,11 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun KivoaAppBar(screen: Screen, navController: NavController, browseViewModel: BrowseViewModel, shareViewModel: ShareViewModel, product: Product?) {
+fun KivoaAppBar(appBarState: AppBarState) {
     TopAppBar(
-        title = {
-            if (browseViewModel.selectionMode) {
-                Text("${browseViewModel.selectedProducts.size} selected")
-            } else {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Image(
-                        painter = painterResource(id = R.drawable.kivoa_logo),
-                        contentDescription = "Kivoa Logo",
-                        modifier = Modifier.size(32.dp)
-                    )
-                    Text(screen.route, modifier = Modifier.padding(start = 8.dp))
-                }
-            }
-        },
-        navigationIcon = {
-            if (browseViewModel.selectionMode) {
-                IconButton(onClick = {
-                    browseViewModel.selectionMode = false
-                    browseViewModel.selectedProducts = emptySet()
-                }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back"
-                    )
-                }
-            } else if (screen == Screen.ProductDetail) {
-                IconButton(onClick = { navController.navigateUp() }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back"
-                    )
-                }
-            }
-        },
-        actions = {
-            if (browseViewModel.selectionMode) {
-                IconButton(onClick = { shareViewModel.shareProducts(browseViewModel.selectedProducts) }) {
-                    Icon(Icons.Default.Share, contentDescription = "Share")
-                }
-            } else if (screen == Screen.ProductDetail) {
-                IconButton(onClick = { product?.let { shareViewModel.shareProduct(it) } }) {
-                    Icon(Icons.Default.Share, contentDescription = "Share")
-                }
-            }
-        }
+        title = appBarState.title,
+        navigationIcon = appBarState.navigationIcon,
+        actions = appBarState.actions
     )
 }
 
