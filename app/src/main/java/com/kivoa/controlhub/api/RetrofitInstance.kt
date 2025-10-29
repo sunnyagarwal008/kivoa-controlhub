@@ -6,7 +6,8 @@ import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 
 object RetrofitInstance {
-    private const val BASE_URL = "https://cockroach-vercel.vercel.app/"
+    //private const val BASE_URL = "https://cockroach-vercel.vercel.app/"
+    private const val BASE_URL = "http://ec2-15-206-158-160.ap-south-1.compute.amazonaws.com:5001/"
 
     private val moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())

@@ -18,10 +18,15 @@ data class Product(
 
 data class ApiResponse(
     val success: Boolean,
-    val count: Int,
+    val message: String,
     val data: List<Product>
 )
 
+
+data class CreateProductsResponse(
+    val success: Boolean,
+    val message: String,
+)
 
 data class Pagination(
     val page: Int,
