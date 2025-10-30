@@ -168,6 +168,14 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    fun deleteRawProducts(urisToDelete: List<Uri>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val imageUriStrings = urisToDelete.map { it.toString() }
+            val rawProductsToDelete = rawProductDao.findRawProductsByImageUris(imageUriStrings)
+            rawProductDao.delete(rawProductsToDelete)
+        }
+    }
+
     fun resetBulkProductCreationSuccess() {
         _bulkProductCreationSuccess.value = false
     }

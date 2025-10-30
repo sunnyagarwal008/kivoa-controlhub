@@ -28,6 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete // Import the Delete icon
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -82,7 +83,7 @@ fun CreateScreen(
     appBarViewModel: AppBarViewModel
 ) {
     var tabIndex by remember { mutableStateOf(0) }
-    val tabs = listOf("In Review", "Pending")
+    val tabs = listOf("Pending", "In Review") // Changed tab order
 
     val rawProducts by createViewModel.rawProducts.collectAsState()
     val isLoading by createViewModel.isLoading.collectAsState()
@@ -127,6 +128,12 @@ fun CreateScreen(
                 },
                 actions = {
                     if (selectedProductUris.isNotEmpty()) {
+                        IconButton(onClick = { 
+                            createViewModel.deleteRawProducts(selectedProductUris.toList())
+                            selectedProductUris = persistentListOf()
+                        }) {
+                            Icon(Icons.Default.Delete, "Delete Products")
+                        }
                         IconButton(onClick = { showCreateProductFormsDialog = true }) {
                             Icon(Icons.Default.Done, "Create Products")
                         }
@@ -142,7 +149,8 @@ fun CreateScreen(
     ) {
         TabRow(selectedTabIndex = tabIndex) {
             tabs.forEachIndexed { index, title ->
-                Tab(text = { Text(title) },
+                Tab(
+                    text = { Text(title) },
                     selected = tabIndex == index,
                     onClick = { tabIndex = index }
                 )
@@ -150,11 +158,7 @@ fun CreateScreen(
         }
 
         when (tabIndex) {
-            0 -> {
-                // Content for "In Review" tab
-                Text("In Review Products")
-            }
-            1 -> {
+            0 -> { // Content for "Pending" tab
                 PendingProductsTab(
                     rawProducts = rawProducts,
                     isLoading = isLoading,
@@ -169,14 +173,14 @@ fun CreateScreen(
                         } else {
                             selectedProductUris.remove(uri)
                         }
-                    }
+                    },
+                    imagePickerLauncher = imagePickerLauncher // Pass the launcher
                 )
             }
-        }
-        FloatingActionButton(onClick = {
-            imagePickerLauncher.launch("image/*")
-        }, modifier = Modifier.align(Alignment.End).padding(16.dp)) {
-            Icon(Icons.Default.Add, "Add new product images")
+
+            1 -> { // Content for "In Review" tab
+                Text("In Review Products")
+            }
         }
     }
 
@@ -210,35 +214,48 @@ fun PendingProductsTab(
     isLoading: Boolean,
     onImageClick: (Uri) -> Unit,
     selectedProductUris: PersistentList<Uri>,
-    onProductLongPress: (Uri, Boolean) -> Unit
+    onProductLongPress: (Uri, Boolean) -> Unit,
+    imagePickerLauncher: androidx.activity.result.ActivityResultLauncher<String> // Added imagePickerLauncher
 ) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        if (isLoading) {
-            CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-            Text("Uploading images...")
-        }
-        if (rawProducts.isEmpty() && !isLoading) {
-            Text("No pending products.", modifier = Modifier.padding(16.dp))
-        }
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(4.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            items(rawProducts) { product ->
-                val uri = Uri.parse(product.imageUri)
-                val isSelected = selectedProductUris.contains(uri)
-                PendingProductItem(
-                    product = product,
-                    onImageClick = onImageClick,
-                    isSelected = isSelected,
-                    onLongPress = {
-                        onProductLongPress(uri, !isSelected)
-                    }
-                )
+    Box(modifier = Modifier.fillMaxSize()) { // Used Box to stack content and FAB
+        Column(modifier = Modifier.fillMaxSize()) {
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                Text("Uploading images...")
             }
+            if (rawProducts.isEmpty() && !isLoading) {
+                Text("No pending products.", modifier = Modifier.padding(16.dp))
+            }
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(3),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                items(rawProducts) { product ->
+                    val uri = Uri.parse(product.imageUri)
+                    val isSelected = selectedProductUris.contains(uri)
+                    PendingProductItem(
+                        product = product,
+                        onImageClick = onImageClick,
+                        isSelected = isSelected,
+                        onLongPress = {
+                            onProductLongPress(uri, !isSelected)
+                        }
+                    )
+                }
+            }
+        }
+        FloatingActionButton( // Moved FAB inside PendingProductsTab
+            onClick = {
+                imagePickerLauncher.launch("image/*")
+            },
+            modifier = Modifier
+                .align(Alignment.BottomEnd) // Aligned to bottom end
+                .padding(16.dp)
+        ) {
+            Icon(Icons.Default.Add, "Add new product images")
         }
     }
 }
@@ -337,7 +354,10 @@ fun CreateProductFormsDialog(
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Create Products", style = androidx.compose.material3.MaterialTheme.typography.headlineMedium)
+                Text(
+                    "Create Products",
+                    style = androidx.compose.material3.MaterialTheme.typography.headlineMedium
+                )
                 Spacer(modifier = Modifier.height(16.dp))
 
                 LazyColumn(
@@ -441,7 +461,8 @@ fun ProductForm(productFormState: ProductFormState) {
             val categories = listOf("Ring", "Necklace", "Earring", "Bracelet")
             var expanded by remember { mutableStateOf(false) }
             var textFieldSize by remember { mutableStateOf(Size.Zero) }
-            val icon = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
+            val icon =
+                if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
 
             ExposedDropdownMenuBox(
                 expanded = expanded,
@@ -452,9 +473,12 @@ fun ProductForm(productFormState: ProductFormState) {
                     value = productFormState.category,
                     onValueChange = { },
                     readOnly = true,
-                    label = { Text("Category") },
+                    label = { Text("Category")},
                     trailingIcon = {
-                        Icon(icon, "contentDescription", Modifier.clickable { expanded = !expanded })
+                        Icon(
+                            icon,
+                            "contentDescription",
+                            Modifier.clickable { expanded = !expanded })
                     },
                     modifier = Modifier
                         .menuAnchor()

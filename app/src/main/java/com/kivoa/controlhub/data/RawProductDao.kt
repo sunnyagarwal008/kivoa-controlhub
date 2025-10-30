@@ -15,9 +15,15 @@ interface RawProductDao {
     @Delete
     suspend fun delete(rawProduct: RawProduct)
 
+    @Delete
+    suspend fun delete(rawProducts: List<RawProduct>)
+
     @Update
     suspend fun update(rawProduct: RawProduct)
 
     @Query("SELECT * FROM raw_products")
     fun getAllRawProducts(): Flow<List<RawProduct>>
+
+    @Query("SELECT * FROM raw_products WHERE imageUri IN (:imageUris)")
+    suspend fun findRawProductsByImageUris(imageUris: List<String>): List<RawProduct>
 }
