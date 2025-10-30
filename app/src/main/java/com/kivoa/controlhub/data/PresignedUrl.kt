@@ -1,10 +1,10 @@
 package com.kivoa.controlhub.data
 
-import com.google.gson.annotations.SerializedName
+import com.squareup.moshi.Json
 
 data class PresignedUrlRequest(
     val filename: String,
-    @SerializedName("content_type")
+    @Json(name = "content_type")
     val contentType: String
 )
 
@@ -14,10 +14,10 @@ data class PresignedUrlResponse(
 )
 
 data class PresignedUrlData(
-    @SerializedName("expires_in")
+    @Json(name = "expires_in")
     val expiresIn: Int,
-    @SerializedName("file_url")
+    @Json(name = "file_url")
     val fileUrl: String,
-    @SerializedName("presigned_url")
+    @Json(name = "presigned_url")
     val presignedUrl: String
 )

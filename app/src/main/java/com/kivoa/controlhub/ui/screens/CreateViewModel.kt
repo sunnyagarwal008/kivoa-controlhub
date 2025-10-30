@@ -19,7 +19,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
@@ -88,20 +87,13 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
                 val presignedUrlData = presignedUrlResponse.data
                 val s3UploadUrl = presignedUrlData.presignedUrl
                 val s3FileUrl = presignedUrlData.fileUrl
-                val requestBodyBuilder =
-                    MultipartBody.Builder()
-                    .setType(MultipartBody.FORM)
 
-                // Add the image file
-                requestBodyBuilder.addFormDataPart(
-                    "file",
-                    fileName,
-                    bytes.toRequestBody(contentType.toMediaTypeOrNull())
-                )
+                val requestBody = bytes.toRequestBody(contentType.toMediaTypeOrNull())
 
                 val request = okhttp3.Request.Builder()
                     .url(s3UploadUrl)
-                    .post(requestBodyBuilder.build())
+                    .put(requestBody)
+                    .header("Content-Type", contentType) // Explicitly set Content-Type header
                     .build()
 
                 withContext(Dispatchers.IO) {
