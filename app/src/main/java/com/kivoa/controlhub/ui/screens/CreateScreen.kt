@@ -437,7 +437,7 @@ fun ProductForm(productFormState: ProductFormState, onUpdateField: (ProductFormS
             OutlinedTextField(
                 value = productFormState.mrp,
                 onValueChange = { newValue ->
-                    if (newValue.matches(Regex("^\\\\d*\\\\.?\\\\d*\$"))) {
+                    if (newValue.matches(Regex("""^\d*\.?\d*$"""))) {
                         onUpdateField(productFormState.copy(mrp = newValue))
                     }
                 },
@@ -449,7 +449,7 @@ fun ProductForm(productFormState: ProductFormState, onUpdateField: (ProductFormS
             OutlinedTextField(
                 value = productFormState.price,
                 onValueChange = { newValue ->
-                    if (newValue.matches(Regex("^\\\\d*\\\\.?\\\\d*\$"))) {
+                    if (newValue.matches(Regex("""^\d*\.?\d*$"""))) {
                         onUpdateField(productFormState.copy(price = newValue))
                     }
                 },
@@ -461,7 +461,7 @@ fun ProductForm(productFormState: ProductFormState, onUpdateField: (ProductFormS
             OutlinedTextField(
                 value = productFormState.discount,
                 onValueChange = { newValue ->
-                    if (newValue.matches(Regex("^\\\\d*\\\\.?\\\\d*\$"))) {
+                    if (newValue.matches(Regex("""^\d*\.?\d*$"""))) {
                         onUpdateField(productFormState.copy(discount = newValue))
                     }
                 },
@@ -473,7 +473,7 @@ fun ProductForm(productFormState: ProductFormState, onUpdateField: (ProductFormS
             OutlinedTextField(
                 value = productFormState.gst,
                 onValueChange = { newValue ->
-                    if (newValue.matches(Regex("^\\\\d*\\\\.?\\\\d*\$"))) {
+                    if (newValue.matches(Regex("""^\d*\.?\d*$"""))) {
                         onUpdateField(productFormState.copy(gst = newValue))
                     }
                 },
