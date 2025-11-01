@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -364,8 +365,13 @@ fun CreateProductFormsDialog(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    items(initialProductForms) { productFormState ->
-                        ProductForm(productFormState)
+                    itemsIndexed(initialProductForms) { index, productFormState ->
+                        ProductForm(
+                            productFormState = productFormState,
+                            onUpdateField = { updatedProductFormState ->
+                                initialProductForms[index] = updatedProductFormState
+                            }
+                        )
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
@@ -385,7 +391,7 @@ fun CreateProductFormsDialog(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProductForm(productFormState: ProductFormState) {
+fun ProductForm(productFormState: ProductFormState, onUpdateField: (ProductFormState) -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Image(
@@ -401,7 +407,7 @@ fun ProductForm(productFormState: ProductFormState) {
                 value = productFormState.mrp,
                 onValueChange = { newValue ->
                     if (newValue.matches(Regex("^\\d*\\.?\\d*\$"))) {
-                        productFormState.mrp = newValue
+                        onUpdateField(productFormState.copy(mrp = newValue))
                     }
                 },
                 label = { Text("MRP") },
@@ -413,7 +419,7 @@ fun ProductForm(productFormState: ProductFormState) {
                 value = productFormState.price,
                 onValueChange = { newValue ->
                     if (newValue.matches(Regex("^\\d*\\.?\\d*\$"))) {
-                        productFormState.price = newValue
+                        onUpdateField(productFormState.copy(price = newValue))
                     }
                 },
                 label = { Text("Price") },
@@ -425,7 +431,7 @@ fun ProductForm(productFormState: ProductFormState) {
                 value = productFormState.discount,
                 onValueChange = { newValue ->
                     if (newValue.matches(Regex("^\\d*\\.?\\d*\$"))) {
-                        productFormState.discount = newValue
+                        onUpdateField(productFormState.copy(discount = newValue))
                     }
                 },
                 label = { Text("Discount") },
@@ -437,7 +443,7 @@ fun ProductForm(productFormState: ProductFormState) {
                 value = productFormState.gst,
                 onValueChange = { newValue ->
                     if (newValue.matches(Regex("^\\d*\\.?\\d*\$"))) {
-                        productFormState.gst = newValue
+                        onUpdateField(productFormState.copy(gst = newValue))
                     }
                 },
                 label = { Text("GST") },
@@ -449,7 +455,7 @@ fun ProductForm(productFormState: ProductFormState) {
                 value = productFormState.purchaseMonth,
                 onValueChange = { newValue ->
                     if (newValue.length <= 4 && newValue.all { it.isDigit() }) {
-                        productFormState.purchaseMonth = newValue
+                        onUpdateField(productFormState.copy(purchaseMonth = newValue))
                     }
                 },
                 label = { Text("Purchase Month (MMyy)") },
@@ -495,7 +501,7 @@ fun ProductForm(productFormState: ProductFormState) {
                         DropdownMenuItem(
                             text = { Text(selectionOption) },
                             onClick = {
-                                productFormState.category = selectionOption
+                                onUpdateField(productFormState.copy(category = selectionOption))
                                 expanded = false
                             }
                         )

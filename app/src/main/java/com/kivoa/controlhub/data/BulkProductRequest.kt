@@ -1,19 +1,19 @@
 package com.kivoa.controlhub.data
 
-import com.google.gson.annotations.SerializedName
+import com.squareup.moshi.Json
 
 data class BulkProductRequest(
     val products: List<ProductDetailRequest>
 )
 
 data class ProductDetailRequest(
-    @SerializedName("raw_image")
+    @Json(name = "raw_image")
     val rawImage: String,
     val mrp: Double,
     val price: Double,
     val discount: Double,
     val gst: Double,
-    @SerializedName("purchase_month")
+    @Json(name = "purchase_month")
     val purchaseMonth: String,
     val category: String
 )
