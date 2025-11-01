@@ -6,6 +6,7 @@ import com.kivoa.controlhub.data.BulkProductRequest
 import com.kivoa.controlhub.data.CreateProductsResponse
 import com.kivoa.controlhub.data.PresignedUrlRequest
 import com.kivoa.controlhub.data.PresignedUrlResponse
+import com.kivoa.controlhub.data.ProductsApiResponse
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -29,5 +30,12 @@ interface ApiService {
 
     @POST("api/products/bulk")
     suspend fun createBulkProducts(@Body request: BulkProductRequest): CreateProductsResponse
+
+    @GET("api/products")
+    suspend fun getProducts(
+        @Query("page") page: Int,
+        @Query("per_page") perPage: Int,
+        @Query("status") status: String
+    ): ProductsApiResponse
 
 }

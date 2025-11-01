@@ -75,6 +75,7 @@ import kotlinx.collections.immutable.persistentListOf
 import com.kivoa.controlhub.AppBarState
 import com.kivoa.controlhub.AppBarViewModel
 import androidx.compose.runtime.LaunchedEffect
+import com.kivoa.controlhub.data.ApiProduct
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -84,11 +85,16 @@ fun CreateScreen(
     appBarViewModel: AppBarViewModel
 ) {
     var tabIndex by remember { mutableStateOf(0) }
-    val tabs = listOf("Pending", "In Review") // Changed tab order
+    val tabs = listOf("Pending", "In Progress", "In Review") // Added "In Progress"
 
     val rawProducts by createViewModel.rawProducts.collectAsState()
     val isLoading by createViewModel.isLoading.collectAsState()
     val bulkProductCreationSuccess by createViewModel.bulkProductCreationSuccess.collectAsState()
+    val inReviewProducts by createViewModel.inReviewProducts.collectAsState()
+    val inReviewProductsLoading by createViewModel.inReviewProductsLoading.collectAsState()
+    val inProgressProducts by createViewModel.inProgressProducts.collectAsState() // Collect in progress products
+    val inProgressProductsLoading by createViewModel.inProgressProductsLoading.collectAsState() // Collect in progress loading state
+
     val context = LocalContext.current
 
     var showFullScreenImageDialog by remember { mutableStateOf(false) }
@@ -108,6 +114,13 @@ fun CreateScreen(
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris: List<Uri> ->
         createViewModel.onImagesSelected(uris, context)
+    }
+
+    LaunchedEffect(tabIndex) {
+        when (tabIndex) {
+            1 -> createViewModel.fetchInProgressProducts() // Fetch in progress products
+            2 -> createViewModel.fetchInReviewProducts()
+        }
     }
 
     LaunchedEffect(selectedProductUris.isNotEmpty(), tabIndex) {
@@ -179,8 +192,26 @@ fun CreateScreen(
                 )
             }
 
-            1 -> { // Content for "In Review" tab
-                Text("In Review Products")
+            1 -> { // Content for "In Progress" tab
+                InProgressProductsTab(
+                    inProgressProducts = inProgressProducts,
+                    isLoading = inProgressProductsLoading,
+                    onProductClick = { product ->
+                        selectedImageUri = Uri.parse(product.images.firstOrNull()?.imageUrl ?: product.rawImage)
+                        showFullScreenImageDialog = true
+                    }
+                )
+            }
+
+            2 -> { // Content for "In Review" tab
+                InReviewProductsTab(
+                    inReviewProducts = inReviewProducts,
+                    isLoading = inReviewProductsLoading,
+                    onProductClick = { product ->
+                        selectedImageUri = Uri.parse(product.images.firstOrNull()?.imageUrl ?: product.rawImage)
+                        showFullScreenImageDialog = true
+                    }
+                )
             }
         }
     }
@@ -406,7 +437,7 @@ fun ProductForm(productFormState: ProductFormState, onUpdateField: (ProductFormS
             OutlinedTextField(
                 value = productFormState.mrp,
                 onValueChange = { newValue ->
-                    if (newValue.matches(Regex("^\\d*\\.?\\d*\$"))) {
+                    if (newValue.matches(Regex("^\\\\d*\\\\.?\\\\d*\$"))) {
                         onUpdateField(productFormState.copy(mrp = newValue))
                     }
                 },
@@ -418,7 +449,7 @@ fun ProductForm(productFormState: ProductFormState, onUpdateField: (ProductFormS
             OutlinedTextField(
                 value = productFormState.price,
                 onValueChange = { newValue ->
-                    if (newValue.matches(Regex("^\\d*\\.?\\d*\$"))) {
+                    if (newValue.matches(Regex("^\\\\d*\\\\.?\\\\d*\$"))) {
                         onUpdateField(productFormState.copy(price = newValue))
                     }
                 },
@@ -430,7 +461,7 @@ fun ProductForm(productFormState: ProductFormState, onUpdateField: (ProductFormS
             OutlinedTextField(
                 value = productFormState.discount,
                 onValueChange = { newValue ->
-                    if (newValue.matches(Regex("^\\d*\\.?\\d*\$"))) {
+                    if (newValue.matches(Regex("^\\\\d*\\\\.?\\\\d*\$"))) {
                         onUpdateField(productFormState.copy(discount = newValue))
                     }
                 },
@@ -442,7 +473,7 @@ fun ProductForm(productFormState: ProductFormState, onUpdateField: (ProductFormS
             OutlinedTextField(
                 value = productFormState.gst,
                 onValueChange = { newValue ->
-                    if (newValue.matches(Regex("^\\d*\\.?\\d*\$"))) {
+                    if (newValue.matches(Regex("^\\\\d*\\\\.?\\\\d*\$"))) {
                         onUpdateField(productFormState.copy(gst = newValue))
                     }
                 },
@@ -507,6 +538,132 @@ fun ProductForm(productFormState: ProductFormState, onUpdateField: (ProductFormS
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun InReviewProductsTab(
+    inReviewProducts: List<ApiProduct>,
+    isLoading: Boolean,
+    onProductClick: (ApiProduct) -> Unit
+) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                Text("Loading in review products...")
+            }
+            if (inReviewProducts.isEmpty() && !isLoading) {
+                Text("No products in review.", modifier = Modifier.padding(16.dp))
+            }
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                items(inReviewProducts) { product ->
+                    InReviewProductItem(
+                        product = product,
+                        onClick = onProductClick
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun InReviewProductItem(
+    product: ApiProduct,
+    onClick: (ApiProduct) -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick(product) },
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Column {
+            val imageUrl = product.images.firstOrNull()?.imageUrl ?: product.rawImage
+            Image(
+                painter = rememberAsyncImagePainter(model = imageUrl),
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(150.dp),
+                contentScale = ContentScale.Crop
+            )
+            Column(modifier = Modifier.padding(8.dp)) {
+                Text(text = product.sku)
+                Text(text = "Status: ${product.status}")
+                Text(text = "Category: ${product.category}")
+            }
+        }
+    }
+}
+
+@Composable
+fun InProgressProductsTab(
+    inProgressProducts: List<ApiProduct>,
+    isLoading: Boolean,
+    onProductClick: (ApiProduct) -> Unit
+) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                Text("Loading in progress products...")
+            }
+            if (inProgressProducts.isEmpty() && !isLoading) {
+                Text("No products in progress.", modifier = Modifier.padding(16.dp))
+            }
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                items(inProgressProducts) { product ->
+                    InProgressProductItem(
+                        product = product,
+                        onClick = onProductClick
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun InProgressProductItem(
+    product: ApiProduct,
+    onClick: (ApiProduct) -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick(product) },
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Column {
+            val imageUrl = product.images.firstOrNull()?.imageUrl ?: product.rawImage
+            Image(
+                painter = rememberAsyncImagePainter(model = imageUrl),
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(150.dp),
+                contentScale = ContentScale.Crop
+            )
+            Column(modifier = Modifier.padding(8.dp)) {
+                Text(text = product.sku)
+                Text(text = "Status: ${product.status}")
+                Text(text = "Category: ${product.category}")
             }
         }
     }

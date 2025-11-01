@@ -26,6 +26,7 @@ import com.kivoa.controlhub.data.BulkProductRequest
 import com.kivoa.controlhub.data.PresignedUrlRequest
 import com.kivoa.controlhub.data.ProductDetailRequest
 import android.provider.OpenableColumns
+import com.kivoa.controlhub.data.ApiProduct
 
 
 class CreateViewModel(application: Application) : AndroidViewModel(application) {
@@ -43,6 +44,19 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _bulkProductCreationSuccess = MutableStateFlow(false)
     val bulkProductCreationSuccess: StateFlow<Boolean> = _bulkProductCreationSuccess.asStateFlow()
+
+    private val _inReviewProducts = MutableStateFlow<List<ApiProduct>>(emptyList())
+    val inReviewProducts: StateFlow<List<ApiProduct>> = _inReviewProducts.asStateFlow()
+
+    private val _inReviewProductsLoading = MutableStateFlow(false)
+    val inReviewProductsLoading: StateFlow<Boolean> = _inReviewProductsLoading.asStateFlow()
+
+    private val _inProgressProducts = MutableStateFlow<List<ApiProduct>>(emptyList())
+    val inProgressProducts: StateFlow<List<ApiProduct>> = _inProgressProducts.asStateFlow()
+
+    private val _inProgressProductsLoading = MutableStateFlow(false)
+    val inProgressProductsLoading: StateFlow<Boolean> = _inProgressProductsLoading.asStateFlow()
+
 
     init {
         val database = AppDatabase.getDatabase(application)
@@ -190,6 +204,44 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
 
     fun resetBulkProductCreationSuccess() {
         _bulkProductCreationSuccess.value = false
+    }
+
+    fun fetchInReviewProducts(page: Int = 1, perPage: Int = 10) {
+        viewModelScope.launch {
+            _inReviewProductsLoading.value = true
+            try {
+                val response = apiService.getProducts(page = page, perPage = perPage, status = "pending_review")
+                if (response.success) {
+                    _inReviewProducts.value = response.data
+                    Log.d(TAG, "Fetched ${response.data.size} in review products")
+                } else {
+                    Log.e(TAG, "Failed to fetch in review products: ${response.pagination}")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error fetching in review products: ${e.message}", e)
+            } finally {
+                _inReviewProductsLoading.value = false
+            }
+        }
+    }
+
+    fun fetchInProgressProducts(page: Int = 1, perPage: Int = 10) {
+        viewModelScope.launch {
+            _inProgressProductsLoading.value = true
+            try {
+                val response = apiService.getProducts(page = page, perPage = perPage, status = "pending")
+                if (response.success) {
+                    _inProgressProducts.value = response.data
+                    Log.d(TAG, "Fetched ${response.data.size} in progress products")
+                } else {
+                    Log.e(TAG, "Failed to fetch in progress products: ${response.pagination}")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error fetching in progress products: ${e.message}", e)
+            } finally {
+                _inProgressProductsLoading.value = false
+            }
+        }
     }
 
     companion object {
