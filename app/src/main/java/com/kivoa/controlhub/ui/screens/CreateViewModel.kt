@@ -25,6 +25,8 @@ import java.io.IOException
 import com.kivoa.controlhub.data.BulkProductRequest
 import com.kivoa.controlhub.data.PresignedUrlRequest
 import com.kivoa.controlhub.data.ProductDetailRequest
+import android.provider.OpenableColumns
+
 
 class CreateViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -76,7 +78,17 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
                 return
             }
 
-            val fileName = imageUri.lastPathSegment ?: "image.jpg" // Extract filename
+            // Extract filename from ContentResolver
+            var fileName = "image.jpg" // Default filename
+            contentResolver.query(imageUri, null, null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val displayNameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (displayNameIndex != -1) {
+                        fileName = cursor.getString(displayNameIndex)
+                    }
+                }
+            }
+
             val contentType = contentResolver.getType(imageUri) ?: "image/jpeg"
 
             val presignedUrlResponse = apiService.generatePresignedUrl(
