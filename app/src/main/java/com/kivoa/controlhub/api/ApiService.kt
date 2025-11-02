@@ -9,6 +9,7 @@ import com.kivoa.controlhub.data.PresignedUrlResponse
 import com.kivoa.controlhub.data.ProductsApiResponse
 import com.kivoa.controlhub.data.UpdateProductStatusRequest
 import com.kivoa.controlhub.data.ApiProduct
+import com.kivoa.controlhub.data.SearchProductsResponse
 import com.kivoa.controlhub.data.UpdateProductApiResponse
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -18,8 +19,8 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ApiService {
-    @GET("api/search")
-    suspend fun searchS(@Query("sku") sku: String): ApiResponse
+    @GET("api/products/search")
+    suspend fun searchS(@Query("sku") sku: String): SearchProductsResponse
 
     @GET("api/browse")
     suspend fun browse(

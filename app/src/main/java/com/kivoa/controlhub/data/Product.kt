@@ -16,12 +16,6 @@ data class Product(
     val quantity: String
 )
 
-data class ApiResponse(
-    val success: Boolean,
-    val message: String,
-    val data: List<Product>
-)
-
 
 data class CreateProductsResponse(
     val success: Boolean,
@@ -50,6 +44,11 @@ data class ProductsApiResponse(
     val success: Boolean,
     val data: List<ApiProduct>,
     val pagination: ProductsApiPagination
+)
+
+data class SearchProductsResponse(
+    val success: Boolean,
+    val data: List<ApiProduct>,
 )
 
 data class UpdateProductApiResponse(
@@ -81,6 +80,8 @@ data class ApiProduct(
     @Json(name = "raw_image") val rawImage: String,
     val sku: String,
     val status: String,
+    @Json(name = "price_code")
+    val priceCode: String?,
     @Json(name = "updated_at") val updatedAt: String
 )
 

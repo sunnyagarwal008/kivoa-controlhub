@@ -61,6 +61,7 @@ import com.kivoa.controlhub.data.Product
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import androidx.compose.runtime.LaunchedEffect
+import com.kivoa.controlhub.data.ApiProduct
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -178,12 +179,12 @@ fun HomeScreen(
 }
 
 @Composable
-fun ProductItem(product: Product, onClick: () -> Unit) {
+fun ProductItem(product: ApiProduct, onClick: () -> Unit) {
     var showZoomedImage by rememberSaveable { mutableStateOf(false) }
 
     if (showZoomedImage) {
         ZoomableImage(
-            imageUrl = Helper.getGoogleDriveImageUrl(product.imageUrl),
+            imageUrl = product.images.first().imageUrl,
             onDismiss = { showZoomedImage = false }
         )
     }
@@ -198,7 +199,7 @@ fun ProductItem(product: Product, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         SubcomposeAsyncImage(
-            model = Helper.getGoogleDriveImageUrl(product.imageUrl),
+            model = product.images.first().imageUrl,
             loading = {
                 ShimmerEffect(modifier = Modifier.size(96.dp))
             },
@@ -211,9 +212,8 @@ fun ProductItem(product: Product, onClick: () -> Unit) {
         Column {
             Text(text = "SKU: ${product.sku}")
             Text(text = "MRP: ₹${product.mrp}")
-            Text(text = "Selling Price: ₹${product.sellingPrice}")
-            val quantity = product.quantity.toIntOrNull() ?: 0
-            val outOfStock = quantity == 0
+            Text(text = "Selling Price: ₹${product.price}")
+            val outOfStock = !product.inStock
             if (outOfStock) {
                 Text(
                     text = "Out of stock",

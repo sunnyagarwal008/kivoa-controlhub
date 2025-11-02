@@ -3,6 +3,7 @@ package com.kivoa.controlhub.ui.screens
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kivoa.controlhub.api.RetrofitInstance
+import com.kivoa.controlhub.data.ApiProduct
 import com.kivoa.controlhub.data.Product
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -24,8 +25,8 @@ class SearchViewModel : ViewModel() {
     private val _selectedPrefix = MutableStateFlow(skuPrefixes.first())
     val selectedPrefix: StateFlow<String> = _selectedPrefix
 
-    private val _searchResults = MutableStateFlow<List<Product>>(emptyList())
-    val searchResults: StateFlow<List<Product>> = _searchResults
+    private val _searchResults = MutableStateFlow<List<ApiProduct>>(emptyList())
+    val searchResults: StateFlow<List<ApiProduct>> = _searchResults
 
     private val _isSearching = MutableStateFlow(false)
     val isSearching: StateFlow<Boolean> = _isSearching
@@ -51,7 +52,7 @@ class SearchViewModel : ViewModel() {
                                 emit(response.data)
                             } catch (e: Exception) {
                                 e.printStackTrace()
-                                emit(emptyList<Product>())
+                                emit(emptyList<ApiProduct>())
                             }
                         }
                     }
