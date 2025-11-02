@@ -76,6 +76,7 @@ import com.kivoa.controlhub.AppBarState
 import com.kivoa.controlhub.AppBarViewModel
 import androidx.compose.runtime.LaunchedEffect
 import com.kivoa.controlhub.data.ApiProduct
+import androidx.compose.material.icons.filled.Check
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -94,6 +95,7 @@ fun CreateScreen(
     val inReviewProductsLoading by createViewModel.inReviewProductsLoading.collectAsState()
     val inProgressProducts by createViewModel.inProgressProducts.collectAsState() // Collect in progress products
     val inProgressProductsLoading by createViewModel.inProgressProductsLoading.collectAsState() // Collect in progress loading state
+    val selectedInReviewProductIds by createViewModel.selectedInReviewProductIds.collectAsState()
 
     val context = LocalContext.current
 
@@ -123,38 +125,57 @@ fun CreateScreen(
         }
     }
 
-    LaunchedEffect(selectedProductUris.isNotEmpty(), tabIndex) {
-        appBarViewModel.setAppBarState(
-            AppBarState(
-                title = {
-                    if (selectedProductUris.isNotEmpty()) {
-                        Text("Selected ${selectedProductUris.size} images")
-                    } else {
-                        Text(tabs[tabIndex])
-                    }
-                },
-                navigationIcon = {
-                    if (selectedProductUris.isNotEmpty()) {
-                        IconButton(onClick = { selectedProductUris = persistentListOf() }) {
-                            Icon(Icons.Default.Close, "Clear selection")
+    LaunchedEffect(selectedProductUris.isNotEmpty(), selectedInReviewProductIds.isNotEmpty(), tabIndex) {
+        val currentAppBarState = when (tabIndex) {
+            0 -> {
+                if (selectedProductUris.isNotEmpty()) {
+                    AppBarState(
+                        title = { Text("Selected ${selectedProductUris.size} images") },
+                        navigationIcon = {
+                            IconButton(onClick = { selectedProductUris = persistentListOf() }) {
+                                Icon(Icons.Default.Close, "Clear selection")
+                            }
+                        },
+                        actions = {
+                            IconButton(onClick = { 
+                                createViewModel.deleteRawProducts(selectedProductUris.toList())
+                                selectedProductUris = persistentListOf()
+                            }) {
+                                Icon(Icons.Default.Delete, "Delete Products")
+                            }
+                            IconButton(onClick = { showCreateProductFormsDialog = true }) {
+                                Icon(Icons.Default.Done, "Create Products")
+                            }
                         }
-                    }
-                },
-                actions = {
-                    if (selectedProductUris.isNotEmpty()) {
-                        IconButton(onClick = { 
-                            createViewModel.deleteRawProducts(selectedProductUris.toList())
-                            selectedProductUris = persistentListOf()
-                        }) {
-                            Icon(Icons.Default.Delete, "Delete Products")
-                        }
-                        IconButton(onClick = { showCreateProductFormsDialog = true }) {
-                            Icon(Icons.Default.Done, "Create Products")
-                        }
-                    }
+                    )
+                } else {
+                    AppBarState(title = { Text(tabs[tabIndex]) })
                 }
-            )
-        )
+            }
+            2 -> {
+                if (selectedInReviewProductIds.isNotEmpty()) {
+                    AppBarState(
+                        title = { Text("Selected ${selectedInReviewProductIds.size} products") },
+                        navigationIcon = {
+                            IconButton(onClick = { createViewModel.clearSelectedInReviewProductIds() }) {
+                                Icon(Icons.Default.Close, "Clear selection")
+                            }
+                        },
+                        actions = {
+                            IconButton(onClick = { 
+                                createViewModel.updateProductsStatus(selectedInReviewProductIds.toList(), "live")
+                            }) {
+                                Icon(Icons.Default.Check, "Mark as Live")
+                            }
+                        }
+                    )
+                } else {
+                    AppBarState(title = { Text(tabs[tabIndex]) })
+                }
+            }
+            else -> AppBarState(title = { Text(tabs[tabIndex]) })
+        }
+        appBarViewModel.setAppBarState(currentAppBarState)
     }
 
     Column(
@@ -210,6 +231,10 @@ fun CreateScreen(
                     onProductClick = { product ->
                         selectedImageUri = Uri.parse(product.images.firstOrNull()?.imageUrl ?: product.rawImage)
                         showFullScreenImageDialog = true
+                    },
+                    selectedProductIds = selectedInReviewProductIds,
+                    onProductLongPress = { productId, isSelected ->
+                        createViewModel.updateSelectedInReviewProductIds(productId, isSelected)
                     }
                 )
             }
@@ -547,7 +572,9 @@ fun ProductForm(productFormState: ProductFormState, onUpdateField: (ProductFormS
 fun InReviewProductsTab(
     inReviewProducts: List<ApiProduct>,
     isLoading: Boolean,
-    onProductClick: (ApiProduct) -> Unit
+    onProductClick: (ApiProduct) -> Unit,
+    selectedProductIds: PersistentList<Long>, // Changed to Long
+    onProductLongPress: (Long, Boolean) -> Unit // Changed to Long
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -566,9 +593,14 @@ fun InReviewProductsTab(
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 items(inReviewProducts) { product ->
+                    val isSelected = selectedProductIds.contains(product.id)
                     InReviewProductItem(
                         product = product,
-                        onClick = onProductClick
+                        onClick = onProductClick,
+                        isSelected = isSelected,
+                        onLongPress = { productId, currentSelectionState ->
+                            onProductLongPress(productId, !currentSelectionState)
+                        }
                     )
                 }
             }
@@ -576,18 +608,24 @@ fun InReviewProductsTab(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun InReviewProductItem(
     product: ApiProduct,
-    onClick: (ApiProduct) -> Unit
+    onClick: (ApiProduct) -> Unit,
+    isSelected: Boolean,
+    onLongPress: (Long, Boolean) -> Unit // Changed to Long
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick(product) },
+            .combinedClickable(
+                onClick = { onClick(product) },
+                onLongClick = { onLongPress(product.id, isSelected) }
+            ),
         shape = RoundedCornerShape(8.dp)
     ) {
-        Column {
+        Box {
             val imageUrl = product.images.firstOrNull()?.imageUrl ?: product.rawImage
             Image(
                 painter = rememberAsyncImagePainter(model = imageUrl),
@@ -601,6 +639,16 @@ fun InReviewProductItem(
                 Text(text = product.sku)
                 Text(text = "Status: ${product.status}")
                 Text(text = "Category: ${product.category}")
+            }
+            if (isSelected) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = "Selected",
+                    tint = Color.Green,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(4.dp)
+                )
             }
         }
     }

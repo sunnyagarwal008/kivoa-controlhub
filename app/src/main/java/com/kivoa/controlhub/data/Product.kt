@@ -52,6 +52,12 @@ data class ProductsApiResponse(
     val pagination: ProductsApiPagination
 )
 
+data class UpdateProductApiResponse(
+    val success: Boolean,
+    val data: Any,
+    val message: String
+)
+
 data class ProductsApiPagination(
     val page: Int,
     val pages: Int,

@@ -7,9 +7,14 @@ import com.kivoa.controlhub.data.CreateProductsResponse
 import com.kivoa.controlhub.data.PresignedUrlRequest
 import com.kivoa.controlhub.data.PresignedUrlResponse
 import com.kivoa.controlhub.data.ProductsApiResponse
+import com.kivoa.controlhub.data.UpdateProductStatusRequest
+import com.kivoa.controlhub.data.ApiProduct
+import com.kivoa.controlhub.data.UpdateProductApiResponse
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ApiService {
@@ -38,4 +43,9 @@ interface ApiService {
         @Query("status") status: String
     ): ProductsApiResponse
 
+    @PUT("api/products/{product_id}/status")
+    suspend fun updateProductStatus(
+        @Path("product_id") productId: Long,
+        @Body request: UpdateProductStatusRequest
+    ): UpdateProductApiResponse
 }

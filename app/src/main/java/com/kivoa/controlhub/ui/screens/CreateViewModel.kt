@@ -27,6 +27,9 @@ import com.kivoa.controlhub.data.PresignedUrlRequest
 import com.kivoa.controlhub.data.ProductDetailRequest
 import android.provider.OpenableColumns
 import com.kivoa.controlhub.data.ApiProduct
+import com.kivoa.controlhub.data.UpdateProductStatusRequest
+import kotlinx.collections.immutable.PersistentList
+import kotlinx.collections.immutable.persistentListOf
 
 
 class CreateViewModel(application: Application) : AndroidViewModel(application) {
@@ -56,6 +59,9 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _inProgressProductsLoading = MutableStateFlow(false)
     val inProgressProductsLoading: StateFlow<Boolean> = _inProgressProductsLoading.asStateFlow()
+
+    private val _selectedInReviewProductIds = MutableStateFlow<PersistentList<Long>>(persistentListOf())
+    val selectedInReviewProductIds: StateFlow<PersistentList<Long>> = _selectedInReviewProductIds.asStateFlow()
 
 
     init {
@@ -240,6 +246,42 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
                 Log.e(TAG, "Error fetching in progress products: ${e.message}", e)
             } finally {
                 _inProgressProductsLoading.value = false
+            }
+        }
+    }
+
+    fun updateSelectedInReviewProductIds(productId: Long, isSelected: Boolean) {
+        _selectedInReviewProductIds.value = if (isSelected) {
+            _selectedInReviewProductIds.value.add(productId)
+        } else {
+            _selectedInReviewProductIds.value.remove(productId)
+        }
+    }
+
+    fun clearSelectedInReviewProductIds() {
+        _selectedInReviewProductIds.value = persistentListOf()
+    }
+
+    fun updateProductsStatus(productIds: List<Long>, status: String) {
+        viewModelScope.launch {
+            _inReviewProductsLoading.value = true // Show loading for status update
+            try {
+                productIds.forEach { productId ->
+                    val request = UpdateProductStatusRequest(status = status)
+                    // Convert Long productId to Int for the API call
+                    val response = apiService.updateProductStatus(productId, request)
+                    if (response.success) {
+                        Log.d(TAG, "Product $productId status updated to $status successfully")
+                    } else {
+                        Log.e(TAG, "Failed to update status for product $productId: ${response.message}")
+                    }
+                }
+                fetchInReviewProducts() // Refresh the list after updates
+                clearSelectedInReviewProductIds() // Clear selection after action
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating product status: ${e.message}", e)
+            } finally {
+                _inReviewProductsLoading.value = false
             }
         }
     }
