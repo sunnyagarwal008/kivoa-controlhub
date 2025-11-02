@@ -15,6 +15,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,19 +27,17 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.navigation.NavController
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import com.kivoa.controlhub.AppBarState
 import com.kivoa.controlhub.AppBarViewModel
-import com.kivoa.controlhub.Helper
-import com.kivoa.controlhub.data.Product
+import com.kivoa.controlhub.data.ApiProduct
 import com.kivoa.controlhub.ui.components.shimmer
-import androidx.compose.runtime.LaunchedEffect
-import androidx.navigation.NavController
 
 @Composable
 fun ProductDetailScreen(
-    product: Product,
+    product: ApiProduct,
     navController: NavController,
     shareViewModel: ShareViewModel,
     appBarViewModel: AppBarViewModel
@@ -70,7 +69,7 @@ fun ProductDetailScreen(
         Dialog(onDismissRequest = { showZoomedImage = false }) {
             SubcomposeAsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data(Helper.getGoogleDriveImageUrl(product.imageUrl))
+                    .data(product.images.first().imageUrl)
                     .crossfade(true)
                     .build(),
                 contentDescription = "Product Image",
@@ -90,7 +89,7 @@ fun ProductDetailScreen(
         ) {
             SubcomposeAsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data(Helper.getGoogleDriveImageUrl(product.imageUrl))
+                    .data(product.images.first().imageUrl)
                     .crossfade(true)
                     .build(),
                 contentDescription = "Product Image",
@@ -116,13 +115,12 @@ fun ProductDetailScreen(
                 .padding(16.dp)
         ) {
             Text(text = "SKU: ${product.sku}", style = MaterialTheme.typography.titleLarge)
-            Text(text = "Purchase Month: ${product.purchaseMonthYear}")
+            Text(text = "Purchase Month: ${product.purchaseMonth}")
             Text(text = "Product Code: ${product.priceCode}")
             Text(text = "MRP: ₹${product.mrp}")
             Text(text = "Discount: ${product.discount}%")
-            Text(text = "Selling Price: ₹${product.sellingPrice}")
-            val quantity = product.quantity.toIntOrNull() ?: 0
-            val outOfStock = quantity == 0
+            Text(text = "Selling Price: ₹${product.price}")
+            val outOfStock = !product.inStock
             if (outOfStock) {
                 Text(
                     text = "Out of stock",

@@ -28,6 +28,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -53,15 +54,12 @@ import coil.compose.SubcomposeAsyncImage
 import com.google.gson.Gson
 import com.kivoa.controlhub.AppBarState
 import com.kivoa.controlhub.AppBarViewModel
-import com.kivoa.controlhub.Helper
 import com.kivoa.controlhub.R
 import com.kivoa.controlhub.Screen
 import com.kivoa.controlhub.ShimmerEffect
-import com.kivoa.controlhub.data.Product
+import com.kivoa.controlhub.data.ApiProduct
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-import androidx.compose.runtime.LaunchedEffect
-import com.kivoa.controlhub.data.ApiProduct
 
 
 @OptIn(ExperimentalMaterial3Api::class)

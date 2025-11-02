@@ -11,7 +11,7 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.kivoa.controlhub.api.RetrofitInstance
-import com.kivoa.controlhub.data.Product
+import com.kivoa.controlhub.data.ApiProduct
 import com.kivoa.controlhub.data.ProductPagingSource
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -25,10 +25,10 @@ class BrowseViewModel : ViewModel() {
     var showPriceFilterDialog by mutableStateOf(false)
 
     var selectionMode by mutableStateOf(false)
-    var selectedProducts by mutableStateOf<Set<Product>>(emptySet())
+    var selectedProducts by mutableStateOf<Set<ApiProduct>>(emptySet())
 
 
-    fun onProductClicked(product: Product) {
+    fun onProductClicked(product: ApiProduct) {
         if (selectionMode) {
             val currentSelection = selectedProducts.toMutableSet()
             if (product in currentSelection) {
@@ -43,7 +43,7 @@ class BrowseViewModel : ViewModel() {
         }
     }
 
-    fun onProductLongClicked(product: Product) {
+    fun onProductLongClicked(product: ApiProduct) {
         if (!selectionMode) {
             selectionMode = true
             selectedProducts = setOf(product)
@@ -52,7 +52,7 @@ class BrowseViewModel : ViewModel() {
 
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val products: Flow<PagingData<Product>> = snapshotFlow {
+    val products: Flow<PagingData<ApiProduct>> = snapshotFlow {
         Triple(selectedCategory, excludeOutOfStock, priceRange)
     }.flatMapLatest { (category, exclude, price) ->
         Pager(

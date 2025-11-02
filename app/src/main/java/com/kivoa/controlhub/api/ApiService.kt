@@ -1,16 +1,13 @@
 package com.kivoa.controlhub.api
 
-import com.kivoa.controlhub.data.ApiResponse
-import com.kivoa.controlhub.data.BrowseApiResponse
 import com.kivoa.controlhub.data.BulkProductRequest
 import com.kivoa.controlhub.data.CreateProductsResponse
 import com.kivoa.controlhub.data.PresignedUrlRequest
 import com.kivoa.controlhub.data.PresignedUrlResponse
 import com.kivoa.controlhub.data.ProductsApiResponse
-import com.kivoa.controlhub.data.UpdateProductStatusRequest
-import com.kivoa.controlhub.data.ApiProduct
 import com.kivoa.controlhub.data.SearchProductsResponse
 import com.kivoa.controlhub.data.UpdateProductApiResponse
+import com.kivoa.controlhub.data.UpdateProductStatusRequest
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -22,15 +19,6 @@ interface ApiService {
     @GET("api/products/search")
     suspend fun searchS(@Query("sku") sku: String): SearchProductsResponse
 
-    @GET("api/browse")
-    suspend fun browse(
-        @Query("category") category: String,
-        @Query("page") page: Int,
-        @Query("excludeOutOfStock") excludeOutOfStock: Boolean,
-        @Query("minPrice") minPrice: Int? = null,
-        @Query("maxPrice") maxPrice: Int? = null
-    ): BrowseApiResponse
-
     @POST("api/presigned-url")
     suspend fun generatePresignedUrl(@Body request: PresignedUrlRequest): PresignedUrlResponse
 
@@ -40,8 +28,12 @@ interface ApiService {
     @GET("api/products")
     suspend fun getProducts(
         @Query("page") page: Int,
-        @Query("per_page") perPage: Int,
-        @Query("status") status: String
+        @Query("per_page") perPage: Int = 10,
+        @Query("status") status: String = "live",
+        @Query("category") category: String? = null,
+        @Query("excludeOutOfStock") excludeOutOfStock: Boolean = false,
+        @Query("minPrice") minPrice: Int? = null,
+        @Query("maxPrice") maxPrice: Int? = null
     ): ProductsApiResponse
 
     @PUT("api/products/{product_id}/status")

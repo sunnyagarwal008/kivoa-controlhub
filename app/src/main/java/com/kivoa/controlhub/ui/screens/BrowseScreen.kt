@@ -60,10 +60,9 @@ import coil.compose.SubcomposeAsyncImage
 import com.google.gson.Gson
 import com.kivoa.controlhub.AppBarState
 import com.kivoa.controlhub.AppBarViewModel
-import com.kivoa.controlhub.Helper
 import com.kivoa.controlhub.Screen
 import com.kivoa.controlhub.ShimmerEffect
-import com.kivoa.controlhub.data.Product
+import com.kivoa.controlhub.data.ApiProduct
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -263,7 +262,7 @@ fun PriceFilterDialog(viewModel: BrowseViewModel) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ProductCard(product: Product, isSelected: Boolean, onClick: () -> Unit, onLongClick: () -> Unit) {
+fun ProductCard(product: ApiProduct, isSelected: Boolean, onClick: () -> Unit, onLongClick: () -> Unit) {
     val haptic = LocalHapticFeedback.current
     Card(
         modifier = Modifier
@@ -279,7 +278,7 @@ fun ProductCard(product: Product, isSelected: Boolean, onClick: () -> Unit, onLo
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             SubcomposeAsyncImage(
-                model = Helper.getGoogleDriveImageUrl(product.imageUrl),
+                model = product.images.first().imageUrl,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
@@ -303,11 +302,10 @@ fun ProductCard(product: Product, isSelected: Boolean, onClick: () -> Unit, onLo
                     color = Color.White
                 )
                 Text(
-                    text = "₹${product.sellingPrice}",
+                    text = "₹${product.price}",
                     color = Color.White
                 )
-                val quantity = product.quantity.toIntOrNull() ?: 0
-                val outOfStock = quantity == 0
+                val outOfStock = !product.inStock
                 if (outOfStock) {
                     Text(
                         text = "Out of stock",

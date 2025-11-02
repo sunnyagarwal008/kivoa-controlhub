@@ -16,8 +16,7 @@ import androidx.compose.runtime.setValue
 import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.kivoa.controlhub.Helper
-import com.kivoa.controlhub.data.Product
+import com.kivoa.controlhub.data.ApiProduct
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
@@ -34,11 +33,11 @@ class ShareViewModel(application: Application) : AndroidViewModel(application) {
 
     var shareState by mutableStateOf<ShareState>(ShareState.Idle)
 
-    fun shareProduct(product: Product) {
+    fun shareProduct(product: ApiProduct) {
         shareProducts(setOf(product))
     }
 
-    fun shareProducts(products: Set<Product>) {
+    fun shareProducts(products: Set<ApiProduct>) {
         shareState = ShareState.Processing
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -48,7 +47,7 @@ class ShareViewModel(application: Application) : AndroidViewModel(application) {
                     val file = File(cachePath, "${product.sku}.jpeg")
 
                     if (!file.exists()) {
-                        val imageUrl = Helper.getGoogleDriveImageUrl(product.imageUrl)
+                        val imageUrl = product.images.first().imageUrl
                         val bitmap = downloadImage(imageUrl)
                         val processedBitmap = addSkuToImage(bitmap, product.sku)
                         val compressedBitmap = compressImage(processedBitmap)
