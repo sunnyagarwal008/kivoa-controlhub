@@ -37,6 +37,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -76,6 +77,8 @@ fun BrowseScreen(
 ) {
     val categories = listOf("All products", "Necklace", "Ring", "Earring", "Bracelet")
     val lazyPagingItems = browseViewModel.products.collectAsLazyPagingItems()
+    val filterParams by browseViewModel.filterParams.collectAsState()
+
 
     LaunchedEffect(browseViewModel.selectionMode, browseViewModel.selectedProducts.size) {
         appBarViewModel.setAppBarState(
@@ -112,7 +115,7 @@ fun BrowseScreen(
     }
 
     if (browseViewModel.showPriceFilterDialog) {
-        PriceFilterDialog(viewModel = browseViewModel)
+        PriceFilterDialog(viewModel = browseViewModel, currentPriceRange = filterParams.priceRange)
     }
 
     if (shareViewModel.shareState is ShareViewModel.ShareState.Processing) {
@@ -142,7 +145,7 @@ fun BrowseScreen(
 
             Box {
                 FilterChip(
-                    label = "Category: ${browseViewModel.selectedCategory}",
+                    label = "Category: ${filterParams.selectedCategory}",
                     onClick = { categoryExpanded = true })
 
                 DropdownMenu(
@@ -151,7 +154,7 @@ fun BrowseScreen(
                 {
                     categories.forEach { category ->
                         DropdownMenuItem(text = { Text(category) }, onClick = {
-                            browseViewModel.selectedCategory = category
+                            browseViewModel.updateSelectedCategory(category)
                             categoryExpanded = false
                         })
                     }
@@ -159,7 +162,7 @@ fun BrowseScreen(
             }
 
             FilterChip(
-                label = "Price: ₹${browseViewModel.priceRange.start.toInt()}-₹${browseViewModel.priceRange.endInclusive.toInt()}",
+                label = "Price: ₹${filterParams.priceRange.start.toInt()}-₹${filterParams.priceRange.endInclusive.toInt()}",
                 onClick = { browseViewModel.showPriceFilterDialog = true })
 
             Row(
@@ -168,8 +171,8 @@ fun BrowseScreen(
             ) {
                 Text(text = "In stock", fontSize = 11.sp)
                 Switch(
-                    checked = browseViewModel.excludeOutOfStock,
-                    onCheckedChange = { browseViewModel.excludeOutOfStock = it })
+                    checked = filterParams.excludeOutOfStock,
+                    onCheckedChange = { browseViewModel.updateExcludeOutOfStock(it) })
             }
         }
 
@@ -237,7 +240,7 @@ fun FilterChip(label: String, onClick: () -> Unit) {
 }
 
 @Composable
-fun PriceFilterDialog(viewModel: BrowseViewModel) {
+fun PriceFilterDialog(viewModel: BrowseViewModel, currentPriceRange: ClosedFloatingPointRange<Float>) {
     Dialog(onDismissRequest = { viewModel.showPriceFilterDialog = false }) {
         Surface(
             shape = RoundedCornerShape(16.dp),
@@ -246,12 +249,12 @@ fun PriceFilterDialog(viewModel: BrowseViewModel) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(text = "Price Range", fontSize = 20.sp)
                 RangeSlider(
-                    value = viewModel.priceRange,
-                    onValueChange = { viewModel.priceRange = it },
+                    value = currentPriceRange,
+                    onValueChange = { viewModel.updatePriceRange(it) },
                     valueRange = 0f..5000f,
                     steps = 100
                 )
-                Text(text = "₹${viewModel.priceRange.start.toInt()}-₹${viewModel.priceRange.endInclusive.toInt()}")
+                Text(text = "₹${currentPriceRange.start.toInt()}-₹${currentPriceRange.endInclusive.toInt()}")
                 Button(onClick = { viewModel.showPriceFilterDialog = false }) {
                     Text("Done")
                 }
