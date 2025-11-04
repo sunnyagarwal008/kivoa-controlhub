@@ -1,5 +1,6 @@
 package com.kivoa.controlhub
 
+import android.app.Application
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -28,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -40,6 +42,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.google.gson.Gson
+import com.kivoa.controlhub.api.RetrofitInstance
 import com.kivoa.controlhub.data.ApiProduct
 import com.kivoa.controlhub.ui.screens.BrowseScreen
 import com.kivoa.controlhub.ui.screens.BrowseViewModel
@@ -47,6 +50,7 @@ import com.kivoa.controlhub.ui.screens.CreateScreen
 import com.kivoa.controlhub.ui.screens.HomeScreen
 import com.kivoa.controlhub.ui.screens.ProductDetailScreen
 import com.kivoa.controlhub.ui.screens.ShareViewModel
+import com.kivoa.controlhub.ui.screens.ShareViewModelFactory
 import com.kivoa.controlhub.ui.theme.ControlHubTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -78,8 +82,13 @@ class MainActivity : ComponentActivity() {
                 val currentDestination = navBackStackEntry?.destination
                 val currentScreen = Screen.fromRoute(currentDestination?.route)
 
+                val context = LocalContext.current
+                val application = context.applicationContext as Application
+                val apiService = RetrofitInstance.api
+                // For ProductDetailScreen, no refresh is needed, so pass null
+                val shareViewModelFactoryForDetail = remember { ShareViewModelFactory(application, apiService, null) }
+
                 val browseViewModel: BrowseViewModel = viewModel()
-                val shareViewModel: ShareViewModel = viewModel()
                 val appBarViewModel: AppBarViewModel = viewModel()
                 val appBarState by appBarViewModel.appBarState.collectAsState()
                 var product by remember { mutableStateOf<ApiProduct?>(null) }
@@ -119,7 +128,7 @@ class MainActivity : ComponentActivity() {
                         Modifier.padding(innerPadding)
                     ) {
                         composable(Screen.Search.route) { HomeScreen(modifier = Modifier.fillMaxSize(), navController = navController, appBarViewModel = appBarViewModel) }
-                        composable(Screen.Browse.route) { BrowseScreen(navController = navController, browseViewModel = browseViewModel, shareViewModel = shareViewModel, appBarViewModel = appBarViewModel) }
+                        composable(Screen.Browse.route) { BrowseScreen(navController = navController, browseViewModel = browseViewModel, appBarViewModel = appBarViewModel) }
                         composable(Screen.Create.route) { CreateScreen(appBarViewModel = appBarViewModel) }
                         composable(
                             route = Screen.ProductDetail.route + "/{productJson}",
@@ -127,7 +136,8 @@ class MainActivity : ComponentActivity() {
                         ) {
                             val productJson = it.arguments?.getString("productJson")
                             product = Gson().fromJson(productJson, ApiProduct::class.java)
-                            ProductDetailScreen(product = product!!, navController = navController, shareViewModel = shareViewModel, appBarViewModel = appBarViewModel)
+                            val shareViewModelForDetail: ShareViewModel = viewModel(factory = shareViewModelFactoryForDetail)
+                            ProductDetailScreen(product = product!!, navController = navController, shareViewModel = shareViewModelForDetail, appBarViewModel = appBarViewModel)
                         }
                     }
                 }

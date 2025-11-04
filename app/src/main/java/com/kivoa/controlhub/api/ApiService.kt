@@ -8,6 +8,7 @@ import com.kivoa.controlhub.data.ProductsApiResponse
 import com.kivoa.controlhub.data.SearchProductsResponse
 import com.kivoa.controlhub.data.UpdateProductApiResponse
 import com.kivoa.controlhub.data.UpdateProductStatusRequest
+import com.kivoa.controlhub.data.UpdateProductStockRequest
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -42,5 +43,11 @@ interface ApiService {
     suspend fun updateProductStatus(
         @Path("product_id") productId: Long,
         @Body request: UpdateProductStatusRequest
+    ): UpdateProductApiResponse
+
+    @PUT("api/products/{product_id}/stock")
+    suspend fun updateProductStock(
+        @Path("product_id") productId: Long,
+        @Body request: UpdateProductStockRequest
     ): UpdateProductApiResponse
 }

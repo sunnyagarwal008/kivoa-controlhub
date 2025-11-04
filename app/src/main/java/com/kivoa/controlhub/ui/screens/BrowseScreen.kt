@@ -1,5 +1,6 @@
 package com.kivoa.controlhub.ui.screens
 
+import android.app.Application
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,6 +25,8 @@ import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -50,6 +53,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -64,6 +68,7 @@ import com.kivoa.controlhub.AppBarState
 import com.kivoa.controlhub.AppBarViewModel
 import com.kivoa.controlhub.Screen
 import com.kivoa.controlhub.ShimmerEffect
+import com.kivoa.controlhub.api.RetrofitInstance
 import com.kivoa.controlhub.data.ApiProduct
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -72,12 +77,18 @@ import java.nio.charset.StandardCharsets
 @Composable
 fun BrowseScreen(
     browseViewModel: BrowseViewModel = viewModel(),
-    shareViewModel: ShareViewModel = viewModel(),
     navController: NavController,
     appBarViewModel: AppBarViewModel
 ) {
-    val categories = listOf("All products", "Necklace", "Ring", "Earring", "Bracelet")
+    val context = LocalContext.current
+    val application = context.applicationContext as Application
+    val apiService = RetrofitInstance.api
+
     val lazyPagingItems = browseViewModel.products.collectAsLazyPagingItems()
+    val shareViewModelFactory = remember { ShareViewModelFactory(application, apiService) { lazyPagingItems.refresh() } }
+    val shareViewModel: ShareViewModel = viewModel(factory = shareViewModelFactory)
+
+    val categories = listOf("All products", "Necklace", "Ring", "Earring", "Bracelet")
     val filterParams by browseViewModel.filterParams.collectAsState()
     var sortExpanded by remember { mutableStateOf(false) }
 
@@ -109,6 +120,20 @@ fun BrowseScreen(
                     if (browseViewModel.selectionMode) {
                         IconButton(onClick = { shareViewModel.shareProducts(browseViewModel.selectedProducts) }) {
                             Icon(Icons.Default.Share, contentDescription = "Share")
+                        }
+                        IconButton(onClick = {
+                            shareViewModel.updateProductStockStatus(browseViewModel.selectedProducts, true)
+                            browseViewModel.selectionMode = false
+                            browseViewModel.selectedProducts = emptySet()
+                        }) {
+                            Icon(Icons.Default.Done, contentDescription = "Mark In Stock")
+                        }
+                        IconButton(onClick = {
+                            shareViewModel.updateProductStockStatus(browseViewModel.selectedProducts, false)
+                            browseViewModel.selectionMode = false
+                            browseViewModel.selectedProducts = emptySet()
+                        }) {
+                            Icon(Icons.Default.Clear, contentDescription = "Mark Out of Stock")
                         }
                     } else {
                         Box {

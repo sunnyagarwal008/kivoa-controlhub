@@ -16,14 +16,16 @@ import androidx.compose.runtime.setValue
 import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.kivoa.controlhub.api.ApiService
 import com.kivoa.controlhub.data.ApiProduct
+import com.kivoa.controlhub.data.UpdateProductStockRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 import java.net.URL
 
-class ShareViewModel(application: Application) : AndroidViewModel(application) {
+class ShareViewModel(application: Application, private val apiService: ApiService, private val onRefreshProducts: (() -> Unit)? = null) : AndroidViewModel(application) {
 
     sealed class ShareState {
         object Idle : ShareState()
@@ -74,6 +76,21 @@ class ShareViewModel(application: Application) : AndroidViewModel(application) {
 
                 shareState = ShareState.Idle
 
+            } catch (e: Exception) {
+                shareState = ShareState.Error(e.message ?: "An unknown error occurred")
+            }
+        }
+    }
+
+    fun updateProductStockStatus(products: Set<ApiProduct>, inStock: Boolean) {
+        shareState = ShareState.Processing
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                products.forEach { product ->
+                    apiService.updateProductStock(product.id, UpdateProductStockRequest(inStock))
+                }
+                shareState = ShareState.Idle
+                onRefreshProducts?.invoke()
             } catch (e: Exception) {
                 shareState = ShareState.Error(e.message ?: "An unknown error occurred")
             }

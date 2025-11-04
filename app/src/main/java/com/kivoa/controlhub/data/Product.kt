@@ -71,3 +71,7 @@ data class Image(
     val status: String,
     @Json(name = "updated_at") val updatedAt: String
 )
+
+data class UpdateProductStockRequest(
+    @Json(name = "in_stock") val inStock: Boolean
+)
