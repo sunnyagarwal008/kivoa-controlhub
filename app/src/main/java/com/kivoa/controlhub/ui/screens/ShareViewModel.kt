@@ -25,7 +25,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.net.URL
 
-class ShareViewModel(application: Application, private val apiService: ApiService, private val onRefreshProducts: (() -> Unit)? = null) : AndroidViewModel(application) {
+class ShareViewModel(application: Application, private val apiService: ApiService, private val onRefreshProducts: (() -> Unit)? = null, private val onShareComplete: (() -> Unit)? = null) : AndroidViewModel(application) {
 
     sealed class ShareState {
         object Idle : ShareState()
@@ -75,6 +75,7 @@ class ShareViewModel(application: Application, private val apiService: ApiServic
                 getApplication<Application>().startActivity(chooser)
 
                 shareState = ShareState.Idle
+                onShareComplete?.invoke()
 
             } catch (e: Exception) {
                 shareState = ShareState.Error(e.message ?: "An unknown error occurred")

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -85,7 +86,10 @@ fun BrowseScreen(
     val apiService = RetrofitInstance.api
 
     val lazyPagingItems = browseViewModel.products.collectAsLazyPagingItems()
-    val shareViewModelFactory = remember { ShareViewModelFactory(application, apiService) { lazyPagingItems.refresh() } }
+    val shareViewModelFactory = remember { ShareViewModelFactory(application, apiService, { lazyPagingItems.refresh() }) { 
+        browseViewModel.selectionMode = false
+        browseViewModel.selectedProducts = emptySet()
+    } }
     val shareViewModel: ShareViewModel = viewModel(factory = shareViewModelFactory)
 
     val categories = listOf("All products", "Necklace", "Ring", "Earring", "Bracelet")
