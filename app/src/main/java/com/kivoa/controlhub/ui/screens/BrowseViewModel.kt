@@ -26,14 +26,18 @@ class BrowseViewModel : ViewModel() {
     data class FilterParams(
         val selectedCategory: String,
         val excludeOutOfStock: Boolean,
-        val priceRange: ClosedFloatingPointRange<Float>
+        val priceRange: ClosedFloatingPointRange<Float>,
+        val sortBy: String,
+        val sortOrder: String
     )
 
     private val _filterParams = MutableStateFlow(
         FilterParams(
             selectedCategory = "All products",
             excludeOutOfStock = true,
-            priceRange = 0f..5000f
+            priceRange = 0f..5000f,
+            sortBy = "created_at",
+            sortOrder = "desc"
         )
     )
     val filterParams: StateFlow<FilterParams> = _filterParams.asStateFlow()
@@ -77,11 +81,15 @@ class BrowseViewModel : ViewModel() {
         _filterParams.update { it.copy(priceRange = price) }
     }
 
+    fun updateSort(sortBy: String, sortOrder: String) {
+        _filterParams.update { it.copy(sortBy = sortBy, sortOrder = sortOrder) }
+    }
+
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val products: Flow<PagingData<ApiProduct>> =
         _filterParams
-            .flatMapLatest { (category, exclude, price) ->
+            .flatMapLatest { (category, exclude, price, sortBy, sortOrder) ->
                 Pager(
                     config = PagingConfig(pageSize = 10, enablePlaceholders = true),
                     pagingSourceFactory = {
@@ -90,7 +98,9 @@ class BrowseViewModel : ViewModel() {
                             category = if (category == "All products") null else category,
                             excludeOutOfStock = exclude,
                             minPrice = price.start.toInt(),
-                            maxPrice = price.endInclusive.toInt()
+                            maxPrice = price.endInclusive.toInt(),
+                            sortBy = sortBy,
+                            sortOrder = sortOrder
                         )
                     }
                 ).flow

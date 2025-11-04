@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Share
@@ -78,6 +79,7 @@ fun BrowseScreen(
     val categories = listOf("All products", "Necklace", "Ring", "Earring", "Bracelet")
     val lazyPagingItems = browseViewModel.products.collectAsLazyPagingItems()
     val filterParams by browseViewModel.filterParams.collectAsState()
+    var sortExpanded by remember { mutableStateOf(false) }
 
 
     LaunchedEffect(browseViewModel.selectionMode, browseViewModel.selectedProducts.size) {
@@ -107,6 +109,59 @@ fun BrowseScreen(
                     if (browseViewModel.selectionMode) {
                         IconButton(onClick = { shareViewModel.shareProducts(browseViewModel.selectedProducts) }) {
                             Icon(Icons.Default.Share, contentDescription = "Share")
+                        }
+                    } else {
+                        Box {
+                            IconButton(onClick = { sortExpanded = true }) {
+                                Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "Sort products")
+                            }
+                            DropdownMenu(
+                                expanded = sortExpanded,
+                                onDismissRequest = { sortExpanded = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("SKU (Ascending)") },
+                                    onClick = {
+                                        browseViewModel.updateSort("sku_sequence_number", "asc")
+                                        sortExpanded = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("SKU (Descending)") },
+                                    onClick = {
+                                        browseViewModel.updateSort("sku_sequence_number", "desc")
+                                        sortExpanded = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Price (Ascending)") },
+                                    onClick = {
+                                        browseViewModel.updateSort("price", "asc")
+                                        sortExpanded = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Price (Descending)") },
+                                    onClick = {
+                                        browseViewModel.updateSort("price", "desc")
+                                        sortExpanded = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Created At (Newest First)") },
+                                    onClick = {
+                                        browseViewModel.updateSort("created_at", "desc")
+                                        sortExpanded = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Created At (Oldest First)") },
+                                    onClick = {
+                                        browseViewModel.updateSort("created_at", "asc")
+                                        sortExpanded = false
+                                    }
+                                )
+                            }
                         }
                     }
                 }

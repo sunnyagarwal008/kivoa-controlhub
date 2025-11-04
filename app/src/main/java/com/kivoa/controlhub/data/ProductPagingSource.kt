@@ -10,13 +10,23 @@ class ProductPagingSource(
     private val category: String?,
     private val excludeOutOfStock: Boolean,
     private val minPrice: Int?,
-    private val maxPrice: Int?
+    private val maxPrice: Int?,
+    private val sortBy: String?,
+    private val sortOrder: String?
 ) : PagingSource<Int, ApiProduct>() {
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, ApiProduct> {
         val page = params.key ?: 0
         return try {
-            val response = apiService.getProducts(category = category, page = page, excludeOutOfStock = excludeOutOfStock, minPrice = minPrice, maxPrice = maxPrice)
+            val response = apiService.getProducts(
+                category = category,
+                page = page,
+                excludeOutOfStock = excludeOutOfStock,
+                minPrice = minPrice,
+                maxPrice = maxPrice,
+                sortBy = sortBy,
+                sortOrder = sortOrder
+            )
             val products = response.data
             LoadResult.Page(
                 data = products,
@@ -24,7 +34,7 @@ class ProductPagingSource(
                 nextKey = if (response.pagination.pages > page) page + 1 else null
             )
         } catch (e: Exception) {
-            Log.e(TAG, "${category}, ${page}, excludeOutOfStock: ${excludeOutOfStock}", e)
+            Log.e(TAG, "$category, $page, excludeOutOfStock: $excludeOutOfStock", e)
             LoadResult.Error(e)
         }
     }

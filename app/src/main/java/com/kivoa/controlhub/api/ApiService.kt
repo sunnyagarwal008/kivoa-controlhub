@@ -33,7 +33,9 @@ interface ApiService {
         @Query("category") category: String? = null,
         @Query("excludeOutOfStock") excludeOutOfStock: Boolean = false,
         @Query("minPrice") minPrice: Int? = null,
-        @Query("maxPrice") maxPrice: Int? = null
+        @Query("maxPrice") maxPrice: Int? = null,
+        @Query("sortBy") sortBy: String? = null,
+        @Query("sortOrder") sortOrder: String? = null
     ): ProductsApiResponse
 
     @PUT("api/products/{product_id}/status")
