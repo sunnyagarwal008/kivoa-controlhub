@@ -54,7 +54,16 @@ data class ProductFormState(
     var purchaseMonth: String = "",
     var category: String = "Ring", // Default category
     var priceCode: String = ""
-)
+) {
+    val isValid: Boolean
+        get() = mrp.isNotBlank() &&
+                price.isNotBlank() &&
+                discount.isNotBlank() &&
+                gst.isNotBlank() &&
+                purchaseMonth.isNotBlank() &&
+                category.isNotBlank() &&
+                priceCode.isNotBlank()
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,6 +79,10 @@ fun CreateProductFormsDialog(
                 ProductFormState(rawImage = product.imageUri)
             }.toTypedArray()
         )
+    }
+
+    val allFormsValid = remember(initialProductForms) {
+        mutableStateOf(initialProductForms.all { it.isValid })
     }
 
     Dialog(
@@ -98,6 +111,10 @@ fun CreateProductFormsDialog(
                             productFormState = productFormState,
                             onUpdateField = { updatedProductFormState ->
                                 initialProductForms[index] = updatedProductFormState
+                                allFormsValid.value = initialProductForms.all { it.isValid }
+                            },
+                            onValidationChange = {
+                                allFormsValid.value = initialProductForms.all { it.isValid }
                             }
                         )
                     }
@@ -107,6 +124,7 @@ fun CreateProductFormsDialog(
                                 createViewModel.createProducts(initialProductForms)
                                 onProductCreationSuccess()
                             },
+                            enabled = allFormsValid.value,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Submit Products")
@@ -123,7 +141,20 @@ fun CreateProductFormsDialog(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProductForm(productFormState: ProductFormState, onUpdateField: (ProductFormState) -> Unit) {
+fun ProductForm(
+    productFormState: ProductFormState,
+    onUpdateField: (ProductFormState) -> Unit,
+    onValidationChange: (Boolean) -> Unit
+) {
+    var mrpError by remember { mutableStateOf(false) }
+    var priceError by remember { mutableStateOf(false) }
+    var discountError by remember { mutableStateOf(false) }
+    var gstError by remember { mutableStateOf(false) }
+    var purchaseMonthError by remember { mutableStateOf(false) }
+    var priceCodeError by remember { mutableStateOf(false) }
+    var categoryError by remember { mutableStateOf(false) }
+
+
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Image(
@@ -139,24 +170,32 @@ fun ProductForm(productFormState: ProductFormState, onUpdateField: (ProductFormS
                 OutlinedTextField(
                     value = productFormState.mrp,
                     onValueChange = { newValue ->
+                        mrpError = newValue.isBlank()
                         if (newValue.matches(Regex("""^\d*\.?\d*$"""))) {
                             onUpdateField(productFormState.copy(mrp = newValue))
                         }
+                        onValidationChange(productFormState.isValid)
                     },
                     label = { Text("MRP") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    isError = mrpError,
+                    supportingText = { if (mrpError) Text("Field cannot be empty") }
                 )
                 OutlinedTextField(
                     value = productFormState.price,
                     onValueChange = { newValue ->
+                        priceError = newValue.isBlank()
                         if (newValue.matches(Regex("""^\d*\.?\d*$"""))) {
                             onUpdateField(productFormState.copy(price = newValue))
                         }
+                        onValidationChange(productFormState.isValid)
                     },
                     label = { Text("Price") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    isError = priceError,
+                    supportingText = { if (priceError) Text("Field cannot be empty") }
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
@@ -164,48 +203,63 @@ fun ProductForm(productFormState: ProductFormState, onUpdateField: (ProductFormS
                 OutlinedTextField(
                     value = productFormState.discount,
                     onValueChange = { newValue ->
+                        discountError = newValue.isBlank()
                         if (newValue.matches(Regex("""^\d*\.?\d*$"""))) {
                             onUpdateField(productFormState.copy(discount = newValue))
                         }
+                        onValidationChange(productFormState.isValid)
                     },
                     label = { Text("Discount") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    isError = discountError,
+                    supportingText = { if (discountError) Text("Field cannot be empty") }
                 )
                 OutlinedTextField(
                     value = productFormState.gst,
                     onValueChange = { newValue ->
+                        gstError = newValue.isBlank()
                         if (newValue.matches(Regex("""^\d*\.?\d*$"""))) {
                             onUpdateField(productFormState.copy(gst = newValue))
                         }
+                        onValidationChange(productFormState.isValid)
                     },
                     label = { Text("GST") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    isError = gstError,
+                    supportingText = { if (gstError) Text("Field cannot be empty") }
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = productFormState.purchaseMonth,
-                    onValueChange = { newValue ->
-                        if (newValue.length <= 4 && newValue.all { it.isDigit() }) {
-                            onUpdateField(productFormState.copy(purchaseMonth = newValue))
-                        }
-                    },
-                    label = { Text("Purchase Month") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.weight(1f)
-                )
-                OutlinedTextField(
-                    value = productFormState.priceCode,
-                    onValueChange = { newValue ->
-                        onUpdateField(productFormState.copy(priceCode = newValue))
-                    },
-                    label = { Text("Price Code") },
-                    modifier = Modifier.weight(1f)
-                )
-            }
+            OutlinedTextField(
+                value = productFormState.purchaseMonth,
+                onValueChange = { newValue ->
+                    purchaseMonthError = newValue.isBlank()
+                    if (newValue.length <= 4 && newValue.all { it.isDigit() }) {
+                        onUpdateField(productFormState.copy(purchaseMonth = newValue))
+                    }
+                    onValidationChange(productFormState.isValid)
+                },
+                label = { Text("Purchase Month") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(),
+                isError = purchaseMonthError,
+                supportingText = { if (purchaseMonthError) Text("Field cannot be empty") }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = productFormState.priceCode,
+                onValueChange = { newValue ->
+                    priceCodeError = newValue.isBlank()
+                    onUpdateField(productFormState.copy(priceCode = newValue))
+                    onValidationChange(productFormState.isValid)
+                },
+                label = { Text("Price Code") },
+                modifier = Modifier.fillMaxWidth(),
+                isError = priceCodeError,
+                supportingText = { if (priceCodeError) Text("Field cannot be empty") }
+            )
             Spacer(modifier = Modifier.height(8.dp))
 
             val categories = listOf("Ring", "Necklace", "Earring", "Bracelet")
@@ -221,7 +275,11 @@ fun ProductForm(productFormState: ProductFormState, onUpdateField: (ProductFormS
             ) {
                 OutlinedTextField(
                     value = productFormState.category,
-                    onValueChange = { },
+                    onValueChange = {
+                        // Category is read-only, validation is done on the current value
+                        categoryError = productFormState.category.isBlank()
+                        onValidationChange(productFormState.isValid)
+                    },
                     readOnly = true,
                     label = { Text("Category")},
                     trailingIcon = {
@@ -235,7 +293,9 @@ fun ProductForm(productFormState: ProductFormState, onUpdateField: (ProductFormS
                         .fillMaxWidth()
                         .onGloballyPositioned { coordinates ->
                             textFieldSize = coordinates.size.toSize()
-                        }
+                        },
+                    isError = categoryError,
+                    supportingText = { if (categoryError) Text("Field cannot be empty") }
                 )
                 ExposedDropdownMenu(
                     expanded = expanded,
@@ -246,7 +306,9 @@ fun ProductForm(productFormState: ProductFormState, onUpdateField: (ProductFormS
                             text = { Text(selectionOption) },
                             onClick = {
                                 onUpdateField(productFormState.copy(category = selectionOption))
+                                categoryError = selectionOption.isBlank()
                                 expanded = false
+                                onValidationChange(productFormState.isValid)
                             }
                         )
                     }
