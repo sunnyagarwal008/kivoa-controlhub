@@ -5,6 +5,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -51,7 +52,8 @@ data class ProductFormState(
     var discount: String = "",
     var gst: String = "",
     var purchaseMonth: String = "",
-    var category: String = "Ring" // Default category
+    var category: String = "Ring", // Default category
+    var priceCode: String = ""
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -99,16 +101,20 @@ fun CreateProductFormsDialog(
                             }
                         )
                     }
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(
-                    onClick = {
-                        createViewModel.createProducts(initialProductForms)
-                        onProductCreationSuccess()
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Submit Products")
+                    item { // Move the button inside LazyColumn
+                        Button(
+                            onClick = {
+                                createViewModel.createProducts(initialProductForms)
+                                onProductCreationSuccess()
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Submit Products")
+                        }
+                    }
+                    item { // Add a spacer after the button for padding at the bottom
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
                 }
             }
         }
@@ -129,65 +135,77 @@ fun ProductForm(productFormState: ProductFormState, onUpdateField: (ProductFormS
                 contentScale = ContentScale.Crop
             )
             Spacer(modifier = Modifier.height(16.dp))
-            OutlinedTextField(
-                value = productFormState.mrp,
-                onValueChange = { newValue ->
-                    if (newValue.matches(Regex("""^\d*\.?\d*$"""))) {
-                        onUpdateField(productFormState.copy(mrp = newValue))
-                    }
-                },
-                label = { Text("MRP") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth()
-            )
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = productFormState.mrp,
+                    onValueChange = { newValue ->
+                        if (newValue.matches(Regex("""^\d*\.?\d*$"""))) {
+                            onUpdateField(productFormState.copy(mrp = newValue))
+                        }
+                    },
+                    label = { Text("MRP") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.weight(1f)
+                )
+                OutlinedTextField(
+                    value = productFormState.price,
+                    onValueChange = { newValue ->
+                        if (newValue.matches(Regex("""^\d*\.?\d*$"""))) {
+                            onUpdateField(productFormState.copy(price = newValue))
+                        }
+                    },
+                    label = { Text("Price") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.weight(1f)
+                )
+            }
             Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
-                value = productFormState.price,
-                onValueChange = { newValue ->
-                    if (newValue.matches(Regex("""^\d*\.?\d*$"""))) {
-                        onUpdateField(productFormState.copy(price = newValue))
-                    }
-                },
-                label = { Text("Price") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth()
-            )
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = productFormState.discount,
+                    onValueChange = { newValue ->
+                        if (newValue.matches(Regex("""^\d*\.?\d*$"""))) {
+                            onUpdateField(productFormState.copy(discount = newValue))
+                        }
+                    },
+                    label = { Text("Discount") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.weight(1f)
+                )
+                OutlinedTextField(
+                    value = productFormState.gst,
+                    onValueChange = { newValue ->
+                        if (newValue.matches(Regex("""^\d*\.?\d*$"""))) {
+                            onUpdateField(productFormState.copy(gst = newValue))
+                        }
+                    },
+                    label = { Text("GST") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.weight(1f)
+                )
+            }
             Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
-                value = productFormState.discount,
-                onValueChange = { newValue ->
-                    if (newValue.matches(Regex("""^\d*\.?\d*$"""))) {
-                        onUpdateField(productFormState.copy(discount = newValue))
-                    }
-                },
-                label = { Text("Discount") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
-                value = productFormState.gst,
-                onValueChange = { newValue ->
-                    if (newValue.matches(Regex("""^\d*\.?\d*$"""))) {
-                        onUpdateField(productFormState.copy(gst = newValue))
-                    }
-                },
-                label = { Text("GST") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
-                value = productFormState.purchaseMonth,
-                onValueChange = { newValue ->
-                    if (newValue.length <= 4 && newValue.all { it.isDigit() }) {
-                        onUpdateField(productFormState.copy(purchaseMonth = newValue))
-                    }
-                },
-                label = { Text("Purchase Month (MMyy)") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth()
-            )
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = productFormState.purchaseMonth,
+                    onValueChange = { newValue ->
+                        if (newValue.length <= 4 && newValue.all { it.isDigit() }) {
+                            onUpdateField(productFormState.copy(purchaseMonth = newValue))
+                        }
+                    },
+                    label = { Text("Purchase Month") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.weight(1f)
+                )
+                OutlinedTextField(
+                    value = productFormState.priceCode,
+                    onValueChange = { newValue ->
+                        onUpdateField(productFormState.copy(priceCode = newValue))
+                    },
+                    label = { Text("Price Code") },
+                    modifier = Modifier.weight(1f)
+                )
+            }
             Spacer(modifier = Modifier.height(8.dp))
 
             val categories = listOf("Ring", "Necklace", "Earring", "Bracelet")

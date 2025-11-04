@@ -14,7 +14,8 @@ class ProductApiRepository(private val apiService: ApiService) {
                 discount = formState.discount.toDoubleOrNull() ?: 0.0,
                 gst = formState.gst.toDoubleOrNull() ?: 0.0,
                 purchaseMonth = formState.purchaseMonth,
-                category = formState.category
+                category = formState.category,
+                priceCode = formState.priceCode
             )
         }
         val bulkProductRequest = BulkProductRequest(products = productDetails)

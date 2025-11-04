@@ -15,5 +15,7 @@ data class ProductDetailRequest(
     val gst: Double,
     @Json(name = "purchase_month")
     val purchaseMonth: String,
-    val category: String
+    val category: String,
+    @Json(name = "price_code")
+    val priceCode: String
 )
