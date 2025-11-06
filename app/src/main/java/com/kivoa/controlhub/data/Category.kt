@@ -25,7 +25,8 @@ data class CreateCategoryRequest(
 data class CreateCategoryResponse(
     val data: ApiCategory,
     val success: Boolean,
-    val message: String
+    val message: String,
+    val error: String? = null
 )
 
 @JsonClass(generateAdapter = true)

@@ -108,7 +108,7 @@ class EditCategoryViewModel(application: Application, private val apiService: Ap
             _isLoading.value = true
             try {
                 val request = UpdateCategoryRequest(
-                    name = _name.value,
+                    name = _name.value.trim(),
                     prefix = _prefix.value,
                     skuSequenceNumber = skuNumber,
                     tags = _tags.value

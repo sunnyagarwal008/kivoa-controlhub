@@ -152,13 +152,11 @@ class MainActivity : ComponentActivity() {
                             ProductDetailScreen(product = product!!, navController = navController, shareViewModel = shareViewModelForDetail, appBarViewModel = appBarViewModel)
                         }
                         composable(
-                            route = Screen.CategoryDetail.route + "/{categoryId}",
-                            arguments = listOf(navArgument("categoryId") { type = NavType.StringType })
+                            route = Screen.CategoryDetail.route + "/{categoryJson}",
+                            arguments = listOf(navArgument("categoryJson") { type = NavType.StringType })
                         ) {
-                            val categoryId = it.arguments?.getString("categoryId")
-                            if (categoryId != null) {
-                                CategoryDetailScreen(navController = navController, appBarViewModel = appBarViewModel, categoryId = categoryId) // Removed onCategoryUpdated lambda
-                            }
+                            val categoryJson = it.arguments?.getString("categoryJson")
+                            CategoryDetailScreen(navController = navController, appBarViewModel = appBarViewModel, categoryJson = categoryJson)
                         }
                         composable(
                             route = Screen.EditCategory.route + "/{categoryJson}",
