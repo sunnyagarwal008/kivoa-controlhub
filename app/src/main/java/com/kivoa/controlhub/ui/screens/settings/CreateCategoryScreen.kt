@@ -109,7 +109,6 @@ class CreateCategoryViewModel(application: Application, private val apiService: 
                     name = _name.value,
                     prefix = _prefix.value,
                     tags = _tags.value,
-                    skuSequenceNumber = 1
                 )
                 // Note: The API does not accept sku_sequence_number in create request based on requirements.
                 // If it should be part of the create, the CreateCategoryRequest data class and API call need adjustment.

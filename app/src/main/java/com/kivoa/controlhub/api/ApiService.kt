@@ -4,6 +4,7 @@ import com.kivoa.controlhub.data.ApiCategory
 import com.kivoa.controlhub.data.BulkProductRequest
 import com.kivoa.controlhub.data.CategoriesApiResponse
 import com.kivoa.controlhub.data.CreateCategoryRequest
+import com.kivoa.controlhub.data.CreateCategoryResponse
 import com.kivoa.controlhub.data.CreateProductsResponse
 import com.kivoa.controlhub.data.PresignedUrlRequest
 import com.kivoa.controlhub.data.PresignedUrlResponse
@@ -60,16 +61,16 @@ interface ApiService {
     suspend fun getCategories(): CategoriesApiResponse
 
     @POST("api/categories")
-    suspend fun createCategory(@Body request: CreateCategoryRequest): ApiCategory
+    suspend fun createCategory(@Body request: CreateCategoryRequest): CreateCategoryResponse
 
     @GET("api/categories/{category_id}")
     suspend fun getCategoryById(@Path("category_id") categoryId: String): ApiCategory
 
     @PUT("api/categories/{category_id}")
     suspend fun updateCategory(
-        @Path("category_id") categoryId: String,
+        @Path("category_id") categoryId: Long,
         @Body request: UpdateCategoryRequest
-    ): ApiCategory
+    ): CreateCategoryResponse
 
     @DELETE("api/categories/{category_id}")
     suspend fun deleteCategory(@Path("category_id") categoryId: String): Unit

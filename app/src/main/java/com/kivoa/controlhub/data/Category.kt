@@ -5,7 +5,7 @@ import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 data class ApiCategory(
-    val id: String,
+    val id: Long,
     val name: String,
     val prefix: String,
     @Json(name = "sku_sequence_number") val skuSequenceNumber: Int,
@@ -19,7 +19,13 @@ data class CreateCategoryRequest(
     val name: String,
     val prefix: String,
     val tags: String,
-    val skuSequenceNumber: Int
+)
+
+@JsonClass(generateAdapter = true)
+data class CreateCategoryResponse(
+    val data: ApiCategory,
+    val success: Boolean,
+    val message: String
 )
 
 @JsonClass(generateAdapter = true)
