@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Settings // Added import for Settings icon
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -51,6 +52,11 @@ import com.kivoa.controlhub.ui.screens.HomeScreen
 import com.kivoa.controlhub.ui.screens.ProductDetailScreen
 import com.kivoa.controlhub.ui.screens.ShareViewModel
 import com.kivoa.controlhub.ui.screens.ShareViewModelFactory
+import com.kivoa.controlhub.ui.screens.settings.CategoriesScreen // Added CategoriesScreen import
+import com.kivoa.controlhub.ui.screens.settings.CategoryDetailScreen
+import com.kivoa.controlhub.ui.screens.settings.CreateCategoryScreen // Added CreateCategoryScreen import
+import com.kivoa.controlhub.ui.screens.settings.EditCategoryScreen // Added EditCategoryScreen import
+import com.kivoa.controlhub.ui.screens.settings.SettingsScreen // Added SettingsScreen import
 import com.kivoa.controlhub.ui.theme.ControlHubTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -102,6 +108,7 @@ class MainActivity : ComponentActivity() {
                                 Screen.Search,
                                 Screen.Browse,
                                 Screen.Create,
+                                Screen.Settings, // Added Settings to the bottom navigation bar
                             )
                             items.forEach { screen ->
                                 NavigationBarItem(
@@ -130,6 +137,11 @@ class MainActivity : ComponentActivity() {
                         composable(Screen.Search.route) { HomeScreen(modifier = Modifier.fillMaxSize(), navController = navController, appBarViewModel = appBarViewModel) }
                         composable(Screen.Browse.route) { BrowseScreen(navController = navController, browseViewModel = browseViewModel, appBarViewModel = appBarViewModel) }
                         composable(Screen.Create.route) { CreateScreen(appBarViewModel = appBarViewModel) }
+                        composable(Screen.Settings.route) { SettingsScreen(navController = navController, appBarViewModel = appBarViewModel) }
+                        composable(Screen.SettingsCategories.route) { CategoriesScreen(navController = navController, appBarViewModel = appBarViewModel) }
+                        composable(Screen.CreateCategory.route) {
+                            CreateCategoryScreen(navController = navController, appBarViewModel = appBarViewModel) { navController.popBackStack() } // Navigate back on success
+                        }
                         composable(
                             route = Screen.ProductDetail.route + "/{productJson}",
                             arguments = listOf(navArgument("productJson") { type = NavType.StringType })
@@ -138,6 +150,25 @@ class MainActivity : ComponentActivity() {
                             product = Gson().fromJson(productJson, ApiProduct::class.java)
                             val shareViewModelForDetail: ShareViewModel = viewModel(factory = shareViewModelFactoryForDetail)
                             ProductDetailScreen(product = product!!, navController = navController, shareViewModel = shareViewModelForDetail, appBarViewModel = appBarViewModel)
+                        }
+                        composable(
+                            route = Screen.CategoryDetail.route + "/{categoryId}",
+                            arguments = listOf(navArgument("categoryId") { type = NavType.StringType })
+                        ) {
+                            val categoryId = it.arguments?.getString("categoryId")
+                            if (categoryId != null) {
+                                CategoryDetailScreen(navController = navController, appBarViewModel = appBarViewModel, categoryId = categoryId) // Removed onCategoryUpdated lambda
+                            }
+                        }
+                        composable(
+                            route = Screen.EditCategory.route + "/{categoryJson}",
+                            arguments = listOf(navArgument("categoryJson") { type = NavType.StringType })
+                        ) {
+                            val categoryJson = it.arguments?.getString("categoryJson")
+                            val category = Gson().fromJson(categoryJson, com.kivoa.controlhub.data.ApiCategory::class.java)
+                            if (category != null) {
+                                EditCategoryScreen(navController = navController, appBarViewModel = appBarViewModel, category = category) { navController.popBackStack() } // Navigate back on success
+                            }
                         }
                     }
                 }
@@ -161,6 +192,12 @@ sealed class Screen(val route: String, val icon: ImageVector? = null) {
     object Browse : Screen("Browse", Icons.Default.ShoppingCart)
     object Create : Screen("Create", Icons.Default.AddCircle)
     object ProductDetail : Screen("ProductDetail")
+    object Settings : Screen("Settings", Icons.Default.Settings) // Added Settings object
+    object SettingsCategories : Screen("Settings/Categories")
+    object CreateCategory : Screen("CreateCategory")
+    object CategoryDetail : Screen("CategoryDetail")
+    object EditCategory : Screen("EditCategory") // Added EditCategory object
+
 
     companion object {
         fun fromRoute(route: String?): Screen {
@@ -169,6 +206,11 @@ sealed class Screen(val route: String, val icon: ImageVector? = null) {
                 Browse.route -> Browse
                 Create.route -> Create
                 ProductDetail.route -> ProductDetail
+                Settings.route -> Settings
+                SettingsCategories.route.substringBefore("/") -> SettingsCategories
+                CreateCategory.route -> CreateCategory
+                CategoryDetail.route -> CategoryDetail
+                EditCategory.route -> EditCategory // Added EditCategory route
                 else -> Search
             }
         }

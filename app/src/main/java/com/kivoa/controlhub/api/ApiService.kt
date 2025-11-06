@@ -1,15 +1,20 @@
 package com.kivoa.controlhub.api
 
+import com.kivoa.controlhub.data.ApiCategory
 import com.kivoa.controlhub.data.BulkProductRequest
+import com.kivoa.controlhub.data.CategoriesApiResponse
+import com.kivoa.controlhub.data.CreateCategoryRequest
 import com.kivoa.controlhub.data.CreateProductsResponse
 import com.kivoa.controlhub.data.PresignedUrlRequest
 import com.kivoa.controlhub.data.PresignedUrlResponse
 import com.kivoa.controlhub.data.ProductsApiResponse
 import com.kivoa.controlhub.data.SearchProductsResponse
+import com.kivoa.controlhub.data.UpdateCategoryRequest
 import com.kivoa.controlhub.data.UpdateProductApiResponse
 import com.kivoa.controlhub.data.UpdateProductStatusRequest
 import com.kivoa.controlhub.data.UpdateProductStockRequest
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
@@ -50,4 +55,22 @@ interface ApiService {
         @Path("product_id") productId: Long,
         @Body request: UpdateProductStockRequest
     ): UpdateProductApiResponse
+
+    @GET("api/categories")
+    suspend fun getCategories(): CategoriesApiResponse
+
+    @POST("api/categories")
+    suspend fun createCategory(@Body request: CreateCategoryRequest): ApiCategory
+
+    @GET("api/categories/{category_id}")
+    suspend fun getCategoryById(@Path("category_id") categoryId: String): ApiCategory
+
+    @PUT("api/categories/{category_id}")
+    suspend fun updateCategory(
+        @Path("category_id") categoryId: String,
+        @Body request: UpdateCategoryRequest
+    ): ApiCategory
+
+    @DELETE("api/categories/{category_id}")
+    suspend fun deleteCategory(@Path("category_id") categoryId: String): Unit
 }
