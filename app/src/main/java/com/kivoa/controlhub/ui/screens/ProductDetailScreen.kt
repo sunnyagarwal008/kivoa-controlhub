@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material3.Icon
@@ -30,10 +31,13 @@ import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
+import com.google.gson.Gson
 import com.kivoa.controlhub.AppBarState
 import com.kivoa.controlhub.AppBarViewModel
 import com.kivoa.controlhub.data.ApiProduct
 import com.kivoa.controlhub.ui.components.shimmer
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 @Composable
 fun ProductDetailScreen(
@@ -57,6 +61,13 @@ fun ProductDetailScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = {
+                        val productJson = Gson().toJson(product)
+                        val encodedProductJson = URLEncoder.encode(productJson, StandardCharsets.UTF_8.toString())
+                        navController.navigate("edit_product/$encodedProductJson")
+                    }) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit")
+                    }
                     IconButton(onClick = { shareViewModel.shareProduct(product) }) {
                         Icon(Icons.Default.Share, contentDescription = "Share")
                     }
@@ -120,6 +131,8 @@ fun ProductDetailScreen(
             Text(text = "MRP: ₹${product.mrp}")
             Text(text = "Discount: ${product.discount}%")
             Text(text = "Selling Price: ₹${product.price}")
+            product.tags?.let { Text(text = "Tags: $it") }
+            product.boxNumber?.let { Text(text = "Box Number: $it") }
             val outOfStock = !product.inStock
             if (outOfStock) {
                 Text(

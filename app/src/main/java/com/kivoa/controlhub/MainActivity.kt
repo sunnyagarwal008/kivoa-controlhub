@@ -48,6 +48,7 @@ import com.kivoa.controlhub.data.ApiProduct
 import com.kivoa.controlhub.ui.screens.BrowseScreen
 import com.kivoa.controlhub.ui.screens.BrowseViewModel
 import com.kivoa.controlhub.ui.screens.CreateScreen
+import com.kivoa.controlhub.ui.screens.EditProductScreen
 import com.kivoa.controlhub.ui.screens.HomeScreen
 import com.kivoa.controlhub.ui.screens.ProductDetailScreen
 import com.kivoa.controlhub.ui.screens.ShareViewModel
@@ -152,6 +153,14 @@ class MainActivity : ComponentActivity() {
                             ProductDetailScreen(product = product!!, navController = navController, shareViewModel = shareViewModelForDetail, appBarViewModel = appBarViewModel)
                         }
                         composable(
+                            route = Screen.EditProduct.route + "/{productJson}",
+                            arguments = listOf(navArgument("productJson") { type = NavType.StringType })
+                        ) {
+                            val productJson = it.arguments?.getString("productJson")
+                            product = Gson().fromJson(productJson, ApiProduct::class.java)
+                            EditProductScreen(product = product!!, navController = navController)
+                        }
+                        composable(
                             route = Screen.CategoryDetail.route + "/{categoryJson}",
                             arguments = listOf(navArgument("categoryJson") { type = NavType.StringType })
                         ) {
@@ -190,6 +199,7 @@ sealed class Screen(val route: String, val icon: ImageVector? = null) {
     object Browse : Screen("Browse", Icons.Default.ShoppingCart)
     object Create : Screen("Create", Icons.Default.AddCircle)
     object ProductDetail : Screen("ProductDetail")
+    object EditProduct : Screen("edit_product")
     object Settings : Screen("Settings", Icons.Default.Settings) // Added Settings object
     object SettingsCategories : Screen("Settings/Categories")
     object CreateCategory : Screen("CreateCategory")
@@ -204,6 +214,7 @@ sealed class Screen(val route: String, val icon: ImageVector? = null) {
                 Browse.route -> Browse
                 Create.route -> Create
                 ProductDetail.route -> ProductDetail
+                EditProduct.route -> EditProduct
                 Settings.route -> Settings
                 SettingsCategories.route.substringBefore("/") -> SettingsCategories
                 CreateCategory.route -> CreateCategory

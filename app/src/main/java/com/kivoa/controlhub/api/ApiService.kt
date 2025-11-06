@@ -12,6 +12,7 @@ import com.kivoa.controlhub.data.ProductsApiResponse
 import com.kivoa.controlhub.data.SearchProductsResponse
 import com.kivoa.controlhub.data.UpdateCategoryRequest
 import com.kivoa.controlhub.data.UpdateProductApiResponse
+import com.kivoa.controlhub.data.UpdateProductRequest
 import com.kivoa.controlhub.data.UpdateProductStatusRequest
 import com.kivoa.controlhub.data.UpdateProductStockRequest
 import retrofit2.http.Body
@@ -44,6 +45,12 @@ interface ApiService {
         @Query("sortBy") sortBy: String? = null,
         @Query("sortOrder") sortOrder: String? = null
     ): ProductsApiResponse
+
+    @PUT("api/products/{product_id}")
+    suspend fun updateProduct(
+        @Path("product_id") productId: Long,
+        @Body request: UpdateProductRequest
+    ): UpdateProductApiResponse
 
     @PUT("api/products/{product_id}/status")
     suspend fun updateProductStatus(

@@ -51,7 +51,10 @@ data class ApiProduct(
     val status: String,
     @Json(name = "price_code")
     val priceCode: String?,
-    @Json(name = "updated_at") val updatedAt: String
+    @Json(name = "updated_at") val updatedAt: String,
+    val tags: String?,
+    @Json(name = "box_number")
+    val boxNumber: Int?
 )
 
 data class CategoryDetails(
