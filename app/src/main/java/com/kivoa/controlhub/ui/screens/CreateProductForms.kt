@@ -26,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -44,6 +45,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.rememberAsyncImagePainter
 import com.kivoa.controlhub.data.RawProduct
+import com.kivoa.controlhub.data.ProductDetailRequest // Assuming this is the correct import
 
 data class ProductFormState(
     val rawImage: String,
@@ -53,7 +55,8 @@ data class ProductFormState(
     var gst: String = "",
     var purchaseMonth: String = "",
     var category: String = "Ring", // Default category
-    var priceCode: String = ""
+    var priceCode: String = "",
+    var isRawImage: Boolean = false
 ) {
     val isValid: Boolean
         get() = mrp.isNotBlank() &&
@@ -121,7 +124,7 @@ fun CreateProductFormsDialog(
                     item { // Move the button inside LazyColumn
                         Button(
                             onClick = {
-                                createViewModel.createProducts(initialProductForms)
+                                createViewModel.createProducts(initialProductForms) // This will need to be updated to pass `isRawImage`
                                 onProductCreationSuccess()
                             },
                             enabled = allFormsValid.value,
@@ -313,6 +316,21 @@ fun ProductForm(
                         )
                     }
                 }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Is Raw Image?")
+                Switch(
+                    checked = productFormState.isRawImage,
+                    onCheckedChange = { isChecked ->
+                        onUpdateField(productFormState.copy(isRawImage = isChecked))
+                        onValidationChange(productFormState.isValid)
+                    }
+                )
             }
         }
     }

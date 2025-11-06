@@ -3,6 +3,7 @@ package com.kivoa.controlhub.data
 import com.kivoa.controlhub.api.ApiService
 import com.kivoa.controlhub.ui.screens.ProductFormState
 
+
 class ProductApiRepository(private val apiService: ApiService) {
 
     suspend fun createBulkProducts(productFormStates: List<ProductFormState>): Boolean {
@@ -15,7 +16,8 @@ class ProductApiRepository(private val apiService: ApiService) {
                 gst = formState.gst.toDoubleOrNull() ?: 0.0,
                 purchaseMonth = formState.purchaseMonth,
                 category = formState.category,
-                priceCode = formState.priceCode
+                priceCode = formState.priceCode,
+                isRawImage = formState.isRawImage // Add this line
             )
         }
         val bulkProductRequest = BulkProductRequest(products = productDetails)
