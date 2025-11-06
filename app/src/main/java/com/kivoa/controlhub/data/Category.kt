@@ -9,7 +9,7 @@ data class ApiCategory(
     val name: String,
     val prefix: String,
     @Json(name = "sku_sequence_number") val skuSequenceNumber: Int,
-    val tags: String,
+    val tags: String?,
     @Json(name = "created_at") val createdAt: String,
     @Json(name = "updated_at") val updatedAt: String
 )
@@ -19,7 +19,7 @@ data class CreateCategoryRequest(
     val name: String,
     val prefix: String,
     val tags: String,
-    @Json(name = "sku_sequence_number") val skuSequenceNumber: Int
+    val skuSequenceNumber: Int
 )
 
 @JsonClass(generateAdapter = true)

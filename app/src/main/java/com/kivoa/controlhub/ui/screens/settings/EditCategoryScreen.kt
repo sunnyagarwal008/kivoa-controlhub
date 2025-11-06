@@ -58,7 +58,7 @@ class EditCategoryViewModel(application: Application, private val apiService: Ap
     val skuSequenceNumber: StateFlow<String> = _skuSequenceNumber.asStateFlow()
 
     private val _tags = MutableStateFlow(initialCategory.tags)
-    val tags: StateFlow<String> = _tags.asStateFlow()
+    val tags: StateFlow<String?> = _tags.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -93,7 +93,7 @@ class EditCategoryViewModel(application: Application, private val apiService: Ap
         _error.value = null
         _isSuccess.value = false
 
-        if (_name.value.isBlank() || _prefix.value.isBlank() || _skuSequenceNumber.value.isBlank() || _tags.value.isBlank()) {
+        if (_name.value.isBlank() || _prefix.value.isBlank() || _skuSequenceNumber.value.isBlank() || _tags.value?.isBlank() == true) {
             _error.value = "All fields are required."
             return
         }
@@ -201,7 +201,7 @@ fun EditCategoryScreen(navController: NavController, appBarViewModel: AppBarView
         )
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
-            value = tags,
+            value = tags ?: "",
             onValueChange = viewModel::onTagsChange,
             label = { Text("Tags (comma-separated)") },
             modifier = Modifier.fillMaxWidth()
