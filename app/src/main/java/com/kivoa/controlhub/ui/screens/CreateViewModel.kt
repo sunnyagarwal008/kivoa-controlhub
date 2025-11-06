@@ -7,6 +7,7 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.kivoa.controlhub.api.RetrofitInstance
+import com.kivoa.controlhub.data.ApiCategory
 import com.kivoa.controlhub.data.AppDatabase
 import com.kivoa.controlhub.data.RawProduct
 import com.kivoa.controlhub.data.RawProductRepository
@@ -55,6 +56,9 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
     private val _selectedInReviewProductIds = MutableStateFlow<PersistentList<Long>>(persistentListOf())
     val selectedInReviewProductIds: StateFlow<PersistentList<Long>> = _selectedInReviewProductIds.asStateFlow()
 
+    private val _categories = MutableStateFlow<List<ApiCategory>>(emptyList())
+    val categories: StateFlow<List<ApiCategory>> = _categories.asStateFlow()
+
 
     init {
         val database = AppDatabase.getDatabase(application)
@@ -72,6 +76,7 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
                 _rawProducts.value = it
             }
         }
+        fetchCategories()
     }
 
     fun onImagesSelected(imageUris: List<Uri>, context: Context) {
@@ -180,6 +185,21 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
                 Log.e(TAG, "Error updating product status: ${e.message}", e)
             } finally {
                 _inReviewProductsLoading.value = false
+            }
+        }
+    }
+
+    private fun fetchCategories() {
+        viewModelScope.launch {
+            try {
+                val response = RetrofitInstance.api.getCategories()
+                if (response.success) {
+                    _categories.value = response.data
+                } else {
+                    Log.e(TAG, "Error fetching categories: ${response.success}")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error fetching categories: ${e.message}", e)
             }
         }
     }

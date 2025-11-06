@@ -28,6 +28,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -35,17 +36,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.core.net.toUri
 import coil.compose.rememberAsyncImagePainter
 import com.kivoa.controlhub.data.RawProduct
-import com.kivoa.controlhub.data.ProductDetailRequest // Assuming this is the correct import
 
 data class ProductFormState(
     val rawImage: String,
@@ -56,7 +54,9 @@ data class ProductFormState(
     var purchaseMonth: String = "",
     var category: String = "Ring", // Default category
     var priceCode: String = "",
-    var isRawImage: Boolean = false
+    var isRawImage: Boolean = false,
+    var boxNumber: String = "",
+    var tags: List<String> = emptyList()
 ) {
     val isValid: Boolean
         get() = mrp.isNotBlank() &&
@@ -118,7 +118,8 @@ fun CreateProductFormsDialog(
                             },
                             onValidationChange = {
                                 allFormsValid.value = initialProductForms.all { it.isValid }
-                            }
+                            },
+                            createViewModel = createViewModel
                         )
                     }
                     item { // Move the button inside LazyColumn
@@ -147,7 +148,8 @@ fun CreateProductFormsDialog(
 fun ProductForm(
     productFormState: ProductFormState,
     onUpdateField: (ProductFormState) -> Unit,
-    onValidationChange: (Boolean) -> Unit
+    onValidationChange: (Boolean) -> Unit,
+    createViewModel: CreateViewModel
 ) {
     var mrpError by remember { mutableStateOf(false) }
     var priceError by remember { mutableStateOf(false) }
@@ -156,12 +158,14 @@ fun ProductForm(
     var purchaseMonthError by remember { mutableStateOf(false) }
     var priceCodeError by remember { mutableStateOf(false) }
     var categoryError by remember { mutableStateOf(false) }
+    var boxNumberError by remember { mutableStateOf(false) }
+    val categories by createViewModel.categories.collectAsState()
 
 
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Image(
-                painter = rememberAsyncImagePainter(model = Uri.parse(productFormState.rawImage)),
+                painter = rememberAsyncImagePainter(model = productFormState.rawImage.toUri()),
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -265,9 +269,7 @@ fun ProductForm(
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-            val categories = listOf("Ring", "Necklace", "Earring", "Bracelet")
             var expanded by remember { mutableStateOf(false) }
-            var textFieldSize by remember { mutableStateOf(Size.Zero) }
             val icon =
                 if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
 
@@ -293,10 +295,7 @@ fun ProductForm(
                     },
                     modifier = Modifier
                         .menuAnchor()
-                        .fillMaxWidth()
-                        .onGloballyPositioned { coordinates ->
-                            textFieldSize = coordinates.size.toSize()
-                        },
+                        .fillMaxWidth(),
                     isError = categoryError,
                     supportingText = { if (categoryError) Text("Field cannot be empty") }
                 )
@@ -306,10 +305,10 @@ fun ProductForm(
                 ) {
                     categories.forEach { selectionOption ->
                         DropdownMenuItem(
-                            text = { Text(selectionOption) },
+                            text = { Text(selectionOption.name) },
                             onClick = {
-                                onUpdateField(productFormState.copy(category = selectionOption))
-                                categoryError = selectionOption.isBlank()
+                                onUpdateField(productFormState.copy(category = selectionOption.name))
+                                categoryError = selectionOption.name.isBlank()
                                 expanded = false
                                 onValidationChange(productFormState.isValid)
                             }
@@ -317,6 +316,67 @@ fun ProductForm(
                     }
                 }
             }
+            Spacer(modifier = Modifier.height(8.dp))
+            // Tags multiselect dropdown (placeholder)
+            // In a real app, you'd fetch these from your view model
+            val allTags = categories.find { it.name == productFormState.category }?.tags?.split(",") ?: emptyList()
+            var tagsExpanded by remember { mutableStateOf(false) }
+            ExposedDropdownMenuBox(
+                expanded = tagsExpanded,
+                onExpandedChange = { tagsExpanded = !tagsExpanded },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                OutlinedTextField(
+                    value = productFormState.tags.joinToString(", "),
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Tags") },
+                    trailingIcon = {
+                        Icon(
+                            Icons.Default.KeyboardArrowDown,
+                            "contentDescription",
+                            Modifier.clickable { tagsExpanded = !tagsExpanded })
+                    },
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth()
+                )
+                ExposedDropdownMenu(
+                    expanded = tagsExpanded,
+                    onDismissRequest = { tagsExpanded = false }
+                ) {
+                    allTags.forEach { tag ->
+                        DropdownMenuItem(
+                            text = { Text(tag) },
+                            onClick = {
+                                val currentTags = productFormState.tags.toMutableList()
+                                if (currentTags.contains(tag)) {
+                                    currentTags.remove(tag)
+                                } else {
+                                    currentTags.add(tag)
+                                }
+                                onUpdateField(productFormState.copy(tags = currentTags))
+                                onValidationChange(productFormState.isValid)
+                            }
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = productFormState.boxNumber,
+                onValueChange = { newValue ->
+                    if (newValue.all { it.isDigit() }) {
+                        onUpdateField(productFormState.copy(boxNumber = newValue))
+                    }
+                    onValidationChange(productFormState.isValid)
+                },
+                label = { Text("Box Number") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(),
+                isError = boxNumberError,
+                supportingText = { if (boxNumberError) Text("Field cannot be empty") }
+            )
             Spacer(modifier = Modifier.height(8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),

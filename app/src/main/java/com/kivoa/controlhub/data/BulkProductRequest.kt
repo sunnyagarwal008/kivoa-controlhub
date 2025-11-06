@@ -19,5 +19,8 @@ data class ProductDetailRequest(
     @Json(name = "price_code")
     val priceCode: String,
     @Json(name = "is_raw_image")
-    val isRawImage: Boolean
+    val isRawImage: Boolean,
+    @Json(name = "box_number")
+    val boxNumber: Int?,
+    val tags: String
 )
