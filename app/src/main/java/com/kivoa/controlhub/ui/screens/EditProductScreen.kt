@@ -215,6 +215,7 @@ fun EditProductScreen(
 
             when (updateState) {
                 is UpdateState.Success -> {
+                    navController.previousBackStackEntry?.savedStateHandle?.set("refresh", true)
                     navController.popBackStack()
                 }
 

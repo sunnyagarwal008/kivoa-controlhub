@@ -80,6 +80,7 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended:1.6.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
     implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.7")
+    implementation("androidx.compose.runtime:runtime-livedata")
 
 
     // Retrofit
