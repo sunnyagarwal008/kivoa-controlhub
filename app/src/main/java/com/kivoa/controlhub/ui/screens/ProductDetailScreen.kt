@@ -11,12 +11,14 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ZoomIn
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,59 +30,62 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
-import com.google.gson.Gson
 import com.kivoa.controlhub.AppBarState
 import com.kivoa.controlhub.AppBarViewModel
-import com.kivoa.controlhub.data.ApiProduct
 import com.kivoa.controlhub.ui.components.shimmer
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 
 @Composable
 fun ProductDetailScreen(
-    product: ApiProduct,
+    productId: Long,
     navController: NavController,
     shareViewModel: ShareViewModel,
-    appBarViewModel: AppBarViewModel
+    appBarViewModel: AppBarViewModel,
+    productDetailViewModel: ProductDetailViewModel = viewModel()
 ) {
     var showZoomedImage by remember { mutableStateOf(false) }
+    val product by productDetailViewModel.product.collectAsState()
+
+    LaunchedEffect(productId) {
+        productDetailViewModel.getProductById(productId)
+    }
 
     LaunchedEffect(product) {
-        appBarViewModel.setAppBarState(
-            AppBarState(
-                title = { Text("Product Detail") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
+        product?.let {
+            appBarViewModel.setAppBarState(
+                AppBarState(
+                    title = { Text("Product Detail") },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.navigateUp() }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back"
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = {
+                            navController.navigate("edit_product/${it.id}")
+                        }) {
+                            Icon(Icons.Default.Edit, contentDescription = "Edit")
+                        }
+                        IconButton(onClick = { shareViewModel.shareProduct(it) }) {
+                            Icon(Icons.Default.Share, contentDescription = "Share")
+                        }
                     }
-                },
-                actions = {
-                    IconButton(onClick = {
-                        val productJson = Gson().toJson(product)
-                        val encodedProductJson = URLEncoder.encode(productJson, StandardCharsets.UTF_8.toString())
-                        navController.navigate("edit_product/$encodedProductJson")
-                    }) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit")
-                    }
-                    IconButton(onClick = { shareViewModel.shareProduct(product) }) {
-                        Icon(Icons.Default.Share, contentDescription = "Share")
-                    }
-                }
+                )
             )
-        )
+        }
     }
 
     if (showZoomedImage) {
         Dialog(onDismissRequest = { showZoomedImage = false }) {
             SubcomposeAsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data(product.images.first().imageUrl)
+                    .data(product?.images?.first()?.imageUrl)
                     .crossfade(true)
                     .build(),
                 contentDescription = "Product Image",
@@ -92,53 +97,61 @@ fun ProductDetailScreen(
         }
     }
 
-    Column {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(3f)
-        ) {
-            SubcomposeAsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(product.images.first().imageUrl)
-                    .crossfade(true)
-                    .build(),
-                contentDescription = "Product Image",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clickable { showZoomedImage = true },
-                loading = {
-                    Box(modifier = Modifier.fillMaxSize().shimmer())
-                }
-            )
-            Icon(
-                imageVector = Icons.Filled.ZoomIn,
-                contentDescription = "Zoom In",
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp)
-            )
+    if (product == null) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
         }
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(16.dp)
-        ) {
-            Text(text = "SKU: ${product.sku}", style = MaterialTheme.typography.titleLarge)
-            Text(text = "Purchase Month: ${product.purchaseMonth}")
-            Text(text = "Product Code: ${product.priceCode}")
-            Text(text = "MRP: ₹${product.mrp}")
-            Text(text = "Discount: ${product.discount}%")
-            Text(text = "Selling Price: ₹${product.price}")
-            product.tags?.let { Text(text = "Tags: $it") }
-            product.boxNumber?.let { Text(text = "Box Number: $it") }
-            val outOfStock = !product.inStock
-            if (outOfStock) {
-                Text(
-                    text = "Out of stock",
-                    color = Color.Red,
-                )
+    } else {
+        product?.let {
+            Column {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(3f)
+                ) {
+                    SubcomposeAsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(it.images.first().imageUrl)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "Product Image",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable { showZoomedImage = true },
+                        loading = {
+                            Box(modifier = Modifier.fillMaxSize().shimmer())
+                        }
+                    )
+                    Icon(
+                        imageVector = Icons.Filled.ZoomIn,
+                        contentDescription = "Zoom In",
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(16.dp)
+                    )
+                }
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(16.dp)
+                ) {
+                    Text(text = "SKU: ${it.sku}", style = MaterialTheme.typography.titleLarge)
+                    Text(text = "Purchase Month: ${it.purchaseMonth}")
+                    Text(text = "Product Code: ${it.priceCode}")
+                    Text(text = "MRP: ₹${it.mrp}")
+                    Text(text = "Discount: ${it.discount}%")
+                    Text(text = "Selling Price: ₹${it.price}")
+                    it.tags?.let { tags -> Text(text = "Tags: $tags") }
+                    it.boxNumber?.let { boxNumber -> Text(text = "Box Number: $boxNumber") }
+                    val outOfStock = !it.inStock
+                    if (outOfStock) {
+                        Text(
+                            text = "Out of stock",
+                            color = Color.Red,
+                        )
+                    }
+                }
             }
         }
     }

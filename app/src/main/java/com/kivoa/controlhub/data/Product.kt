@@ -15,6 +15,11 @@ data class ProductsApiResponse(
     val pagination: ProductsApiPagination
 )
 
+data class ProductDetailResponse(
+    val success: Boolean,
+    val data: ApiProduct,
+)
+
 data class SearchProductsResponse(
     val success: Boolean,
     val data: List<ApiProduct>,
@@ -22,7 +27,7 @@ data class SearchProductsResponse(
 
 data class UpdateProductApiResponse(
     val success: Boolean,
-    val data: Any,
+    val data: ApiProduct,
     val message: String
 )
 
@@ -62,6 +67,7 @@ data class CategoryDetails(
     val id: Long,
     val name: String,
     val prefix: String,
+    val tags: String,
     @Json(name = "sku_sequence_number") val skuSequenceNumber: Int,
     @Json(name = "updated_at") val updatedAt: String
 )

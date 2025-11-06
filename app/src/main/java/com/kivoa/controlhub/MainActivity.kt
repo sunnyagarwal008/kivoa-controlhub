@@ -25,9 +25,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -44,7 +42,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.google.gson.Gson
 import com.kivoa.controlhub.api.RetrofitInstance
-import com.kivoa.controlhub.data.ApiProduct
 import com.kivoa.controlhub.ui.screens.BrowseScreen
 import com.kivoa.controlhub.ui.screens.BrowseViewModel
 import com.kivoa.controlhub.ui.screens.CreateScreen
@@ -93,12 +90,12 @@ class MainActivity : ComponentActivity() {
                 val application = context.applicationContext as Application
                 val apiService = RetrofitInstance.api
                 // For ProductDetailScreen, no refresh is needed, so pass null
-                val shareViewModelFactoryForDetail = remember { ShareViewModelFactory(application, apiService, null) }
+                val shareViewModelFactoryForDetail =
+                    remember { ShareViewModelFactory(application, apiService, null) }
 
                 val browseViewModel: BrowseViewModel = viewModel()
                 val appBarViewModel: AppBarViewModel = viewModel()
                 val appBarState by appBarViewModel.appBarState.collectAsState()
-                var product by remember { mutableStateOf<ApiProduct?>(null) }
 
 
                 Scaffold(
@@ -144,21 +141,19 @@ class MainActivity : ComponentActivity() {
                             CreateCategoryScreen(navController = navController, appBarViewModel = appBarViewModel) { navController.popBackStack() } // Navigate back on success
                         }
                         composable(
-                            route = Screen.ProductDetail.route + "/{productJson}",
-                            arguments = listOf(navArgument("productJson") { type = NavType.StringType })
+                            route = Screen.ProductDetail.route + "/{productId}",
+                            arguments = listOf(navArgument("productId") { type = NavType.LongType })
                         ) {
-                            val productJson = it.arguments?.getString("productJson")
-                            product = Gson().fromJson(productJson, ApiProduct::class.java)
+                            val productId = it.arguments?.getLong("productId")
                             val shareViewModelForDetail: ShareViewModel = viewModel(factory = shareViewModelFactoryForDetail)
-                            ProductDetailScreen(product = product!!, navController = navController, shareViewModel = shareViewModelForDetail, appBarViewModel = appBarViewModel)
+                            ProductDetailScreen(productId = productId!!, navController = navController, shareViewModel = shareViewModelForDetail, appBarViewModel = appBarViewModel)
                         }
                         composable(
-                            route = Screen.EditProduct.route + "/{productJson}",
-                            arguments = listOf(navArgument("productJson") { type = NavType.StringType })
+                            route = Screen.EditProduct.route + "/{productId}",
+                            arguments = listOf(navArgument("productId") { type = NavType.LongType })
                         ) {
-                            val productJson = it.arguments?.getString("productJson")
-                            product = Gson().fromJson(productJson, ApiProduct::class.java)
-                            EditProductScreen(product = product!!, navController = navController)
+                            val productId = it.arguments?.getLong("productId")
+                            EditProductScreen(productId = productId!!, navController = navController)
                         }
                         composable(
                             route = Screen.CategoryDetail.route + "/{categoryJson}",

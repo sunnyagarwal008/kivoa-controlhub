@@ -64,15 +64,12 @@ import androidx.navigation.NavController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.SubcomposeAsyncImage
-import com.google.gson.Gson
 import com.kivoa.controlhub.AppBarState
 import com.kivoa.controlhub.AppBarViewModel
 import com.kivoa.controlhub.Screen
 import com.kivoa.controlhub.ShimmerEffect
 import com.kivoa.controlhub.api.RetrofitInstance
 import com.kivoa.controlhub.data.ApiProduct
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -282,13 +279,7 @@ fun BrowseScreen(
                             if (browseViewModel.selectionMode) {
                                 browseViewModel.onProductClicked(product)
                             } else {
-                                val productJson = Gson().toJson(product)
-                                val encodedUrl =
-                                    URLEncoder.encode(
-                                        productJson,
-                                        StandardCharsets.UTF_8.toString()
-                                    )
-                                navController.navigate(Screen.ProductDetail.route + "/$encodedUrl")
+                                navController.navigate(Screen.ProductDetail.route + "/${product.id}")
                             }
                         },
                         onLongClick = { browseViewModel.onProductLongClicked(product) }

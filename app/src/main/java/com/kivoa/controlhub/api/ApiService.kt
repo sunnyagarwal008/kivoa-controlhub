@@ -8,6 +8,7 @@ import com.kivoa.controlhub.data.CreateCategoryResponse
 import com.kivoa.controlhub.data.CreateProductsResponse
 import com.kivoa.controlhub.data.PresignedUrlRequest
 import com.kivoa.controlhub.data.PresignedUrlResponse
+import com.kivoa.controlhub.data.ProductDetailResponse
 import com.kivoa.controlhub.data.ProductsApiResponse
 import com.kivoa.controlhub.data.SearchProductsResponse
 import com.kivoa.controlhub.data.UpdateCategoryRequest
@@ -45,6 +46,9 @@ interface ApiService {
         @Query("sortBy") sortBy: String? = null,
         @Query("sortOrder") sortOrder: String? = null
     ): ProductsApiResponse
+
+    @GET("api/products/{product_id}")
+    suspend fun getProductById(@Path("product_id") productId: Long): ProductDetailResponse
 
     @PUT("api/products/{product_id}")
     suspend fun updateProduct(

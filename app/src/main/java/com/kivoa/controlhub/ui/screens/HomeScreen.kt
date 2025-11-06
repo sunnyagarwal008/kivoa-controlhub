@@ -51,15 +51,12 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.SubcomposeAsyncImage
-import com.google.gson.Gson
 import com.kivoa.controlhub.AppBarState
 import com.kivoa.controlhub.AppBarViewModel
 import com.kivoa.controlhub.R
 import com.kivoa.controlhub.Screen
 import com.kivoa.controlhub.ShimmerEffect
 import com.kivoa.controlhub.data.ApiProduct
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -166,9 +163,7 @@ fun HomeScreen(
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(searchResults) { product ->
                     ProductItem(product = product, onClick = {
-                        val productJson = Gson().toJson(product)
-                        val encodedUrl = URLEncoder.encode(productJson, StandardCharsets.UTF_8.toString())
-                        navController.navigate(Screen.ProductDetail.route + "/$encodedUrl")
+                        navController.navigate(Screen.ProductDetail.route + "/${product.id}")
                     })
                 }
             }
