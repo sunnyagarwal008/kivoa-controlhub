@@ -26,8 +26,6 @@ import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -83,7 +81,7 @@ fun BrowseScreen(
     val apiService = RetrofitInstance.api
 
     val lazyPagingItems = browseViewModel.products.collectAsLazyPagingItems()
-    val shareViewModelFactory = remember { ShareViewModelFactory(application, apiService, { lazyPagingItems.refresh() }) { 
+    val shareViewModelFactory = remember { ShareViewModelFactory(application, apiService, { lazyPagingItems.refresh() }) {
         browseViewModel.selectionMode = false
         browseViewModel.selectedProducts = emptySet()
     } }
@@ -121,20 +119,6 @@ fun BrowseScreen(
                     if (browseViewModel.selectionMode) {
                         IconButton(onClick = { shareViewModel.shareProducts(browseViewModel.selectedProducts) }) {
                             Icon(Icons.Default.Share, contentDescription = "Share")
-                        }
-                        IconButton(onClick = {
-                            shareViewModel.updateProductStockStatus(browseViewModel.selectedProducts, true)
-                            browseViewModel.selectionMode = false
-                            browseViewModel.selectedProducts = emptySet()
-                        }) {
-                            Icon(Icons.Default.Done, contentDescription = "Mark In Stock")
-                        }
-                        IconButton(onClick = {
-                            shareViewModel.updateProductStockStatus(browseViewModel.selectedProducts, false)
-                            browseViewModel.selectionMode = false
-                            browseViewModel.selectedProducts = emptySet()
-                        }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Mark Out of Stock")
                         }
                     } else {
                         Box {

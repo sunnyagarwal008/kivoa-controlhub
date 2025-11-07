@@ -83,21 +83,6 @@ class ShareViewModel(application: Application, private val apiService: ApiServic
         }
     }
 
-    fun updateProductStockStatus(products: Set<ApiProduct>, inStock: Boolean) {
-        shareState = ShareState.Processing
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                products.forEach { product ->
-                    apiService.updateProductStock(product.id, UpdateProductStockRequest(inStock))
-                }
-                shareState = ShareState.Idle
-                onRefreshProducts?.invoke()
-            } catch (e: Exception) {
-                shareState = ShareState.Error(e.message ?: "An unknown error occurred")
-            }
-        }
-    }
-
     private fun downloadImage(imageUrl: String): Bitmap {
         val url = URL(imageUrl)
         return BitmapFactory.decodeStream(url.openConnection().getInputStream())

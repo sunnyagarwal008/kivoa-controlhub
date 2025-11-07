@@ -15,6 +15,7 @@ import com.kivoa.controlhub.data.UpdateCategoryRequest
 import com.kivoa.controlhub.data.UpdateProductApiResponse
 import com.kivoa.controlhub.data.UpdateProductRequest
 import com.kivoa.controlhub.data.UpdateProductStatusRequest
+import com.kivoa.controlhub.data.UpdateProductStockApiResponse
 import com.kivoa.controlhub.data.UpdateProductStockRequest
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -66,7 +67,7 @@ interface ApiService {
     suspend fun updateProductStock(
         @Path("product_id") productId: Long,
         @Body request: UpdateProductStockRequest
-    ): UpdateProductApiResponse
+    ): UpdateProductStockApiResponse
 
     @GET("api/categories")
     suspend fun getCategories(): CategoriesApiResponse

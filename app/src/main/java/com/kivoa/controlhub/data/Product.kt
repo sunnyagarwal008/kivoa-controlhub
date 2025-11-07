@@ -31,6 +31,12 @@ data class UpdateProductApiResponse(
     val message: String
 )
 
+data class UpdateProductStockApiResponse(
+    val success: Boolean,
+    val data: Any,
+    val message: String
+)
+
 data class ProductsApiPagination(
     val page: Int,
     val pages: Int,
