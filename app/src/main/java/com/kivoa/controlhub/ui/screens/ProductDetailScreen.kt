@@ -3,9 +3,12 @@ package com.kivoa.controlhub.ui.screens
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
@@ -114,11 +117,11 @@ fun ProductDetailScreen(
         }
     } else {
         product?.let {
-            Column {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(3f)
+                        .aspectRatio(1f)
                 ) {
                     SubcomposeAsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
@@ -144,7 +147,6 @@ fun ProductDetailScreen(
                 }
                 Column(
                     modifier = Modifier
-                        .weight(1f)
                         .padding(16.dp)
                 ) {
                     Text(text = "SKU: ${it.sku}", style = MaterialTheme.typography.titleLarge)
