@@ -87,7 +87,7 @@ fun BrowseScreen(
     } }
     val shareViewModel: ShareViewModel = viewModel(factory = shareViewModelFactory)
 
-    val categories = listOf("All products", "Necklace", "Ring", "Earring", "Bracelet")
+    val categories by browseViewModel.categories.collectAsState()
     val filterParams by browseViewModel.filterParams.collectAsState()
     var sortExpanded by remember { mutableStateOf(false) }
 
@@ -210,16 +210,20 @@ fun BrowseScreen(
 
             Box {
                 FilterChip(
-                    label = "Category: ${filterParams.selectedCategory}",
+                    label = filterParams.selectedCategory,
                     onClick = { categoryExpanded = true })
 
                 DropdownMenu(
                     expanded = categoryExpanded,
                     onDismissRequest = { categoryExpanded = false })
                 {
+                    DropdownMenuItem(text = { Text("All products") }, onClick = {
+                        browseViewModel.updateSelectedCategory("All products")
+                        categoryExpanded = false
+                    })
                     categories.forEach { category ->
-                        DropdownMenuItem(text = { Text(category) }, onClick = {
-                            browseViewModel.updateSelectedCategory(category)
+                        DropdownMenuItem(text = { Text(category.name) }, onClick = {
+                            browseViewModel.updateSelectedCategory(category.name)
                             categoryExpanded = false
                         })
                     }
@@ -227,7 +231,7 @@ fun BrowseScreen(
             }
 
             FilterChip(
-                label = "Price: ₹${filterParams.priceRange.start.toInt()}-₹${filterParams.priceRange.endInclusive.toInt()}",
+                label = "₹${filterParams.priceRange.start.toInt()}-₹${filterParams.priceRange.endInclusive.toInt()}",
                 onClick = { browseViewModel.showPriceFilterDialog = true })
 
             Row(

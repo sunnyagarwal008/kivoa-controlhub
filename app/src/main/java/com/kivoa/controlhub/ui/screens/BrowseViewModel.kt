@@ -1,6 +1,5 @@
 package com.kivoa.controlhub.ui.screens
 
-import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -11,98 +10,89 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.kivoa.controlhub.api.RetrofitInstance
+import com.kivoa.controlhub.data.ApiCategory
 import com.kivoa.controlhub.data.ApiProduct
 import com.kivoa.controlhub.data.ProductPagingSource
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+
+data class FilterParams(
+    val selectedCategory: String = "All products",
+    val priceRange: ClosedFloatingPointRange<Float> = 0f..5000f,
+    val excludeOutOfStock: Boolean = false,
+    val sortBy: String = "created_at",
+    val sortOrder: String = "desc"
+)
 
 class BrowseViewModel : ViewModel() {
 
-    data class FilterParams(
-        val selectedCategory: String,
-        val excludeOutOfStock: Boolean,
-        val priceRange: ClosedFloatingPointRange<Float>,
-        val sortBy: String,
-        val sortOrder: String
-    )
-
-    private val _filterParams = MutableStateFlow(
-        FilterParams(
-            selectedCategory = "All products",
-            excludeOutOfStock = true,
-            priceRange = 0f..5000f,
-            sortBy = "created_at",
-            sortOrder = "desc"
-        )
-    )
-    val filterParams: StateFlow<FilterParams> = _filterParams.asStateFlow()
-
     var selectionMode by mutableStateOf(false)
-    var selectedProducts by mutableStateOf<Set<ApiProduct>>(emptySet())
+    var selectedProducts by mutableStateOf(emptySet<ApiProduct>())
     var showPriceFilterDialog by mutableStateOf(false)
+    val filterParams = MutableStateFlow(FilterParams())
 
+    private val _categories = MutableStateFlow<List<ApiCategory>>(emptyList())
+    val categories: StateFlow<List<ApiCategory>> = _categories.asStateFlow()
+
+    init {
+        fetchCategories()
+    }
+
+    val products: Flow<PagingData<ApiProduct>> = filterParams.flatMapLatest { params ->
+        Pager(PagingConfig(pageSize = 10)) {
+            ProductPagingSource(
+                apiService = RetrofitInstance.api,
+                category = if (params.selectedCategory == "All products") null else params.selectedCategory,
+                excludeOutOfStock = params.excludeOutOfStock,
+                minPrice = params.priceRange.start.toInt(),
+                maxPrice = params.priceRange.endInclusive.toInt(),
+                sortBy = params.sortBy,
+                sortOrder = params.sortOrder
+            )
+        }.flow
+    }.cachedIn(viewModelScope)
 
     fun onProductClicked(product: ApiProduct) {
         if (selectionMode) {
-            val currentSelection = selectedProducts.toMutableSet()
-            if (product in currentSelection) {
-                currentSelection.remove(product)
-            } else if (currentSelection.size < 10) {
-                currentSelection.add(product)
-            }
-            selectedProducts = currentSelection
-            if (currentSelection.isEmpty()) {
-                selectionMode = false
+            selectedProducts = if (selectedProducts.contains(product)) {
+                selectedProducts - product
+            } else {
+                selectedProducts + product
             }
         }
     }
 
     fun onProductLongClicked(product: ApiProduct) {
-        if (!selectionMode) {
-            selectionMode = true
-            selectedProducts = setOf(product)
-        }
+        selectionMode = true
+        selectedProducts = selectedProducts + product
     }
 
     fun updateSelectedCategory(category: String) {
-        _filterParams.update { it.copy(selectedCategory = category) }
+        filterParams.value = filterParams.value.copy(selectedCategory = category)
+    }
+
+    fun updatePriceRange(newRange: ClosedFloatingPointRange<Float>) {
+        filterParams.value = filterParams.value.copy(priceRange = newRange)
     }
 
     fun updateExcludeOutOfStock(exclude: Boolean) {
-        _filterParams.update { it.copy(excludeOutOfStock = exclude) }
+        filterParams.value = filterParams.value.copy(excludeOutOfStock = exclude)
     }
-
-    fun updatePriceRange(price: ClosedFloatingPointRange<Float>) {
-        _filterParams.update { it.copy(priceRange = price) }
-    }
-
     fun updateSort(sortBy: String, sortOrder: String) {
-        _filterParams.update { it.copy(sortBy = sortBy, sortOrder = sortOrder) }
+        filterParams.value = filterParams.value.copy(sortBy = sortBy, sortOrder = sortOrder)
     }
-
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val products: Flow<PagingData<ApiProduct>> =
-        _filterParams
-            .flatMapLatest { (category, exclude, price, sortBy, sortOrder) ->
-                Pager(
-                    config = PagingConfig(pageSize = 10, enablePlaceholders = true),
-                    pagingSourceFactory = {
-                        ProductPagingSource(
-                            apiService = RetrofitInstance.api,
-                            category = if (category == "All products") null else category,
-                            excludeOutOfStock = exclude,
-                            minPrice = price.start.toInt(),
-                            maxPrice = price.endInclusive.toInt(),
-                            sortBy = sortBy,
-                            sortOrder = sortOrder
-                        )
-                    }
-                ).flow
-            }.cachedIn(viewModelScope)
+    private fun fetchCategories() {
+        viewModelScope.launch {
+            try {
+                val response = RetrofitInstance.api.getCategories()
+                _categories.value = response.data
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
+    }
 }
