@@ -18,9 +18,16 @@ class ProductDetailViewModel : ViewModel() {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _productNotFound = MutableStateFlow(false)
+    val productNotFound: StateFlow<Boolean> = _productNotFound.asStateFlow()
+
     fun getProductById(productId: Long) {
         viewModelScope.launch {
-            _product.value = RetrofitInstance.api.getProductById(productId).data
+            try {
+                _product.value = RetrofitInstance.api.getProductById(productId).data
+            } catch (e: Exception) {
+                _productNotFound.value = true
+            }
         }
     }
 
@@ -36,6 +43,12 @@ class ProductDetailViewModel : ViewModel() {
             } finally {
                 _isLoading.value = false
             }
+        }
+    }
+
+    fun deleteProduct(productId: Long) {
+        viewModelScope.launch {
+            RetrofitInstance.api.deleteProduct(productId)
         }
     }
 }

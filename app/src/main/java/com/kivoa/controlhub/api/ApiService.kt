@@ -69,6 +69,9 @@ interface ApiService {
         @Body request: UpdateProductStockRequest
     ): UpdateProductStockApiResponse
 
+    @DELETE("api/products/{product_id}")
+    suspend fun deleteProduct(@Path("product_id") productId: Long): Unit
+
     @GET("api/categories")
     suspend fun getCategories(): CategoriesApiResponse
 

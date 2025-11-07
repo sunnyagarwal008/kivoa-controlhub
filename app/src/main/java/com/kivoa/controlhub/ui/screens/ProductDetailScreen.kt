@@ -12,15 +12,18 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ZoomIn
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -53,8 +56,11 @@ fun ProductDetailScreen(
     productDetailViewModel: ProductDetailViewModel = viewModel()
 ) {
     var showZoomedImage by remember { mutableStateOf(false) }
+    var showDeleteConfirmationDialog by remember { mutableStateOf(false) }
     val product by productDetailViewModel.product.collectAsState()
     val isLoading by productDetailViewModel.isLoading.collectAsState()
+    val productNotFound by productDetailViewModel.productNotFound.collectAsState()
+
     val shouldRefreshState = navController.currentBackStackEntry
         ?.savedStateHandle
         ?.getLiveData<Boolean>("refresh")
@@ -92,11 +98,38 @@ fun ProductDetailScreen(
                         IconButton(onClick = { shareViewModel.shareProduct(it) }) {
                             Icon(Icons.Default.Share, contentDescription = "Share")
                         }
+                        IconButton(onClick = { showDeleteConfirmationDialog = true }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete")
+                        }
                     }
                 )
             )
         }
     }
+    if (showDeleteConfirmationDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmationDialog = false },
+            title = { Text("Delete Product") },
+            text = { Text("Are you sure you want to delete this product?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        productDetailViewModel.deleteProduct(productId)
+                        navController.navigateUp()
+                        showDeleteConfirmationDialog = false
+                    }
+                ) {
+                    Text("Confirm")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmationDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
 
     if (showZoomedImage) {
         Dialog(onDismissRequest = { showZoomedImage = false }) {
@@ -114,7 +147,11 @@ fun ProductDetailScreen(
         }
     }
 
-    if (product == null) {
+    if (productNotFound) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("Product Not Found")
+        }
+    } else if (product == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
