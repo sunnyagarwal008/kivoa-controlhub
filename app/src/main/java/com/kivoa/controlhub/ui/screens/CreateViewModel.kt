@@ -189,6 +189,23 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    fun deleteProducts(productIds: List<Long>) {
+        viewModelScope.launch {
+            _inReviewProductsLoading.value = true
+            try {
+                productIds.forEach { productId ->
+                    productApiRepository.deleteProduct(productId)
+                }
+                fetchInReviewProducts()
+                clearSelectedInReviewProductIds()
+            } catch (e: Exception) {
+                Log.e(TAG, "Error deleting products: ${e.message}", e)
+            } finally {
+                _inReviewProductsLoading.value = false
+            }
+        }
+    }
+
     private fun fetchCategories() {
         viewModelScope.launch {
             try {

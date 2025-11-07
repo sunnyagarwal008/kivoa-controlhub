@@ -37,4 +37,8 @@ class ProductApiRepository(private val apiService: ApiService) {
         val response = apiService.updateProductStatus(productId, request)
         return response.success
     }
+
+    suspend fun deleteProduct(productId: Long) {
+        apiService.deleteProduct(productId)
+    }
 }

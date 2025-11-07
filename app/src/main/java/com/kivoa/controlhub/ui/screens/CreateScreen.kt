@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -31,11 +32,6 @@ import com.kivoa.controlhub.AppBarState
 import com.kivoa.controlhub.AppBarViewModel
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
-import com.kivoa.controlhub.ui.screens.PendingProductsTab
-import com.kivoa.controlhub.ui.screens.InProgressProductsTab
-import com.kivoa.controlhub.ui.screens.InReviewProductsTab
-import com.kivoa.controlhub.ui.screens.FullScreenImageDialog
-import com.kivoa.controlhub.ui.screens.CreateProductFormsDialog
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -43,7 +39,7 @@ fun CreateScreen(
     createViewModel: CreateViewModel = viewModel(),
     appBarViewModel: AppBarViewModel
 ) {
-    var tabIndex by remember { mutableStateOf(0) }
+    var tabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("Pending", "In Progress", "In Review")
 
     val rawProducts by createViewModel.rawProducts.collectAsState()
@@ -93,7 +89,7 @@ fun CreateScreen(
                             }
                         },
                         actions = {
-                            IconButton(onClick = { 
+                            IconButton(onClick = {
                                 createViewModel.deleteRawProducts(selectedProductUris.toList())
                                 selectedProductUris = persistentListOf()
                             }) {
@@ -118,10 +114,15 @@ fun CreateScreen(
                             }
                         },
                         actions = {
-                            IconButton(onClick = { 
+                            IconButton(onClick = {
                                 createViewModel.updateProductsStatus(selectedInReviewProductIds.toList(), "live")
                             }) {
                                 Icon(Icons.Default.Check, "Mark as Live")
+                            }
+                            IconButton(onClick = {
+                                createViewModel.deleteProducts(selectedInReviewProductIds.toList())
+                            }) {
+                                Icon(Icons.Default.Delete, "Delete Products")
                             }
                         }
                     )
