@@ -27,9 +27,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.kivoa.controlhub.AppBarState
 import com.kivoa.controlhub.AppBarViewModel
+import com.kivoa.controlhub.Screen
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
 
@@ -37,7 +40,8 @@ import kotlinx.collections.immutable.persistentListOf
 @Composable
 fun CreateScreen(
     createViewModel: CreateViewModel = viewModel(),
-    appBarViewModel: AppBarViewModel
+    appBarViewModel: AppBarViewModel,
+    navController: NavController
 ) {
     var tabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("Pending", "In Progress", "In Review")
@@ -174,7 +178,7 @@ fun CreateScreen(
                     inProgressProducts = inProgressProducts,
                     isLoading = inProgressProductsLoading,
                     onProductClick = { product ->
-                        selectedImageUri = Uri.parse(product.images.firstOrNull()?.imageUrl ?: product.rawImage)
+                        selectedImageUri = (product.images.firstOrNull()?.imageUrl ?: product.rawImage).toUri()
                         showFullScreenImageDialog = true
                     }
                 )
@@ -185,8 +189,7 @@ fun CreateScreen(
                     inReviewProducts = inReviewProducts,
                     isLoading = inReviewProductsLoading,
                     onProductClick = { product ->
-                        selectedImageUri = Uri.parse(product.images.firstOrNull()?.imageUrl ?: product.rawImage)
-                        showFullScreenImageDialog = true
+                        navController.navigate(Screen.EditProduct.route + "/${product.id}")
                     },
                     selectedProductIds = selectedInReviewProductIds,
                     onProductLongPress = { productId, isSelected ->
@@ -206,7 +209,7 @@ fun CreateScreen(
 
     if (showCreateProductFormsDialog) {
         val selectedRawProducts = rawProducts.filter { product ->
-            selectedProductUris.contains(Uri.parse(product.imageUri))
+            selectedProductUris.contains(product.imageUri.toUri())
         }
         CreateProductFormsDialog(
             selectedRawProducts = selectedRawProducts,

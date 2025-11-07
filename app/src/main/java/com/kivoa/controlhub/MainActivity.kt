@@ -84,7 +84,6 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentDestination = navBackStackEntry?.destination
-                val currentScreen = Screen.fromRoute(currentDestination?.route)
 
                 val context = LocalContext.current
                 val application = context.applicationContext as Application
@@ -134,7 +133,7 @@ class MainActivity : ComponentActivity() {
                     ) {
                         composable(Screen.Search.route) { HomeScreen(modifier = Modifier.fillMaxSize(), navController = navController, appBarViewModel = appBarViewModel) }
                         composable(Screen.Browse.route) { BrowseScreen(navController = navController, browseViewModel = browseViewModel, appBarViewModel = appBarViewModel) }
-                        composable(Screen.Create.route) { CreateScreen(appBarViewModel = appBarViewModel) }
+                        composable(Screen.Create.route) { CreateScreen(appBarViewModel = appBarViewModel, navController = navController) }
                         composable(Screen.Settings.route) { SettingsScreen(navController = navController, appBarViewModel = appBarViewModel) }
                         composable(Screen.SettingsCategories.route) { CategoriesScreen(navController = navController, appBarViewModel = appBarViewModel) }
                         composable(Screen.CreateCategory.route) {
@@ -200,23 +199,4 @@ sealed class Screen(val route: String, val icon: ImageVector? = null) {
     object CreateCategory : Screen("CreateCategory")
     object CategoryDetail : Screen("CategoryDetail")
     object EditCategory : Screen("EditCategory") // Added EditCategory object
-
-
-    companion object {
-        fun fromRoute(route: String?): Screen {
-            return when (route?.substringBefore("/")) {
-                Search.route -> Search
-                Browse.route -> Browse
-                Create.route -> Create
-                ProductDetail.route -> ProductDetail
-                EditProduct.route -> EditProduct
-                Settings.route -> Settings
-                SettingsCategories.route.substringBefore("/") -> SettingsCategories
-                CreateCategory.route -> CreateCategory
-                CategoryDetail.route -> CategoryDetail
-                EditCategory.route -> EditCategory // Added EditCategory route
-                else -> Search
-            }
-        }
-    }
 }
