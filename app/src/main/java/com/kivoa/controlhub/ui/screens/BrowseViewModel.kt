@@ -38,6 +38,11 @@ class BrowseViewModel : ViewModel() {
     private val _categories = MutableStateFlow<List<ApiCategory>>(emptyList())
     val categories: StateFlow<List<ApiCategory>> = _categories.asStateFlow()
 
+    private val _pdfCatalogUrl = MutableStateFlow<String?>(null)
+    val pdfCatalogUrl: StateFlow<String?> = _pdfCatalogUrl.asStateFlow()
+
+    var generatingPdf by mutableStateOf(false)
+
     init {
         fetchCategories()
     }
@@ -85,6 +90,35 @@ class BrowseViewModel : ViewModel() {
     fun updateSort(sortBy: String, sortOrder: String) {
         filterParams.value = filterParams.value.copy(sortBy = sortBy, sortOrder = sortOrder)
     }
+
+    fun generatePdfCatalog() {
+        viewModelScope.launch {
+            generatingPdf = true
+            try {
+                val params = filterParams.value
+                val response = RetrofitInstance.api.generatePdfCatalog(
+                    category = if (params.selectedCategory == "All products") null else params.selectedCategory,
+                    excludeOutOfStock = params.excludeOutOfStock,
+                    minPrice = params.priceRange.start.toInt(),
+                    maxPrice = params.priceRange.endInclusive.toInt(),
+                    sortBy = params.sortBy,
+                    sortOrder = params.sortOrder
+                )
+                if (response.success) {
+                    _pdfCatalogUrl.value = response.data.catalogUrl
+                }
+            } catch (e: Exception) {
+                // Handle error
+            } finally {
+                generatingPdf = false
+            }
+        }
+    }
+
+    fun onPdfShared() {
+        _pdfCatalogUrl.value = null
+    }
+
     private fun fetchCategories() {
         viewModelScope.launch {
             try {

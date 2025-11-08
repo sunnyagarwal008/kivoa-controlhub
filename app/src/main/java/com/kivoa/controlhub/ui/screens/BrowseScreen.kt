@@ -1,6 +1,14 @@
 package com.kivoa.controlhub.ui.screens
 
 import android.app.Application
+import android.app.DownloadManager
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.net.Uri
+import android.os.Build
+import android.os.Environment
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,6 +33,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -39,6 +48,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -57,6 +67,8 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.paging.LoadState
@@ -68,6 +80,11 @@ import com.kivoa.controlhub.Screen
 import com.kivoa.controlhub.ShimmerEffect
 import com.kivoa.controlhub.api.RetrofitInstance
 import com.kivoa.controlhub.data.ApiProduct
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -90,6 +107,7 @@ fun BrowseScreen(
     val categories by browseViewModel.categories.collectAsState()
     val filterParams by browseViewModel.filterParams.collectAsState()
     var sortExpanded by remember { mutableStateOf(false) }
+    val pdfCatalogUrl by browseViewModel.pdfCatalogUrl.collectAsState()
 
 
     LaunchedEffect(browseViewModel.selectionMode, browseViewModel.selectedProducts.size) {
@@ -121,6 +139,9 @@ fun BrowseScreen(
                             Icon(Icons.Default.Share, contentDescription = "Share")
                         }
                     } else {
+                        IconButton(onClick = { browseViewModel.generatePdfCatalog() }) {
+                            Icon(Icons.Default.PictureAsPdf, contentDescription = "Generate PDF Catalog")
+                        }
                         Box {
                             IconButton(onClick = { sortExpanded = true }) {
                                 Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "Sort products")
@@ -178,6 +199,77 @@ fun BrowseScreen(
             )
         )
     }
+
+    if (browseViewModel.generatingPdf) {
+        Dialog(onDismissRequest = {}) {
+            Surface(shape = RoundedCornerShape(16.dp), color = Color.White) {
+                Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Generating PDF catalog...")
+                    CircularProgressIndicator()
+                }
+            }
+        }
+    }
+
+    DisposableEffect(pdfCatalogUrl) {
+        val receiver = if (pdfCatalogUrl != null) {
+            object : BroadcastReceiver() {
+                override fun onReceive(context: Context, intent: Intent) {
+                    val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
+                    val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+                    val query = DownloadManager.Query().setFilterById(id)
+                    val cursor = downloadManager.query(query)
+                    if (cursor.moveToFirst()) {
+                        val columnIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
+                        if (columnIndex >= 0 && cursor.getInt(columnIndex) == DownloadManager.STATUS_SUCCESSFUL) {
+                            val uriIndex = cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI)
+                            if (uriIndex >= 0) {
+                                val uriString = cursor.getString(uriIndex)
+                                val downloadedFileUri = Uri.parse(uriString)
+                                val file = File(downloadedFileUri.path!!)
+                                val fileUri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+                                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "application/pdf"
+                                    putExtra(Intent.EXTRA_STREAM, fileUri)
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                context.startActivity(Intent.createChooser(shareIntent, "Share Catalog"))
+                                browseViewModel.onPdfShared()
+                            }
+                        }
+                    }
+                    cursor.close()
+                }
+            }
+        } else {
+            null
+        }
+
+        if (receiver != null) {
+            val url = pdfCatalogUrl ?: ""
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val fileName = "Product Catalog-${dateFormat.format(Date())}.pdf"
+
+            val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            val request = DownloadManager.Request(url.toUri())
+                .setTitle("Product Catalog")
+                .setDescription("Downloading")
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+            downloadManager.enqueue(request)
+            ContextCompat.registerReceiver(
+                context,
+                receiver,
+                IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
+                ContextCompat.RECEIVER_NOT_EXPORTED
+            )
+        }
+
+        onDispose {
+            receiver?.let { context.unregisterReceiver(it) }
+        }
+    }
+
 
     if (browseViewModel.showPriceFilterDialog) {
         PriceFilterDialog(viewModel = browseViewModel, currentPriceRange = filterParams.priceRange)

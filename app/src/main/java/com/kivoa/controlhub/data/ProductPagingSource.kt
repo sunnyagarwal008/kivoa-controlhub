@@ -16,7 +16,7 @@ class ProductPagingSource(
 ) : PagingSource<Int, ApiProduct>() {
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, ApiProduct> {
-        val page = params.key ?: 0
+        val page = params.key ?: 1
         return try {
             val response = apiService.getProducts(
                 category = category,
@@ -30,7 +30,7 @@ class ProductPagingSource(
             val products = response.data
             LoadResult.Page(
                 data = products,
-                prevKey = if (page == 0) null else page - 1,
+                prevKey = if (page == 1) null else page - 1,
                 nextKey = if (response.pagination.pages > page) page + 1 else null
             )
         } catch (e: Exception) {
