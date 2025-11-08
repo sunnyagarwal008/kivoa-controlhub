@@ -19,5 +19,6 @@ data class BulkCreateRawImagesResponse(
 )
 
 data class RawImagesData(
+    @Json(name = "raw_images")
     val rawImages: List<ApiRawImage>
 )
