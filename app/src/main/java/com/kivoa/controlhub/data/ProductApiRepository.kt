@@ -6,6 +6,11 @@ import com.kivoa.controlhub.ui.screens.ProductFormState
 
 class ProductApiRepository(private val apiService: ApiService) {
 
+    suspend fun bulkCreateRawImages(rawImages: List<RawImageRequest>): BulkCreateRawImagesResponse {
+        val request = BulkCreateRawImagesRequest(rawImages = rawImages)
+        return apiService.bulkCreateRawImages(request)
+    }
+
     suspend fun createBulkProducts(productFormStates: List<ProductFormState>): Boolean {
         val productDetails = productFormStates.map { formState ->
             ProductDetailRequest(

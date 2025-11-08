@@ -8,27 +8,23 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.kivoa.controlhub.api.RetrofitInstance
 import com.kivoa.controlhub.data.ApiCategory
-import com.kivoa.controlhub.data.AppDatabase
-import com.kivoa.controlhub.data.RawProduct
-import com.kivoa.controlhub.data.RawProductRepository
 import com.kivoa.controlhub.data.ApiProduct
 import com.kivoa.controlhub.data.ProductApiRepository
+import com.kivoa.controlhub.data.RawImageRequest
+import com.kivoa.controlhub.data.RawProduct
 import com.kivoa.controlhub.utils.S3ImageUploader
 import com.google.gson.Gson
-import kotlinx.coroutines.Dispatchers
+import kotlinx.collections.immutable.PersistentList
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.collections.immutable.PersistentList
-import kotlinx.collections.immutable.persistentListOf
 import okhttp3.OkHttpClient
 
 
 class CreateViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val rawProductRepository: RawProductRepository
     private val s3ImageUploader: S3ImageUploader
     private val productApiRepository: ProductApiRepository
 
@@ -53,43 +49,47 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
     private val _inProgressProductsLoading = MutableStateFlow(false)
     val inProgressProductsLoading: StateFlow<Boolean> = _inProgressProductsLoading.asStateFlow()
 
-    private val _selectedInReviewProductIds = MutableStateFlow<PersistentList<Long>>(persistentListOf())
-    val selectedInReviewProductIds: StateFlow<PersistentList<Long>> = _selectedInReviewProductIds.asStateFlow()
+    private val _selectedInReviewProductIds =
+        MutableStateFlow<PersistentList<Long>>(persistentListOf())
+    val selectedInReviewProductIds: StateFlow<PersistentList<Long>> =
+        _selectedInReviewProductIds.asStateFlow()
 
     private val _categories = MutableStateFlow<List<ApiCategory>>(emptyList())
     val categories: StateFlow<List<ApiCategory>> = _categories.asStateFlow()
 
 
     init {
-        val database = AppDatabase.getDatabase(application)
-        val rawProductDao = database.rawProductDao()
-        rawProductRepository = RawProductRepository(rawProductDao)
-
         val apiService = RetrofitInstance.api
         val okHttpClient = OkHttpClient()
         val gson = Gson()
         s3ImageUploader = S3ImageUploader(apiService, okHttpClient, gson)
         productApiRepository = ProductApiRepository(apiService)
 
-        viewModelScope.launch {
-            rawProductRepository.getAllRawProducts().collect {
-                _rawProducts.value = it
-            }
-        }
         fetchCategories()
     }
 
     fun onImagesSelected(imageUris: List<Uri>, context: Context) {
         viewModelScope.launch {
             _isLoading.value = true
-            imageUris.forEach { uri ->
-                val s3FileUrl = s3ImageUploader.uploadImageToS3(uri, context)
-                if (s3FileUrl != null) {
-                    val rawProduct = RawProduct(imageUri = s3FileUrl)
-                    rawProductRepository.insert(rawProduct)
-                }
+            val imageUrls = imageUris.mapNotNull { uri ->
+                s3ImageUploader.uploadImageToS3(uri, context)
             }
-            _isLoading.value = false
+            val rawImageRequests = imageUrls.map { RawImageRequest(imageUrl = it) }
+            try {
+                val response = productApiRepository.bulkCreateRawImages(rawImageRequests)
+                if (response.success) {
+                    val newRawProducts = response.data.rawImages.map {
+                        RawProduct(imageUri = it.imageUrl)
+                    }
+                    _rawProducts.value = _rawProducts.value + newRawProducts
+                } else {
+                    Log.e(TAG, "Bulk raw image creation failed: ${response.message}")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error creating raw images: ${e.message}", e)
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 
@@ -102,10 +102,7 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
                     Log.d(TAG, "Bulk product creation successful")
                     _bulkProductCreationSuccess.value = true
                     productFormStates.forEach { formState ->
-                        val rawProductToRemove = _rawProducts.value.find { it.imageUri == formState.rawImage }
-                        if (rawProductToRemove != null) {
-                            rawProductRepository.delete(listOf(rawProductToRemove))
-                        }
+                        _rawProducts.value = _rawProducts.value.filter { it.imageUri != formState.rawImage }
                     }
                 } else {
                     Log.e(TAG, "Bulk product creation failed")
@@ -121,10 +118,9 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun deleteRawProducts(urisToDelete: List<Uri>) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             val imageUriStrings = urisToDelete.map { it.toString() }
-            val rawProductsToDelete = rawProductRepository.findRawProductsByImageUris(imageUriStrings)
-            rawProductRepository.delete(rawProductsToDelete)
+            _rawProducts.value = _rawProducts.value.filter { !imageUriStrings.contains(it.imageUri) }
         }
     }
 
@@ -136,7 +132,11 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             _inReviewProductsLoading.value = true
             try {
-                _inReviewProducts.value = productApiRepository.getProducts(page = page, perPage = perPage, status = "pending_review")
+                _inReviewProducts.value = productApiRepository.getProducts(
+                    page = page,
+                    perPage = perPage,
+                    status = "pending_review"
+                )
                 Log.d(TAG, "Fetched ${_inReviewProducts.value.size} in review products")
             } catch (e: Exception) {
                 Log.e(TAG, "Error fetching in review products: ${e.message}", e)
@@ -150,7 +150,11 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             _inProgressProductsLoading.value = true
             try {
-                _inProgressProducts.value = productApiRepository.getProducts(page = page, perPage = perPage, status = "pending")
+                _inProgressProducts.value = productApiRepository.getProducts(
+                    page = page,
+                    perPage = perPage,
+                    status = "pending"
+                )
                 Log.d(TAG, "Fetched ${_inProgressProducts.value.size} in progress products")
             } catch (e: Exception) {
                 Log.e(TAG, "Error fetching in progress products: ${e.message}", e)

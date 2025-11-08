@@ -1,6 +1,8 @@
 package com.kivoa.controlhub.api
 
 import com.kivoa.controlhub.data.ApiCategory
+import com.kivoa.controlhub.data.BulkCreateRawImagesRequest
+import com.kivoa.controlhub.data.BulkCreateRawImagesResponse
 import com.kivoa.controlhub.data.BulkProductRequest
 import com.kivoa.controlhub.data.CategoriesApiResponse
 import com.kivoa.controlhub.data.CreateCategoryRequest
@@ -26,6 +28,9 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ApiService {
+    @POST("api/raw-images/bulk")
+    suspend fun bulkCreateRawImages(@Body request: BulkCreateRawImagesRequest): BulkCreateRawImagesResponse
+    
     @GET("api/products/search")
     suspend fun searchS(@Query("sku") sku: String): SearchProductsResponse
 
