@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
 data class FilterParams(
     val selectedCategory: String = "All products",
     val priceRange: ClosedFloatingPointRange<Float> = 0f..5000f,
-    val excludeOutOfStock: Boolean = false,
+    val excludeOutOfStock: Boolean = true,
     val sortBy: String = "created_at",
     val sortOrder: String = "desc"
 )

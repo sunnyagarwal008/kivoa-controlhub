@@ -58,6 +58,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -333,7 +334,8 @@ fun BrowseScreen(
                 Text(text = "In stock", fontSize = 11.sp)
                 Switch(
                     checked = filterParams.excludeOutOfStock,
-                    onCheckedChange = { browseViewModel.updateExcludeOutOfStock(it) })
+                    onCheckedChange = { browseViewModel.updateExcludeOutOfStock(it) },
+                    modifier = Modifier.scale(0.8f))
             }
         }
 
