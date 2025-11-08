@@ -18,12 +18,10 @@ import com.kivoa.controlhub.utils.S3ImageUploader
 import com.google.gson.Gson
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 
@@ -33,12 +31,7 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
     private val s3ImageUploader: S3ImageUploader
     private val productApiRepository: ProductApiRepository
 
-    private val _refreshRawImages = MutableStateFlow(false)
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val rawProducts: Flow<PagingData<ApiRawImage>> = _refreshRawImages
-        .flatMapLatest { productApiRepository.getRawImages() }
-        .cachedIn(viewModelScope)
+    val rawProducts: Flow<PagingData<ApiRawImage>>
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -62,7 +55,7 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
         MutableStateFlow<PersistentList<Long>>(persistentListOf())
     val selectedInReviewProductIds: StateFlow<PersistentList<Long>> =
         _selectedInReviewProductIds.asStateFlow()
-        
+
     private val _selectedRawProductIds = MutableStateFlow<PersistentList<Long>>(persistentListOf())
     val selectedRawProductIds: StateFlow<PersistentList<Long>> = _selectedRawProductIds.asStateFlow()
 
@@ -76,6 +69,7 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
         val gson = Gson()
         s3ImageUploader = S3ImageUploader(apiService, okHttpClient, gson)
         productApiRepository = ProductApiRepository(apiService)
+        rawProducts = productApiRepository.rawImagesFlow.cachedIn(viewModelScope)
         fetchCategories()
     }
 
@@ -89,7 +83,7 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
             try {
                 val response = productApiRepository.bulkCreateRawImages(rawImageRequests)
                 if (response.success) {
-                    _refreshRawImages.value = !_refreshRawImages.value
+                    productApiRepository.invalidateRawImages()
                 } else {
                     Log.e(TAG, "Bulk raw image creation failed: ${response.message}")
                 }
@@ -109,7 +103,7 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
                 if (success) {
                     Log.d(TAG, "Bulk product creation successful")
                     _bulkProductCreationSuccess.value = true
-                    _refreshRawImages.value = !_refreshRawImages.value
+                    productApiRepository.invalidateRawImages()
                 } else {
                     Log.e(TAG, "Bulk product creation failed")
                     _bulkProductCreationSuccess.value = false
@@ -128,7 +122,7 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
             try {
                 val response = productApiRepository.bulkDeleteRawImages(_selectedRawProductIds.value)
                 if (response.success) {
-                    _refreshRawImages.value = !_refreshRawImages.value
+                    productApiRepository.invalidateRawImages()
                     _selectedRawProductIds.value = persistentListOf()
                 } else {
                     Log.e(TAG, "Bulk raw image deletion failed: ${response.message}")
@@ -138,7 +132,7 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
             }
         }
     }
-    
+
     fun updateSelectedRawProductIds(productId: Long, isSelected: Boolean) {
         _selectedRawProductIds.value = if (isSelected) {
             _selectedRawProductIds.value.add(productId)
@@ -146,7 +140,7 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
             _selectedRawProductIds.value.remove(productId)
         }
     }
-    
+
     fun clearSelectedRawProductIds() {
         _selectedRawProductIds.value = persistentListOf()
     }

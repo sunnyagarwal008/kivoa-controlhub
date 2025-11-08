@@ -3,6 +3,7 @@ package com.kivoa.controlhub.data
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import androidx.paging.PagingSource
 import com.kivoa.controlhub.api.ApiService
 import com.kivoa.controlhub.ui.screens.ProductFormState
 import kotlinx.coroutines.flow.Flow
@@ -10,19 +11,22 @@ import kotlinx.coroutines.flow.Flow
 
 class ProductApiRepository(private val apiService: ApiService) {
 
+    private var rawImagePagingSource: PagingSource<Int, ApiRawImage>? = null
+
+    val rawImagesFlow: Flow<PagingData<ApiRawImage>> = Pager(
+        config = PagingConfig(pageSize = 20, enablePlaceholders = false),
+        pagingSourceFactory = {
+            RawImagePagingSource(apiService).also { rawImagePagingSource = it }
+        }
+    ).flow
+
+    fun invalidateRawImages() {
+        rawImagePagingSource?.invalidate()
+    }
+
     suspend fun bulkCreateRawImages(rawImages: List<RawImageRequest>): BulkCreateRawImagesResponse {
         val request = BulkCreateRawImagesRequest(rawImages = rawImages)
         return apiService.bulkCreateRawImages(request)
-    }
-
-    fun getRawImages(): Flow<PagingData<ApiRawImage>> {
-        return Pager(
-            config = PagingConfig(
-                pageSize = 20,
-                enablePlaceholders = false
-            ),
-            pagingSourceFactory = { RawImagePagingSource(apiService) }
-        ).flow
     }
 
     suspend fun bulkDeleteRawImages(ids: List<Long>): BulkDeleteRawImagesResponse {
