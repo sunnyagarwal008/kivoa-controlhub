@@ -1,37 +1,27 @@
 package com.kivoa.controlhub.data
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
 
-@JsonClass(generateAdapter = true)
-data class RawImageRequest(
-    @Json(name = "image_url") val imageUrl: String
-)
-
-@JsonClass(generateAdapter = true)
-data class BulkCreateRawImagesRequest(
-    @Json(name = "raw_images") val rawImages: List<RawImageRequest>
-)
-
-@JsonClass(generateAdapter = true)
+@Entity(tableName = "raw_images")
 data class RawImage(
-    val id: Int,
-    @Json(name = "image_url") val imageUrl: String,
-    @Json(name = "created_at") val createdAt: String,
-    @Json(name = "updated_at") val updatedAt: String
+    @PrimaryKey(autoGenerate = true)
+    val id: Int = 0,
+    val imageUri: String,
+    val createdAt: Long = System.currentTimeMillis()
 )
 
-@JsonClass(generateAdapter = true)
-data class BulkCreateRawImagesResponseData(
-    val created: Int,
-    val total: Int,
-    val skipped: Int,
-    @Json(name = "raw_images") val rawImages: List<RawImage>
-)
-
-@JsonClass(generateAdapter = true)
-data class BulkCreateRawImagesResponse(
+data class RawImagesApiResponse(
     val success: Boolean,
-    val message: String,
-    val data: BulkCreateRawImagesResponseData
+    val data: List<ApiRawImage>,
+    val pagination: ProductsApiPagination
+)
+
+data class ApiRawImage(
+    val id: Long,
+    @Json(name = "image_url")
+    val imageUrl: String,
+    @Json(name = "created_at")
+    val createdAt: String
 )

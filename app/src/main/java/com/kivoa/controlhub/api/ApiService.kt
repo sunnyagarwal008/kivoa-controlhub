@@ -3,6 +3,8 @@ package com.kivoa.controlhub.api
 import com.kivoa.controlhub.data.ApiCategory
 import com.kivoa.controlhub.data.BulkCreateRawImagesRequest
 import com.kivoa.controlhub.data.BulkCreateRawImagesResponse
+import com.kivoa.controlhub.data.BulkDeleteRawImagesRequest
+import com.kivoa.controlhub.data.BulkDeleteRawImagesResponse
 import com.kivoa.controlhub.data.BulkProductRequest
 import com.kivoa.controlhub.data.CategoriesApiResponse
 import com.kivoa.controlhub.data.CreateCategoryRequest
@@ -12,6 +14,7 @@ import com.kivoa.controlhub.data.PresignedUrlRequest
 import com.kivoa.controlhub.data.PresignedUrlResponse
 import com.kivoa.controlhub.data.ProductDetailResponse
 import com.kivoa.controlhub.data.ProductsApiResponse
+import com.kivoa.controlhub.data.RawImagesApiResponse
 import com.kivoa.controlhub.data.SearchProductsResponse
 import com.kivoa.controlhub.data.UpdateCategoryRequest
 import com.kivoa.controlhub.data.UpdateProductApiResponse
@@ -22,6 +25,7 @@ import com.kivoa.controlhub.data.UpdateProductStockRequest
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.HTTP
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
@@ -30,7 +34,19 @@ import retrofit2.http.Query
 interface ApiService {
     @POST("api/raw-images/bulk")
     suspend fun bulkCreateRawImages(@Body request: BulkCreateRawImagesRequest): BulkCreateRawImagesResponse
-    
+
+    @GET("api/raw-images")
+    suspend fun getRawImages(
+        @Query("page") page: Int,
+        @Query("per_page") perPage: Int = 10,
+        @Query("sortBy") sortBy: String = "created_at",
+        @Query("sortOrder") sortOrder: String = "desc"
+    ): RawImagesApiResponse
+
+
+    @HTTP(method = "DELETE", path = "api/raw-images/bulk", hasBody = true)
+    suspend fun bulkDeleteRawImages(@Body request: BulkDeleteRawImagesRequest): BulkDeleteRawImagesResponse
+
     @GET("api/products/search")
     suspend fun searchS(@Query("sku") sku: String): SearchProductsResponse
 

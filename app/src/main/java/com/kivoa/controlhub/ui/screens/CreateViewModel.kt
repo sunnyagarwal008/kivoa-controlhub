@@ -6,19 +6,24 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import com.kivoa.controlhub.api.RetrofitInstance
 import com.kivoa.controlhub.data.ApiCategory
 import com.kivoa.controlhub.data.ApiProduct
+import com.kivoa.controlhub.data.ApiRawImage
 import com.kivoa.controlhub.data.ProductApiRepository
 import com.kivoa.controlhub.data.RawImageRequest
-import com.kivoa.controlhub.data.RawProduct
 import com.kivoa.controlhub.utils.S3ImageUploader
 import com.google.gson.Gson
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 
@@ -28,8 +33,12 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
     private val s3ImageUploader: S3ImageUploader
     private val productApiRepository: ProductApiRepository
 
-    private val _rawProducts = MutableStateFlow<List<RawProduct>>(emptyList())
-    val rawProducts: StateFlow<List<RawProduct>> = _rawProducts.asStateFlow()
+    private val _refreshRawImages = MutableStateFlow(false)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val rawProducts: Flow<PagingData<ApiRawImage>> = _refreshRawImages
+        .flatMapLatest { productApiRepository.getRawImages() }
+        .cachedIn(viewModelScope)
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -53,6 +62,9 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
         MutableStateFlow<PersistentList<Long>>(persistentListOf())
     val selectedInReviewProductIds: StateFlow<PersistentList<Long>> =
         _selectedInReviewProductIds.asStateFlow()
+        
+    private val _selectedRawProductIds = MutableStateFlow<PersistentList<Long>>(persistentListOf())
+    val selectedRawProductIds: StateFlow<PersistentList<Long>> = _selectedRawProductIds.asStateFlow()
 
     private val _categories = MutableStateFlow<List<ApiCategory>>(emptyList())
     val categories: StateFlow<List<ApiCategory>> = _categories.asStateFlow()
@@ -64,7 +76,6 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
         val gson = Gson()
         s3ImageUploader = S3ImageUploader(apiService, okHttpClient, gson)
         productApiRepository = ProductApiRepository(apiService)
-
         fetchCategories()
     }
 
@@ -78,10 +89,7 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
             try {
                 val response = productApiRepository.bulkCreateRawImages(rawImageRequests)
                 if (response.success) {
-                    val newRawProducts = response.data.rawImages.map {
-                        RawProduct(imageUri = it.imageUrl)
-                    }
-                    _rawProducts.value = _rawProducts.value + newRawProducts
+                    _refreshRawImages.value = !_refreshRawImages.value
                 } else {
                     Log.e(TAG, "Bulk raw image creation failed: ${response.message}")
                 }
@@ -101,9 +109,7 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
                 if (success) {
                     Log.d(TAG, "Bulk product creation successful")
                     _bulkProductCreationSuccess.value = true
-                    productFormStates.forEach { formState ->
-                        _rawProducts.value = _rawProducts.value.filter { it.imageUri != formState.rawImage }
-                    }
+                    _refreshRawImages.value = !_refreshRawImages.value
                 } else {
                     Log.e(TAG, "Bulk product creation failed")
                     _bulkProductCreationSuccess.value = false
@@ -117,11 +123,32 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun deleteRawProducts(urisToDelete: List<Uri>) {
+    fun deleteRawProducts() {
         viewModelScope.launch {
-            val imageUriStrings = urisToDelete.map { it.toString() }
-            _rawProducts.value = _rawProducts.value.filter { !imageUriStrings.contains(it.imageUri) }
+            try {
+                val response = productApiRepository.bulkDeleteRawImages(_selectedRawProductIds.value)
+                if (response.success) {
+                    _refreshRawImages.value = !_refreshRawImages.value
+                    _selectedRawProductIds.value = persistentListOf()
+                } else {
+                    Log.e(TAG, "Bulk raw image deletion failed: ${response.message}")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error deleting raw images: ${e.message}", e)
+            }
         }
+    }
+    
+    fun updateSelectedRawProductIds(productId: Long, isSelected: Boolean) {
+        _selectedRawProductIds.value = if (isSelected) {
+            _selectedRawProductIds.value.add(productId)
+        } else {
+            _selectedRawProductIds.value.remove(productId)
+        }
+    }
+    
+    fun clearSelectedRawProductIds() {
+        _selectedRawProductIds.value = persistentListOf()
     }
 
     fun resetBulkProductCreationSuccess() {

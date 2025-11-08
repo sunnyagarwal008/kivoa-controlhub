@@ -30,11 +30,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.kivoa.controlhub.AppBarState
 import com.kivoa.controlhub.AppBarViewModel
 import com.kivoa.controlhub.Screen
+import com.kivoa.controlhub.data.ApiRawImage
+import com.kivoa.controlhub.data.RawProduct
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.flow.StateFlow
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -46,7 +50,7 @@ fun CreateScreen(
     var tabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("Pending", "In Progress", "In Review")
 
-    val rawProducts by createViewModel.rawProducts.collectAsState()
+    val rawProducts = createViewModel.rawProducts.collectAsLazyPagingItems()
     val isLoading by createViewModel.isLoading.collectAsState()
     val bulkProductCreationSuccess by createViewModel.bulkProductCreationSuccess.collectAsState()
     val inReviewProducts by createViewModel.inReviewProducts.collectAsState()
@@ -54,6 +58,7 @@ fun CreateScreen(
     val inProgressProducts by createViewModel.inProgressProducts.collectAsState()
     val inProgressProductsLoading by createViewModel.inProgressProductsLoading.collectAsState()
     val selectedInReviewProductIds by createViewModel.selectedInReviewProductIds.collectAsState()
+    val selectedRawProductIds by createViewModel.selectedRawProductIds.collectAsState()
 
     val context = LocalContext.current
 
@@ -81,21 +86,20 @@ fun CreateScreen(
         }
     }
 
-    LaunchedEffect(selectedProductUris.isNotEmpty(), selectedInReviewProductIds.isNotEmpty(), tabIndex) {
+    LaunchedEffect(selectedRawProductIds.isNotEmpty(), selectedInReviewProductIds.isNotEmpty(), tabIndex) {
         val currentAppBarState = when (tabIndex) {
             0 -> {
-                if (selectedProductUris.isNotEmpty()) {
+                if (selectedRawProductIds.isNotEmpty()) {
                     AppBarState(
-                        title = { Text("Selected ${selectedProductUris.size} images") },
+                        title = { Text("Selected ${selectedRawProductIds.size} images") },
                         navigationIcon = {
-                            IconButton(onClick = { selectedProductUris = persistentListOf() }) {
+                            IconButton(onClick = { createViewModel.clearSelectedRawProductIds() }) {
                                 Icon(Icons.Default.Close, "Clear selection")
                             }
                         },
                         actions = {
                             IconButton(onClick = {
-                                createViewModel.deleteRawProducts(selectedProductUris.toList())
-                                selectedProductUris = persistentListOf()
+                                createViewModel.deleteRawProducts()
                             }) {
                                 Icon(Icons.Default.Delete, "Delete Products")
                             }
@@ -161,13 +165,9 @@ fun CreateScreen(
                         selectedImageUri = uri
                         showFullScreenImageDialog = true
                     },
-                    selectedProductUris = selectedProductUris,
-                    onProductLongPress = { uri, isSelected ->
-                        selectedProductUris = if (isSelected) {
-                            selectedProductUris.add(uri)
-                        } else {
-                            selectedProductUris.remove(uri)
-                        }
+                    selectedProductIds = selectedRawProductIds,
+                    onProductLongPress = { id, isSelected ->
+                        createViewModel.updateSelectedRawProductIds(id, isSelected)
                     },
                     imagePickerLauncher = imagePickerLauncher
                 )
@@ -215,9 +215,10 @@ fun CreateScreen(
     }
 
     if (showCreateProductFormsDialog) {
-        val selectedRawProducts = rawProducts.filter { product ->
-            selectedProductUris.contains(product.imageUri.toUri())
-        }
+        val selectedRawProducts = rawProducts.itemSnapshotList.items
+            .filter { product: ApiRawImage ->
+                selectedRawProductIds.contains(product.id)
+            }.map { RawProduct(imageUri = it.imageUrl) }
         CreateProductFormsDialog(
             selectedRawProducts = selectedRawProducts,
             onDismiss = { showCreateProductFormsDialog = false },

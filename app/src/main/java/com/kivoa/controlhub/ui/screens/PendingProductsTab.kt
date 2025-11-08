@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -31,18 +30,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
+import androidx.paging.compose.LazyPagingItems
 import coil.compose.rememberAsyncImagePainter
-import com.kivoa.controlhub.data.RawProduct
+import com.kivoa.controlhub.data.ApiRawImage
 import kotlinx.collections.immutable.PersistentList
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PendingProductsTab(
-    rawProducts: List<RawProduct>,
+    rawProducts: LazyPagingItems<ApiRawImage>,
     isLoading: Boolean,
     onImageClick: (Uri) -> Unit,
-    selectedProductUris: PersistentList<Uri>,
-    onProductLongPress: (Uri, Boolean) -> Unit,
+    selectedProductIds: PersistentList<Long>,
+    onProductLongPress: (Long, Boolean) -> Unit,
     imagePickerLauncher: ActivityResultLauncher<String>
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
@@ -51,7 +52,7 @@ fun PendingProductsTab(
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
                 Text("Uploading images...")
             }
-            if (rawProducts.isEmpty() && !isLoading) {
+            if (rawProducts.itemCount == 0 && !isLoading) {
                 Text("No pending products.", modifier = Modifier.padding(16.dp))
             }
             LazyVerticalGrid(
@@ -61,17 +62,19 @@ fun PendingProductsTab(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                items(rawProducts) { product ->
-                    val uri = Uri.parse(product.imageUri)
-                    val isSelected = selectedProductUris.contains(uri)
-                    PendingProductItem(
-                        product = product,
-                        onImageClick = onImageClick,
-                        isSelected = isSelected,
-                        onLongPress = {
-                            onProductLongPress(uri, !isSelected)
-                        }
-                    )
+                items(rawProducts.itemCount) { index ->
+                    val product = rawProducts[index]
+                    if (product != null) {
+                        val isSelected = selectedProductIds.contains(product.id)
+                        PendingProductItem(
+                            product = product,
+                            onImageClick = onImageClick,
+                            isSelected = isSelected,
+                            onLongPress = {
+                                onProductLongPress(product.id, !isSelected)
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -91,7 +94,7 @@ fun PendingProductsTab(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PendingProductItem(
-    product: RawProduct,
+    product: ApiRawImage,
     onImageClick: (Uri) -> Unit,
     isSelected: Boolean,
     onLongPress: () -> Unit
@@ -100,14 +103,14 @@ fun PendingProductItem(
         modifier = Modifier
             .fillMaxWidth()
             .combinedClickable(
-                onClick = { onImageClick(Uri.parse(product.imageUri)) },
+                onClick = { onImageClick(product.imageUrl.toUri()) },
                 onLongClick = onLongPress
             ),
         shape = RoundedCornerShape(8.dp)
     ) {
         Box {
             Image(
-                painter = rememberAsyncImagePainter(model = Uri.parse(product.imageUri)),
+                painter = rememberAsyncImagePainter(model = product.imageUrl.toUri()),
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxSize()
