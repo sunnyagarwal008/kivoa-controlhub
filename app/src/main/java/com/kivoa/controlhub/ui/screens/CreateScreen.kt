@@ -189,7 +189,14 @@ fun CreateScreen(
                     inReviewProducts = inReviewProducts,
                     isLoading = inReviewProductsLoading,
                     onProductClick = { product ->
-                        navController.navigate(Screen.EditProduct.route + "/${product.id}")
+                        if (selectedInReviewProductIds.isNotEmpty()) {
+                            createViewModel.updateSelectedInReviewProductIds(
+                                product.id,
+                                !selectedInReviewProductIds.contains(product.id)
+                            )
+                        } else {
+                            navController.navigate(Screen.EditProduct.route + "/${product.id}")
+                        }
                     },
                     selectedProductIds = selectedInReviewProductIds,
                     onProductLongPress = { productId, isSelected ->
