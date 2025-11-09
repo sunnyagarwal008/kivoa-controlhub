@@ -43,10 +43,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
+import com.google.accompanist.pager.ExperimentalPagerApi
+import com.google.accompanist.pager.HorizontalPager
+import com.google.accompanist.pager.HorizontalPagerIndicator
+import com.google.accompanist.pager.rememberPagerState
 import com.kivoa.controlhub.AppBarState
 import com.kivoa.controlhub.AppBarViewModel
 import com.kivoa.controlhub.ui.components.shimmer
 
+@OptIn(ExperimentalPagerApi::class)
 @Composable
 fun ProductDetailScreen(
     productId: Long,
@@ -60,6 +65,8 @@ fun ProductDetailScreen(
     val product by productDetailViewModel.product.collectAsState()
     val isLoading by productDetailViewModel.isLoading.collectAsState()
     val productNotFound by productDetailViewModel.productNotFound.collectAsState()
+    var currentImageIndex by remember { mutableStateOf(0) }
+
 
     val shouldRefreshState = navController.currentBackStackEntry
         ?.savedStateHandle
@@ -135,7 +142,7 @@ fun ProductDetailScreen(
         Dialog(onDismissRequest = { showZoomedImage = false }) {
             SubcomposeAsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data(product?.images?.first()?.imageUrl)
+                    .data(product?.images?.get(currentImageIndex)?.imageUrl)
                     .crossfade(true)
                     .build(),
                 contentDescription = "Product Image",
@@ -158,32 +165,54 @@ fun ProductDetailScreen(
     } else {
         product?.let {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f)
-                ) {
-                    SubcomposeAsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(it.images.first().imageUrl)
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = "Product Image",
-                        contentScale = ContentScale.Crop,
+                if (it.images.isNotEmpty()) {
+                    val pagerState = rememberPagerState()
+                    Box(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .clickable { showZoomedImage = true },
-                        loading = {
-                            Box(modifier = Modifier.fillMaxSize().shimmer())
+                            .fillMaxWidth()
+                            .aspectRatio(1f)
+                    ) {
+                        HorizontalPager(
+                            count = it.images.size,
+                            state = pagerState,
+                            modifier = Modifier.fillMaxSize()
+                        ) { page ->
+                            SubcomposeAsyncImage(
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(it.images[page].imageUrl)
+                                    .crossfade(true)
+                                    .build(),
+                                contentDescription = "Product Image",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clickable {
+                                        currentImageIndex = page
+                                        showZoomedImage = true
+                                    },
+                                loading = {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .shimmer()
+                                    )
+                                }
+                            )
                         }
-                    )
-                    Icon(
-                        imageVector = Icons.Filled.ZoomIn,
-                        contentDescription = "Zoom In",
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(16.dp)
-                    )
+                        Icon(
+                            imageVector = Icons.Filled.ZoomIn,
+                            contentDescription = "Zoom In",
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(16.dp)
+                        )
+                        HorizontalPagerIndicator(
+                            pagerState = pagerState,
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(16.dp),
+                        )
+                    }
                 }
                 Column(
                     modifier = Modifier
