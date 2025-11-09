@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
@@ -177,7 +178,7 @@ fun CategoryPromptsScreen(
                                         style = MaterialTheme.typography.titleSmall,
                                         modifier = Modifier.padding(16.dp)
                                     )
-                                }
+                                 }
                             }
                             items(prompts) { prompt ->
                                 ListItem(
@@ -213,6 +214,9 @@ class EditPromptViewModel(private val apiService: ApiService) : ViewModel() {
     private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Idle)
     val updateState: StateFlow<UpdateState> = _updateState
 
+    private val _deleteState = MutableStateFlow<DeleteState>(DeleteState.Idle)
+    val deleteState: StateFlow<DeleteState> = _deleteState
+
     fun updatePrompt(promptId: Long, request: UpdatePromptRequest) {
         viewModelScope.launch {
             _updateState.value = UpdateState.Loading
@@ -228,6 +232,22 @@ class EditPromptViewModel(private val apiService: ApiService) : ViewModel() {
             }
         }
     }
+
+    fun deletePrompt(promptId: Long) {
+        viewModelScope.launch {
+            _deleteState.value = DeleteState.Loading
+            try {
+                val response = apiService.deletePrompt(promptId)
+                if (response.success) {
+                    _deleteState.value = DeleteState.Success
+                } else {
+                    _deleteState.value = DeleteState.Error(response.message)
+                }
+            } catch (e: Exception) {
+                _deleteState.value = DeleteState.Error(e.message ?: "An unknown error occurred")
+            }
+        }
+    }
 }
 
 sealed class UpdateState {
@@ -235,6 +255,13 @@ sealed class UpdateState {
     object Loading : UpdateState()
     data class Success(val prompt: Prompt) : UpdateState()
     data class Error(val message: String) : UpdateState()
+}
+
+sealed class DeleteState {
+    object Idle : DeleteState()
+    object Loading : DeleteState()
+    object Success : DeleteState()
+    data class Error(val message: String) : DeleteState()
 }
 
 class EditPromptViewModelFactory(private val apiService: ApiService) : ViewModelProvider.Factory {
@@ -257,6 +284,7 @@ fun EditPromptScreen(
     val apiService = RetrofitInstance.api
     val viewModel: EditPromptViewModel = viewModel(factory = EditPromptViewModelFactory(apiService))
     val updateState by viewModel.updateState.collectAsState()
+    val deleteState by viewModel.deleteState.collectAsState()
 
     var text by remember { mutableStateOf(prompt.text) }
     var type by remember { mutableStateOf(prompt.type ?: "") }
@@ -270,6 +298,11 @@ fun EditPromptScreen(
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { viewModel.deletePrompt(prompt.id) }) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete")
                     }
                 }
             )
@@ -336,6 +369,21 @@ fun EditPromptScreen(
 
             is UpdateState.Error -> {
                 Text("Error: ${(updateState as UpdateState.Error).message}")
+            }
+
+            else -> {}
+        }
+
+        when (deleteState) {
+            is DeleteState.Loading -> CircularProgressIndicator()
+            is DeleteState.Success -> {
+                LaunchedEffect(Unit) {
+                    navController.popBackStack()
+                }
+            }
+
+            is DeleteState.Error -> {
+                Text("Error: ${(deleteState as DeleteState.Error).message}")
             }
 
             else -> {}

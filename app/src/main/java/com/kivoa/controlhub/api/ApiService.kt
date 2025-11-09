@@ -12,6 +12,7 @@ import com.kivoa.controlhub.data.CreateCategoryResponse
 import com.kivoa.controlhub.data.CreateProductsResponse
 import com.kivoa.controlhub.data.CreatePromptRequest
 import com.kivoa.controlhub.data.CreatePromptResponse
+import com.kivoa.controlhub.data.DeletePromptResponse
 import com.kivoa.controlhub.data.PdfCatalogResponse
 import com.kivoa.controlhub.data.PresignedUrlRequest
 import com.kivoa.controlhub.data.PresignedUrlResponse
@@ -148,4 +149,7 @@ interface ApiService {
         @Path("prompt_id") promptId: Long,
         @Body request: UpdatePromptRequest
     ): UpdatePromptResponse
+
+    @DELETE("api/prompts/{prompt_id}")
+    suspend fun deletePrompt(@Path("prompt_id") promptId: Long): DeletePromptResponse
 }
