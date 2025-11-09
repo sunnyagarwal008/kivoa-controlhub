@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -22,9 +23,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -36,14 +34,13 @@ import androidx.navigation.NavController
 import com.google.gson.Gson
 import com.kivoa.controlhub.AppBarState
 import com.kivoa.controlhub.AppBarViewModel
+import com.kivoa.controlhub.Screen
 import com.kivoa.controlhub.api.ApiService
 import com.kivoa.controlhub.api.RetrofitInstance
 import com.kivoa.controlhub.data.ApiCategory
-import com.kivoa.controlhub.data.CategoriesApiResponse
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import com.kivoa.controlhub.Screen
 
 class CategoriesViewModel(application: Application, private val apiService: ApiService) : ViewModel() {
     private val _categories = MutableStateFlow<List<ApiCategory>>(emptyList())
@@ -54,8 +51,6 @@ class CategoriesViewModel(application: Application, private val apiService: ApiS
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
-
-    // Removed init block call, as fetch will be triggered by LaunchedEffect
 
     fun fetchCategories() {
         viewModelScope.launch {
@@ -96,13 +91,13 @@ fun CategoriesScreen(navController: NavController, appBarViewModel: AppBarViewMo
     val isLoading by categoriesViewModel.isLoading.collectAsState()
     val error by categoriesViewModel.error.collectAsState()
 
-    LaunchedEffect(Unit) { // Use LaunchedEffect to update app bar state and fetch categories
+    LaunchedEffect(Unit) {
         appBarViewModel.setAppBarState(
             AppBarState(
                 title = { Text("Categories") }
             )
         )
-        categoriesViewModel.fetchCategories() // Fetch categories when the screen is active
+        categoriesViewModel.fetchCategories()
     }
 
     Scaffold(
@@ -135,7 +130,14 @@ fun CategoriesScreen(navController: NavController, appBarViewModel: AppBarViewMo
                                         navController.navigate(Screen.CategoryDetail.route + "/${categoryJson}")
                                     },
                                 headlineContent = { Text(category.name) },
-                                supportingContent = { Text("Prefix: ${category.prefix}, SKU Seq: ${category.skuSequenceNumber}, Tags: ${category.tags}") }
+                                supportingContent = {
+                                    Column {
+                                        Text("Prefix: ${category.prefix}, SKU Seq: ${category.skuSequenceNumber}, Tags: ${category.tags}")
+                                        Button(onClick = { navController.navigate(Screen.CategoryPrompts.withArgs(category.name)) }) {
+                                            Text("Prompts")
+                                        }
+                                    }
+                                }
                             )
                             Divider()
                         }

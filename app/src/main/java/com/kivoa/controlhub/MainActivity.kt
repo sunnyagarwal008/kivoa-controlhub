@@ -42,6 +42,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.google.gson.Gson
 import com.kivoa.controlhub.api.RetrofitInstance
+import com.kivoa.controlhub.data.Prompt
 import com.kivoa.controlhub.ui.screens.BrowseScreen
 import com.kivoa.controlhub.ui.screens.BrowseViewModel
 import com.kivoa.controlhub.ui.screens.CreateScreen
@@ -52,8 +53,12 @@ import com.kivoa.controlhub.ui.screens.ShareViewModel
 import com.kivoa.controlhub.ui.screens.ShareViewModelFactory
 import com.kivoa.controlhub.ui.screens.settings.CategoriesScreen // Added CategoriesScreen import
 import com.kivoa.controlhub.ui.screens.settings.CategoryDetailScreen
+import com.kivoa.controlhub.ui.screens.settings.CategoryPromptsScreen
+import com.kivoa.controlhub.ui.screens.settings.CategoryPromptsViewModel
+import com.kivoa.controlhub.ui.screens.settings.CategoryPromptsViewModelFactory
 import com.kivoa.controlhub.ui.screens.settings.CreateCategoryScreen // Added CreateCategoryScreen import
 import com.kivoa.controlhub.ui.screens.settings.EditCategoryScreen // Added EditCategoryScreen import
+import com.kivoa.controlhub.ui.screens.settings.EditPromptScreen
 import com.kivoa.controlhub.ui.screens.settings.SettingsScreen // Added SettingsScreen import
 import com.kivoa.controlhub.ui.theme.ControlHubTheme
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -171,6 +176,29 @@ class MainActivity : ComponentActivity() {
                                 EditCategoryScreen(navController = navController, appBarViewModel = appBarViewModel, category = category) { navController.popBackStack() } // Navigate back on success
                             }
                         }
+                        composable(
+                            route = Screen.CategoryPrompts.route,
+                            arguments = listOf(navArgument("categoryName") { type = NavType.StringType })
+                        ) {
+                            val categoryName = it.arguments?.getString("categoryName")
+                            val viewModel: CategoryPromptsViewModel = viewModel(factory = CategoryPromptsViewModelFactory(apiService))
+                            CategoryPromptsScreen(
+                                navController = navController,
+                                categoryName = categoryName!!,
+                                viewModel = viewModel
+                            )
+                        }
+                        composable(
+                            route = Screen.EditPrompt.route,
+                            arguments = listOf(navArgument("promptJson") { type = NavType.StringType })
+                        ) {
+                            val promptJson = it.arguments?.getString("promptJson")
+                            val prompt = Gson().fromJson(promptJson, Prompt::class.java)
+                            EditPromptScreen(
+                                navController = navController,
+                                prompt = prompt
+                            )
+                        }
                     }
                 }
             }
@@ -199,4 +227,14 @@ sealed class Screen(val route: String, val icon: ImageVector? = null) {
     object CreateCategory : Screen("CreateCategory")
     object CategoryDetail : Screen("CategoryDetail")
     object EditCategory : Screen("EditCategory") // Added EditCategory object
+    object CategoryPrompts : Screen("Settings/Categories/{categoryName}/Prompts")
+    object EditPrompt : Screen("Settings/Prompts/{promptJson}")
+
+    fun withArgs(vararg args: Any): String {
+        var finalRoute = route
+        args.forEach { arg ->
+            finalRoute = finalRoute.replaceFirst(Regex("\\{[^}]+\\}"), arg.toString())
+        }
+        return finalRoute
+    }
 }

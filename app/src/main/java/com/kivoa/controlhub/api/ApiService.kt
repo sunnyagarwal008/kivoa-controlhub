@@ -15,6 +15,7 @@ import com.kivoa.controlhub.data.PresignedUrlRequest
 import com.kivoa.controlhub.data.PresignedUrlResponse
 import com.kivoa.controlhub.data.ProductDetailResponse
 import com.kivoa.controlhub.data.ProductsApiResponse
+import com.kivoa.controlhub.data.PromptsApiResponse
 import com.kivoa.controlhub.data.RawImagesApiResponse
 import com.kivoa.controlhub.data.SearchProductsResponse
 import com.kivoa.controlhub.data.UpdateCategoryRequest
@@ -23,6 +24,8 @@ import com.kivoa.controlhub.data.UpdateProductRequest
 import com.kivoa.controlhub.data.UpdateProductStatusRequest
 import com.kivoa.controlhub.data.UpdateProductStockApiResponse
 import com.kivoa.controlhub.data.UpdateProductStockRequest
+import com.kivoa.controlhub.data.UpdatePromptRequest
+import com.kivoa.controlhub.data.UpdatePromptResponse
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -123,4 +126,21 @@ interface ApiService {
 
     @DELETE("api/categories/{category_id}")
     suspend fun deleteCategory(@Path("category_id") categoryId: String): Unit
+
+    @GET("api/prompts")
+    suspend fun getPrompts(
+        @Query("category") category: String? = null,
+        @Query("category_id") categoryId: Int? = null,
+        @Query("type") type: String? = null,
+        @Query("is_active") isActive: Boolean? = null,
+        @Query("tags") tags: String? = null,
+        @Query("sortBy") sortBy: String? = "created_at",
+        @Query("sortOrder") sortOrder: String? = "desc"
+    ): PromptsApiResponse
+
+    @PUT("api/prompts/{prompt_id}")
+    suspend fun updatePrompt(
+        @Path("prompt_id") promptId: Long,
+        @Body request: UpdatePromptRequest
+    ): UpdatePromptResponse
 }
