@@ -13,10 +13,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -144,50 +146,61 @@ fun CategoryPromptsScreen(
         )
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-    ) {
-        if (isLoading) {
-            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-        } else {
-            if (prompts.isEmpty()) {
-                Text("No prompts found for this category.", modifier = Modifier.align(Alignment.Center))
+    Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(onClick = {
+                navController.navigate(Screen.CreatePrompt.withArgs(categoryName))
+            }) {
+                Icon(Icons.Default.Add, contentDescription = "Create Prompt")
+            }
+        }
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else {
-                val groupedPrompts = prompts.groupBy { it.type ?: "Others" }
+                if (prompts.isEmpty()) {
+                    Text("No prompts found for this category.", modifier = Modifier.align(Alignment.Center))
+                } else {
+                    val groupedPrompts = prompts.groupBy { it.type ?: "Others" }
 
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    groupedPrompts.forEach { (type, prompts) ->
-                        stickyHeader {
-                            Surface(modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.surfaceVariant) {
-                                Text(
-                                    text = type,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    modifier = Modifier.padding(16.dp)
-                                )
-                            }
-                        }
-                        items(prompts) { prompt ->
-                            ListItem(
-                                headlineContent = {
+                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        groupedPrompts.forEach { (type, prompts) ->
+                            stickyHeader {
+                                Surface(modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.surfaceVariant) {
                                     Text(
-                                        text = prompt.text.take(100) + if (prompt.text.length > 100) "..." else "",
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                },
-                                modifier = Modifier.clickable {
-                                    val promptJson = Gson().toJson(prompt)
-                                    navController.navigate(Screen.EditPrompt.withArgs(promptJson))
-                                },
-                                trailingContent = {
-                                    Icon(
-                                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                        contentDescription = "Edit"
+                                        text = type,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        modifier = Modifier.padding(16.dp)
                                     )
                                 }
-                            )
-                            Divider()
+                            }
+                            items(prompts) { prompt ->
+                                ListItem(
+                                    headlineContent = {
+                                        Text(
+                                            text = prompt.text.take(100) + if (prompt.text.length > 100) "..." else "",
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    },
+                                    modifier = Modifier.clickable {
+                                        val promptJson = Gson().toJson(prompt)
+                                        navController.navigate(Screen.EditPrompt.withArgs(promptJson))
+                                    },
+                                    trailingContent = {
+                                        Icon(
+                                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                            contentDescription = "Edit"
+                                        )
+                                    }
+                                )
+                                Divider()
+                            }
                         }
                     }
                 }

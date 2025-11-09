@@ -57,6 +57,7 @@ import com.kivoa.controlhub.ui.screens.settings.CategoryPromptsScreen
 import com.kivoa.controlhub.ui.screens.settings.CategoryPromptsViewModel
 import com.kivoa.controlhub.ui.screens.settings.CategoryPromptsViewModelFactory
 import com.kivoa.controlhub.ui.screens.settings.CreateCategoryScreen // Added CreateCategoryScreen import
+import com.kivoa.controlhub.ui.screens.settings.CreatePromptScreen
 import com.kivoa.controlhub.ui.screens.settings.EditCategoryScreen // Added EditCategoryScreen import
 import com.kivoa.controlhub.ui.screens.settings.EditPromptScreen
 import com.kivoa.controlhub.ui.screens.settings.SettingsScreen // Added SettingsScreen import
@@ -201,6 +202,17 @@ class MainActivity : ComponentActivity() {
                                 appBarViewModel = appBarViewModel
                             )
                         }
+                        composable(
+                            route = Screen.CreatePrompt.route,
+                            arguments = listOf(navArgument("categoryName") { type = NavType.StringType })
+                        ) {
+                            val categoryName = it.arguments?.getString("categoryName")
+                            CreatePromptScreen(
+                                navController = navController,
+                                categoryName = categoryName!!,
+                                appBarViewModel = appBarViewModel
+                            )
+                        }
                     }
                 }
             }
@@ -231,6 +243,7 @@ sealed class Screen(val route: String, val icon: ImageVector? = null) {
     object EditCategory : Screen("EditCategory") // Added EditCategory object
     object CategoryPrompts : Screen("Settings/Categories/{categoryName}/Prompts")
     object EditPrompt : Screen("Settings/Prompts/{promptJson}")
+    object CreatePrompt : Screen("Settings/Categories/{categoryName}/CreatePrompt")
 
     fun withArgs(vararg args: Any): String {
         var finalRoute = route

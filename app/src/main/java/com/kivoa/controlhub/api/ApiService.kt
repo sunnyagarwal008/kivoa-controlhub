@@ -10,6 +10,8 @@ import com.kivoa.controlhub.data.CategoriesApiResponse
 import com.kivoa.controlhub.data.CreateCategoryRequest
 import com.kivoa.controlhub.data.CreateCategoryResponse
 import com.kivoa.controlhub.data.CreateProductsResponse
+import com.kivoa.controlhub.data.CreatePromptRequest
+import com.kivoa.controlhub.data.CreatePromptResponse
 import com.kivoa.controlhub.data.PdfCatalogResponse
 import com.kivoa.controlhub.data.PresignedUrlRequest
 import com.kivoa.controlhub.data.PresignedUrlResponse
@@ -137,6 +139,9 @@ interface ApiService {
         @Query("sortBy") sortBy: String? = "created_at",
         @Query("sortOrder") sortOrder: String? = "desc"
     ): PromptsApiResponse
+
+    @POST("api/prompts")
+    suspend fun createPrompt(@Body request: CreatePromptRequest): CreatePromptResponse
 
     @PUT("api/prompts/{prompt_id}")
     suspend fun updatePrompt(
