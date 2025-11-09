@@ -1,6 +1,7 @@
 package com.kivoa.controlhub.ui.screens.settings
 
 import android.util.Log
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,8 +20,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -32,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -62,7 +66,9 @@ fun SettingsScreen(navController: NavController, appBarViewModel: AppBarViewMode
         0 // Dummy value to satisfy remember block
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .padding(16.dp)) {
         ListItem(
             modifier = Modifier
                 .fillMaxWidth()
@@ -113,23 +119,21 @@ class CategoryPromptsViewModelFactory(private val apiService: ApiService) : View
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun CategoryPromptsScreen(
     navController: NavController,
     categoryName: String,
-    viewModel: CategoryPromptsViewModel
+    viewModel: CategoryPromptsViewModel,
+    appBarViewModel: AppBarViewModel
 ) {
     val prompts by viewModel.prompts.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
     LaunchedEffect(categoryName) {
         viewModel.getPrompts(categoryName)
-    }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
+        appBarViewModel.setAppBarState(
+            AppBarState(
                 title = { Text("Prompts for $categoryName") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
@@ -137,23 +141,41 @@ fun CategoryPromptsScreen(
                     }
                 }
             )
-        }
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        )
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
+        if (isLoading) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        } else {
+            if (prompts.isEmpty()) {
+                Text("No prompts found for this category.", modifier = Modifier.align(Alignment.Center))
             } else {
-                if (prompts.isEmpty()) {
-                    Text("No prompts found for this category.", modifier = Modifier.align(Alignment.Center))
-                } else {
-                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                val groupedPrompts = prompts.groupBy { it.type ?: "Others" }
+
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    groupedPrompts.forEach { (type, prompts) ->
+                        stickyHeader {
+                            Surface(modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.surfaceVariant) {
+                                Text(
+                                    text = type,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    modifier = Modifier.padding(16.dp)
+                                )
+                            }
+                        }
                         items(prompts) { prompt ->
                             ListItem(
-                                headlineContent = { Text(prompt.text) },
+                                headlineContent = {
+                                    Text(
+                                        text = prompt.text.take(100) + if (prompt.text.length > 100) "..." else "",
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                },
                                 modifier = Modifier.clickable {
                                     val promptJson = Gson().toJson(prompt)
                                     navController.navigate(Screen.EditPrompt.withArgs(promptJson))
@@ -217,6 +239,7 @@ class EditPromptViewModelFactory(private val apiService: ApiService) : ViewModel
 fun EditPromptScreen(
     navController: NavController,
     prompt: Prompt,
+    appBarViewModel: AppBarViewModel
 ) {
     val apiService = RetrofitInstance.api
     val viewModel: EditPromptViewModel = viewModel(factory = EditPromptViewModelFactory(apiService))
@@ -227,9 +250,9 @@ fun EditPromptScreen(
     var tags by remember { mutableStateOf(prompt.tags ?: "") }
     var isActive by remember { mutableStateOf(prompt.isActive) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
+    LaunchedEffect(Unit) {
+        appBarViewModel.setAppBarState(
+            AppBarState(
                 title = { Text("Edit Prompt") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
@@ -237,73 +260,72 @@ fun EditPromptScreen(
                     }
                 }
             )
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
+        )
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        OutlinedTextField(
+            value = text,
+            onValueChange = { text = it },
+            label = { Text("Prompt Text") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        OutlinedTextField(
+            value = type,
+            onValueChange = { type = it },
+            label = { Text("Type") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        OutlinedTextField(
+            value = tags,
+            onValueChange = { tags = it },
+            label = { Text("Tags") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        ListItem(
+            headlineContent = { Text("Active") },
+            trailingContent = {
+                androidx.compose.material3.Switch(
+                    checked = isActive,
+                    onCheckedChange = { isActive = it }
+                )
+            }
+        )
+        Button(
+            onClick = {
+                viewModel.updatePrompt(
+                    prompt.id,
+                    UpdatePromptRequest(
+                        text = text,
+                        type = type,
+                        tags = tags,
+                        isActive = isActive,
+                        category = null
+                    )
+                )
+            },
+            modifier = Modifier.fillMaxWidth()
         ) {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
-                label = { Text("Prompt Text") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            OutlinedTextField(
-                value = type,
-                onValueChange = { type = it },
-                label = { Text("Type") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            OutlinedTextField(
-                value = tags,
-                onValueChange = { tags = it },
-                label = { Text("Tags") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            ListItem(
-                headlineContent = { Text("Active") },
-                trailingContent = {
-                    androidx.compose.material3.Switch(
-                        checked = isActive,
-                        onCheckedChange = { isActive = it }
-                    )
+            Text("Update Prompt")
+        }
+
+        when (updateState) {
+            is UpdateState.Loading -> CircularProgressIndicator()
+            is UpdateState.Success -> {
+                LaunchedEffect(Unit) {
+                    navController.popBackStack()
                 }
-            )
-            Button(
-                onClick = {
-                    viewModel.updatePrompt(
-                        prompt.id,
-                        UpdatePromptRequest(
-                            text = text,
-                            type = type,
-                            tags = tags,
-                            isActive = isActive,
-                            category = null
-                        )
-                    )
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Update Prompt")
             }
 
-            when (updateState) {
-                is UpdateState.Loading -> CircularProgressIndicator()
-                is UpdateState.Success -> {
-                    LaunchedEffect(Unit) {
-                        navController.popBackStack()
-                    }
-                }
-
-                is UpdateState.Error -> {
-                    Text("Error: ${(updateState as UpdateState.Error).message}")
-                }
-
-                else -> {}
+            is UpdateState.Error -> {
+                Text("Error: ${(updateState as UpdateState.Error).message}")
             }
+
+            else -> {}
         }
     }
 }

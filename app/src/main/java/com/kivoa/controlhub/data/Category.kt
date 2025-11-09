@@ -67,7 +67,7 @@ data class UpdatePromptRequest(
     val category: String?,
     val type: String?,
     val tags: String?,
-    @SerializedName("is_active") val isActive: Boolean?
+    @Json(name = "is_active") val isActive: Boolean
 )
 
 data class UpdatePromptResponse(

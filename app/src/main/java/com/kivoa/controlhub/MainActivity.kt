@@ -185,7 +185,8 @@ class MainActivity : ComponentActivity() {
                             CategoryPromptsScreen(
                                 navController = navController,
                                 categoryName = categoryName!!,
-                                viewModel = viewModel
+                                viewModel = viewModel,
+                                appBarViewModel = appBarViewModel
                             )
                         }
                         composable(
@@ -196,7 +197,8 @@ class MainActivity : ComponentActivity() {
                             val prompt = Gson().fromJson(promptJson, Prompt::class.java)
                             EditPromptScreen(
                                 navController = navController,
-                                prompt = prompt
+                                prompt = prompt,
+                                appBarViewModel = appBarViewModel
                             )
                         }
                     }
