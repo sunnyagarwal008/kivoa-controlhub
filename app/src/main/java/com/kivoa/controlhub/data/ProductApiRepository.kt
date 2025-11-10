@@ -69,4 +69,17 @@ class ProductApiRepository(private val apiService: ApiService) {
     suspend fun deleteProduct(productId: Long) {
         apiService.deleteProduct(productId)
     }
+
+    suspend fun generateProductImage(
+        productId: Long,
+        promptType: String?,
+        promptText: String?
+    ): GenerateProductImageResponse {
+        val request = GenerateProductImageRequest(promptType, promptText)
+        return apiService.generateProductImage(productId, request)
+    }
+
+    suspend fun getPrompts(category: String?): PromptsApiResponse {
+        return apiService.getPrompts(category = category)
+    }
 }

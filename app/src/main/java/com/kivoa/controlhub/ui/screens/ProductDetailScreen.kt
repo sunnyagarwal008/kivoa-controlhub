@@ -1,17 +1,24 @@
 package com.kivoa.controlhub.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Share
@@ -22,15 +29,19 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,7 +60,9 @@ import com.google.accompanist.pager.HorizontalPagerIndicator
 import com.google.accompanist.pager.rememberPagerState
 import com.kivoa.controlhub.AppBarState
 import com.kivoa.controlhub.AppBarViewModel
+import com.kivoa.controlhub.data.Prompt
 import com.kivoa.controlhub.ui.components.shimmer
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
@@ -62,10 +75,20 @@ fun ProductDetailScreen(
 ) {
     var showZoomedImage by remember { mutableStateOf(false) }
     var showDeleteConfirmationDialog by remember { mutableStateOf(false) }
+    var showGenerateImageDialog by remember { mutableStateOf(false) }
     val product by productDetailViewModel.product.collectAsState()
     val isLoading by productDetailViewModel.isLoading.collectAsState()
     val productNotFound by productDetailViewModel.productNotFound.collectAsState()
-    var currentImageIndex by remember { mutableStateOf(0) }
+    var currentImageIndex by remember { mutableIntStateOf(0) }
+    val error by productDetailViewModel.error.collectAsState()
+    val context = LocalContext.current
+
+    LaunchedEffect(error) {
+        error?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            productDetailViewModel.clearError()
+        }
+    }
 
 
     val shouldRefreshState = navController.currentBackStackEntry
@@ -108,6 +131,9 @@ fun ProductDetailScreen(
                         IconButton(onClick = { showDeleteConfirmationDialog = true }) {
                             Icon(Icons.Default.Delete, contentDescription = "Delete")
                         }
+                        IconButton(onClick = { showGenerateImageDialog = true }) {
+                            Icon(Icons.Default.AddAPhoto, contentDescription = "Generate Image")
+                        }
                     }
                 )
             )
@@ -134,6 +160,14 @@ fun ProductDetailScreen(
                     Text("Cancel")
                 }
             }
+        )
+    }
+
+    if (showGenerateImageDialog) {
+        GenerateImageDialog(
+            productDetailViewModel = productDetailViewModel,
+            productId = productId,
+            onDismiss = { showGenerateImageDialog = false }
         )
     }
 
@@ -255,4 +289,95 @@ fun ProductDetailScreen(
             }
         }
     }
+}
+
+@Composable
+fun GenerateImageDialog(
+    productDetailViewModel: ProductDetailViewModel,
+    productId: Long,
+    onDismiss: () -> Unit
+) {
+    val prompts by productDetailViewModel.prompts.collectAsState()
+    var selectedPrompt by remember { mutableStateOf<Prompt?>(null) }
+    var customPrompt by remember { mutableStateOf("") }
+    val product by productDetailViewModel.product.collectAsState()
+    var isGenerating by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    LaunchedEffect(product) {
+        product?.category?.let { productDetailViewModel.getPrompts(it) }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Generate Image") },
+        text = {
+            Column {
+                if (isGenerating) {
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+                Text("Select a prompt type or enter a custom prompt.")
+                LazyColumn(modifier = Modifier.height(200.dp)) {
+                    items(prompts) { prompt ->
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .selectable(
+                                    selected = (selectedPrompt?.id == prompt.id),
+                                    onClick = { selectedPrompt = prompt }
+                                )
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = (selectedPrompt?.id == prompt.id),
+                                onClick = { selectedPrompt = prompt }
+                            )
+                            Text(
+                                text = prompt.type ?: "",
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.padding(start = 8.dp)
+                            )
+                        }
+                    }
+                }
+                TextField(
+                    value = customPrompt,
+                    onValueChange = { customPrompt = it },
+                    label = { Text("Custom Prompt") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    scope.launch {
+                        isGenerating = true
+                        val success = productDetailViewModel.generateProductImage(
+                            productId,
+                            selectedPrompt?.type,
+                            customPrompt.ifBlank { null }
+                        )
+                        if (success) {
+                            Toast.makeText(context, "Image generated successfully", Toast.LENGTH_SHORT).show()
+                            onDismiss()
+                        }
+                        isGenerating = false
+                    }
+                },
+                enabled = !isGenerating
+            ) {
+                Text("Generate")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }

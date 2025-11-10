@@ -13,6 +13,8 @@ import com.kivoa.controlhub.data.CreateProductsResponse
 import com.kivoa.controlhub.data.CreatePromptRequest
 import com.kivoa.controlhub.data.CreatePromptResponse
 import com.kivoa.controlhub.data.DeletePromptResponse
+import com.kivoa.controlhub.data.GenerateProductImageRequest
+import com.kivoa.controlhub.data.GenerateProductImageResponse
 import com.kivoa.controlhub.data.PdfCatalogResponse
 import com.kivoa.controlhub.data.PresignedUrlRequest
 import com.kivoa.controlhub.data.PresignedUrlResponse
@@ -96,6 +98,12 @@ interface ApiService {
         @Path("product_id") productId: Long,
         @Body request: UpdateProductRequest
     ): UpdateProductApiResponse
+    
+    @POST("api/products/{product_id}/generate-image")
+    suspend fun generateProductImage(
+        @Path("product_id") productId: Long,
+        @Body request: GenerateProductImageRequest
+    ): GenerateProductImageResponse
 
     @PUT("api/products/{product_id}/status")
     suspend fun updateProductStatus(
