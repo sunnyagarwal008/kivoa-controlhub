@@ -2,8 +2,8 @@ package com.kivoa.controlhub.ui.screens
 
 import android.net.Uri
 import androidx.activity.result.ActivityResultLauncher
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,7 +28,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.paging.compose.LazyPagingItems
@@ -66,9 +68,16 @@ fun PendingProductsTab(
                     val product = rawProducts[index]
                     if (product != null) {
                         val isSelected = selectedProductIds.contains(product.id)
+                        val selectionMode = selectedProductIds.isNotEmpty()
                         PendingProductItem(
                             product = product,
-                            onImageClick = onImageClick,
+                            onProductClick = {
+                                if (selectionMode) {
+                                    onProductLongPress(product.id, !isSelected)
+                                } else {
+                                    onImageClick(product.imageUrl.toUri())
+                                }
+                            },
                             isSelected = isSelected,
                             onLongPress = {
                                 onProductLongPress(product.id, !isSelected)
@@ -95,16 +104,20 @@ fun PendingProductsTab(
 @Composable
 fun PendingProductItem(
     product: ApiRawImage,
-    onImageClick: (Uri) -> Unit,
+    onProductClick: () -> Unit,
     isSelected: Boolean,
     onLongPress: () -> Unit
 ) {
+    val haptics = LocalHapticFeedback.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .combinedClickable(
-                onClick = { onImageClick(product.imageUrl.toUri()) },
-                onLongClick = onLongPress
+                onClick = onProductClick,
+                onLongClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onLongPress()
+                }
             ),
         shape = RoundedCornerShape(8.dp)
     ) {

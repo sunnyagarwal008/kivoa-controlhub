@@ -1,6 +1,5 @@
 package com.kivoa.controlhub.ui.screens
 
-import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,8 +24,8 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -52,7 +51,7 @@ data class ProductFormState(
     var discount: String = "",
     var gst: String = "",
     var purchaseMonth: String = "",
-    var category: String = "Ring", // Default category
+    var category: String = "", // Default category
     var priceCode: String = "",
     var isRawImage: Boolean = false,
     var boxNumber: String = "",
