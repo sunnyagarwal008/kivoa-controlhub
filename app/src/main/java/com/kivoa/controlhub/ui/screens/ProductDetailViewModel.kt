@@ -60,6 +60,17 @@ class ProductDetailViewModel : ViewModel() {
         }
     }
 
+    fun deleteProductImage(productId: Long, imageId: Long) {
+        viewModelScope.launch {
+            try {
+                RetrofitInstance.api.rejectProductImage(productId, imageId)
+                getProductById(productId)
+            } catch (e: Exception) {
+                _error.value = "Failed to delete image: ${e.message}"
+            }
+        }
+    }
+
     fun getPrompts(category: String) {
         viewModelScope.launch {
             try {

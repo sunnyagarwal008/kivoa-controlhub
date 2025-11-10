@@ -120,6 +120,12 @@ interface ApiService {
     @DELETE("api/products/{product_id}")
     suspend fun deleteProduct(@Path("product_id") productId: Long): Unit
 
+    @DELETE("api/products/{product_id}/images/{image_id}/reject")
+    suspend fun rejectProductImage(
+        @Path("product_id") productId: Long,
+        @Path("image_id") imageId: Long
+    ): Unit
+
     @GET("api/categories")
     suspend fun getCategories(): CategoriesApiResponse
 

@@ -70,6 +70,10 @@ class ProductApiRepository(private val apiService: ApiService) {
         apiService.deleteProduct(productId)
     }
 
+    suspend fun deleteProductImage(productId: Long, imageId: Long) {
+        apiService.rejectProductImage(productId, imageId)
+    }
+
     suspend fun generateProductImage(
         productId: Long,
         promptType: String?,

@@ -76,6 +76,7 @@ fun ProductDetailScreen(
     var showZoomedImage by remember { mutableStateOf(false) }
     var showDeleteConfirmationDialog by remember { mutableStateOf(false) }
     var showGenerateImageDialog by remember { mutableStateOf(false) }
+    var showDeleteImageConfirmationDialog by remember { mutableStateOf<Long?>(null) }
     val product by productDetailViewModel.product.collectAsState()
     val isLoading by productDetailViewModel.isLoading.collectAsState()
     val productNotFound by productDetailViewModel.productNotFound.collectAsState()
@@ -171,6 +172,29 @@ fun ProductDetailScreen(
         )
     }
 
+    showDeleteImageConfirmationDialog?.let { imageId ->
+        AlertDialog(
+            onDismissRequest = { showDeleteImageConfirmationDialog = null },
+            title = { Text("Delete Image") },
+            text = { Text("Are you sure you want to delete this image?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        productDetailViewModel.deleteProductImage(productId, imageId)
+                        showDeleteImageConfirmationDialog = null
+                    }
+                ) {
+                    Text("Confirm")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteImageConfirmationDialog = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
 
     if (showZoomedImage) {
         Dialog(onDismissRequest = { showZoomedImage = false }) {
@@ -211,27 +235,45 @@ fun ProductDetailScreen(
                             state = pagerState,
                             modifier = Modifier.fillMaxSize()
                         ) { page ->
-                            SubcomposeAsyncImage(
-                                model = ImageRequest.Builder(LocalContext.current)
-                                    .data(it.images[page].imageUrl)
-                                    .crossfade(true)
-                                    .build(),
-                                contentDescription = "Product Image",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clickable {
-                                        currentImageIndex = page
-                                        showZoomedImage = true
-                                    },
-                                loading = {
-                                    Box(
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                SubcomposeAsyncImage(
+                                    model = ImageRequest.Builder(LocalContext.current)
+                                        .data(it.images[page].imageUrl)
+                                        .crossfade(true)
+                                        .build(),
+                                    contentDescription = "Product Image",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clickable {
+                                            currentImageIndex = page
+                                            showZoomedImage = true
+                                        },
+                                    loading = {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .shimmer()
+                                        )
+                                    }
+                                )
+                                if (it.images.size > 1) {
+                                    IconButton(
+                                        onClick = {
+                                            showDeleteImageConfirmationDialog = it.images[page].id
+                                        },
                                         modifier = Modifier
-                                            .fillMaxSize()
-                                            .shimmer()
-                                    )
+                                            .align(Alignment.TopEnd)
+                                            .padding(8.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Delete,
+                                            contentDescription = "Delete Image",
+                                            tint = Color.White
+                                        )
+                                    }
                                 }
-                            )
+                            }
                         }
                         Icon(
                             imageVector = Icons.Filled.ZoomIn,
