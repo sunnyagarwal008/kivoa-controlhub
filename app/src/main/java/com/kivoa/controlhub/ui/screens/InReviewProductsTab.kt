@@ -120,8 +120,6 @@ fun InReviewProductItem(
             ) {
                 Column {
                     Text(text = product.sku, color = Color.White)
-                    Text(text = "Status: ${product.status}", color = Color.White)
-                    Text(text = "Category: ${product.category}", color = Color.White)
                 }
             }
             if (isSelected) {
