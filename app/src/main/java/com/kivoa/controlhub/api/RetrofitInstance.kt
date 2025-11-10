@@ -2,8 +2,10 @@ package com.kivoa.controlhub.api
 
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
+import java.util.concurrent.TimeUnit
 
 object RetrofitInstance {
     //private const val BASE_URL = "https://cockroach-vercel.vercel.app/"
@@ -13,9 +15,16 @@ object RetrofitInstance {
         .add(KotlinJsonAdapterFactory())
         .build()
 
+    private val client = OkHttpClient.Builder()
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .build()
+
     val api: ApiService by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
+            .client(client)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
             .create(ApiService::class.java)
