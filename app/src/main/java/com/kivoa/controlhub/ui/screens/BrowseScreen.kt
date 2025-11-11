@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
@@ -49,7 +50,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -63,7 +63,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -115,10 +114,8 @@ fun BrowseScreen(
     val categories by browseViewModel.categories.collectAsState()
     val tags by browseViewModel.tags.collectAsState()
     val filterParams by browseViewModel.filterParams.collectAsState()
-    var sortExpanded by remember { mutableStateOf(false) }
     val pdfCatalogUrl by browseViewModel.pdfCatalogUrl.collectAsState()
     var showPdfNameDialog by remember { mutableStateOf(false) }
-    var showCatalogMenu by remember { mutableStateOf(false) }
 
 
     LaunchedEffect(browseViewModel.selectionMode, browseViewModel.selectedProducts.size) {
@@ -150,6 +147,60 @@ fun BrowseScreen(
                             Icon(Icons.Default.Share, contentDescription = "Share")
                         }
                     } else {
+                        var sortExpanded by remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(onClick = { sortExpanded = true }) {
+                                Icon(Icons.Default.Sort, contentDescription = "Sort options")
+                            }
+                            DropdownMenu(
+                                expanded = sortExpanded,
+                                onDismissRequest = { sortExpanded = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("SKU (Ascending)") },
+                                    onClick = {
+                                        browseViewModel.updateSort("sku_sequence_number", "asc")
+                                        sortExpanded = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("SKU (Descending)") },
+                                    onClick = {
+                                        browseViewModel.updateSort("sku_sequence_number", "desc")
+                                        sortExpanded = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Price (Ascending)") },
+                                    onClick = {
+                                        browseViewModel.updateSort("price", "asc")
+                                        sortExpanded = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Price (Descending)") },
+                                    onClick = {
+                                        browseViewModel.updateSort("price", "desc")
+                                        sortExpanded = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Created At (Newest First)") },
+                                    onClick = {
+                                        browseViewModel.updateSort("created_at", "desc")
+                                        sortExpanded = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Created At (Oldest First)") },
+                                    onClick = {
+                                        browseViewModel.updateSort("created_at", "asc")
+                                        sortExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                        var showCatalogMenu by remember { mutableStateOf(false) }
                         Box {
                             IconButton(onClick = { showCatalogMenu = true }) {
                                 Icon(Icons.Default.MoreVert, contentDescription = "More options")
@@ -304,6 +355,7 @@ fun BrowseScreen(
 
             var categoryExpanded by remember { mutableStateOf(false) }
             var tagsExpanded by remember { mutableStateOf(false) }
+            var inStockExpanded by remember { mutableStateOf(false) }
 
             Box {
                 FilterChip(
@@ -363,65 +415,27 @@ fun BrowseScreen(
                 label = "₹${filterParams.priceRange.start.toInt()}-₹${filterParams.priceRange.endInclusive.toInt()}",
                 onClick = { browseViewModel.showPriceFilterDialog = true })
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(text = "In stock", fontSize = 11.sp)
-                Switch(
-                    checked = filterParams.excludeOutOfStock,
-                    onCheckedChange = { browseViewModel.updateExcludeOutOfStock(it) },
-                    modifier = Modifier.scale(0.8f))
-            }
             Box {
                 FilterChip(
-                    label = "Sort By: ${filterParams.sortBy} ${filterParams.sortOrder}",
-                    onClick = { sortExpanded = true }
+                    label = if (filterParams.excludeOutOfStock) "In Stock" else "All Stock",
+                    onClick = { inStockExpanded = true }
                 )
                 DropdownMenu(
-                    expanded = sortExpanded,
-                    onDismissRequest = { sortExpanded = false }
+                    expanded = inStockExpanded,
+                    onDismissRequest = { inStockExpanded = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("SKU (Ascending)") },
+                        text = { Text("All Stock") },
                         onClick = {
-                            browseViewModel.updateSort("sku_sequence_number", "asc")
-                            sortExpanded = false
+                            browseViewModel.updateExcludeOutOfStock(false)
+                            inStockExpanded = false
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("SKU (Descending)") },
+                        text = { Text("In Stock") },
                         onClick = {
-                            browseViewModel.updateSort("sku_sequence_number", "desc")
-                            sortExpanded = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Price (Ascending)") },
-                        onClick = {
-                            browseViewModel.updateSort("price", "asc")
-                            sortExpanded = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Price (Descending)") },
-                        onClick = {
-                            browseViewModel.updateSort("price", "desc")
-                            sortExpanded = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Created At (Newest First)") },
-                        onClick = {
-                            browseViewModel.updateSort("created_at", "desc")
-                            sortExpanded = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Created At (Oldest First)") },
-                        onClick = {
-                            browseViewModel.updateSort("created_at", "asc")
-                            sortExpanded = false
+                            browseViewModel.updateExcludeOutOfStock(true)
+                            inStockExpanded = false
                         }
                     )
                 }
