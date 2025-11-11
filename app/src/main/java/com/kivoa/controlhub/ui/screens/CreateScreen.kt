@@ -229,10 +229,14 @@ fun CreateScreen(
             }.map { RawProduct(imageUri = it.imageUrl) }
         CreateProductFormsDialog(
             selectedRawProducts = selectedRawProducts,
-            onDismiss = { showCreateProductFormsDialog = false },
+            onDismiss = {
+                showCreateProductFormsDialog = false
+                createViewModel.clearSelectedRawProductIds()
+            },
             createViewModel = createViewModel,
             onProductCreationSuccess = {
                 showCreateProductFormsDialog = false
+                createViewModel.clearSelectedRawProductIds()
             }
         )
     }
