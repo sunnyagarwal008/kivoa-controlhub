@@ -77,6 +77,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation("androidx.compose.material:material:1.6.8")
     implementation("androidx.compose.material:material-icons-extended:1.6.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
     implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.7")

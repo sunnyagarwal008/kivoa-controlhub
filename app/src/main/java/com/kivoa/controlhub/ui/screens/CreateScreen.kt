@@ -38,7 +38,6 @@ import com.kivoa.controlhub.data.ApiRawImage
 import com.kivoa.controlhub.data.RawProduct
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.coroutines.flow.StateFlow
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -169,7 +168,8 @@ fun CreateScreen(
                     onProductLongPress = { id, isSelected ->
                         createViewModel.updateSelectedRawProductIds(id, isSelected)
                     },
-                    imagePickerLauncher = imagePickerLauncher
+                    imagePickerLauncher = imagePickerLauncher,
+                    onRefresh = { rawProducts.refresh() }
                 )
             }
 
@@ -180,7 +180,8 @@ fun CreateScreen(
                     onProductClick = { product ->
                         selectedImageUri = (product.images.firstOrNull()?.imageUrl ?: product.rawImage).toUri()
                         showFullScreenImageDialog = true
-                    }
+                    },
+                    onRefresh = { createViewModel.fetchInProgressProducts() }
                 )
             }
 
@@ -201,7 +202,8 @@ fun CreateScreen(
                     selectedProductIds = selectedInReviewProductIds,
                     onProductLongPress = { productId, isSelected ->
                         createViewModel.updateSelectedInReviewProductIds(productId, isSelected)
-                    }
+                    },
+                    onRefresh = { createViewModel.fetchInReviewProducts() }
                 )
             }
         }

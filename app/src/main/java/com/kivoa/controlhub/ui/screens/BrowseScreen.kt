@@ -7,7 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
-import android.os.Build
 import android.os.Environment
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -22,12 +21,12 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Sort
@@ -35,6 +34,9 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -70,6 +72,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.paging.LoadState
@@ -85,9 +88,8 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import androidx.core.net.toUri
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
 @Composable
 fun BrowseScreen(
     browseViewModel: BrowseViewModel = viewModel(),
@@ -338,42 +340,46 @@ fun BrowseScreen(
                     modifier = Modifier.scale(0.8f))
             }
         }
+        val refreshing = lazyPagingItems.loadState.refresh is LoadState.Loading
+        val pullRefreshState = rememberPullRefreshState(refreshing, { lazyPagingItems.refresh() })
+        Box(modifier = Modifier.pullRefresh(pullRefreshState)) {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                contentPadding = PaddingValues(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                if (lazyPagingItems.loadState.refresh == LoadState.Loading) {
+                    items(10) {
+                        ShimmerEffect(modifier = Modifier.aspectRatio(0.7f))
+                    }
+                }
 
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.weight(1f)
-        ) {
-            if (lazyPagingItems.loadState.refresh == LoadState.Loading) {
-                items(10) {
-                    ShimmerEffect(modifier = Modifier.aspectRatio(0.7f))
+                items(lazyPagingItems.itemCount) { index ->
+                    lazyPagingItems[index]?.let { product ->
+                        ProductCard(
+                            product = product,
+                            isSelected = browseViewModel.selectedProducts.contains(product),
+                            onClick = {
+                                if (browseViewModel.selectionMode) {
+                                    browseViewModel.onProductClicked(product)
+                                } else {
+                                    navController.navigate(Screen.ProductDetail.route + "/${product.id}")
+                                }
+                            },
+                            onLongClick = { browseViewModel.onProductLongClicked(product) }
+                        )
+                    }
+                }
+
+                if (lazyPagingItems.loadState.append == LoadState.Loading) {
+                    item {
+                        ShimmerEffect(modifier = Modifier.aspectRatio(0.7f))
+                    }
                 }
             }
-
-            items(lazyPagingItems.itemCount) { index ->
-                lazyPagingItems[index]?.let { product ->
-                    ProductCard(
-                        product = product,
-                        isSelected = browseViewModel.selectedProducts.contains(product),
-                        onClick = {
-                            if (browseViewModel.selectionMode) {
-                                browseViewModel.onProductClicked(product)
-                            } else {
-                                navController.navigate(Screen.ProductDetail.route + "/${product.id}")
-                            }
-                        },
-                        onLongClick = { browseViewModel.onProductLongClicked(product) }
-                    )
-                }
-            }
-
-            if (lazyPagingItems.loadState.append == LoadState.Loading) {
-                item {
-                    ShimmerEffect(modifier = Modifier.aspectRatio(0.7f))
-                }
-            }
+            PullRefreshIndicator(refreshing, pullRefreshState, Modifier.align(Alignment.TopCenter))
         }
     }
 }

@@ -16,9 +16,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
@@ -38,7 +42,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.kivoa.controlhub.data.ApiRawImage
 import kotlinx.collections.immutable.PersistentList
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
 @Composable
 fun PendingProductsTab(
     rawProducts: LazyPagingItems<ApiRawImage>,
@@ -46,9 +50,11 @@ fun PendingProductsTab(
     onImageClick: (Uri) -> Unit,
     selectedProductIds: PersistentList<Long>,
     onProductLongPress: (Long, Boolean) -> Unit,
-    imagePickerLauncher: ActivityResultLauncher<String>
+    imagePickerLauncher: ActivityResultLauncher<String>,
+    onRefresh: () -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
+    val pullRefreshState = rememberPullRefreshState(isLoading, onRefresh)
+    Box(modifier = Modifier.fillMaxSize().pullRefresh(pullRefreshState)) {
         Column(modifier = Modifier.fillMaxSize()) {
             if (isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
@@ -100,6 +106,7 @@ fun PendingProductsTab(
         ) {
             Icon(Icons.Default.Add, "Add new product images")
         }
+        PullRefreshIndicator(isLoading, pullRefreshState, Modifier.align(Alignment.TopCenter))
     }
 }
 
