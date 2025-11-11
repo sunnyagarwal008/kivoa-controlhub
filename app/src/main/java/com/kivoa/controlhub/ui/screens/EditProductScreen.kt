@@ -18,14 +18,20 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -45,6 +51,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.kivoa.controlhub.AppBarState
+import com.kivoa.controlhub.AppBarViewModel
 import com.kivoa.controlhub.api.RetrofitInstance
 import com.kivoa.controlhub.data.UpdateProductRequest
 
@@ -53,15 +61,67 @@ import com.kivoa.controlhub.data.UpdateProductRequest
 fun EditProductScreen(
     productId: Long,
     navController: NavController,
+    appBarViewModel: AppBarViewModel,
     editProductViewModel: EditProductViewModel = viewModel(
         factory = EditProductViewModelFactory(RetrofitInstance.api)
     )
 ) {
     val product by editProductViewModel.product.collectAsState()
     val updateState by editProductViewModel.updateState.collectAsState()
+    var showRawImage by remember { mutableStateOf(false) }
+    var showMenu by remember { mutableStateOf(false) }
 
     LaunchedEffect(productId) {
         editProductViewModel.getProductById(productId)
+    }
+
+    LaunchedEffect(product) {
+        product?.let {
+            appBarViewModel.setAppBarState(
+                AppBarState(
+                    title = { Text("Edit Product") },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.navigateUp() }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back"
+                            )
+                        }
+                    },
+                    actions = {
+                        if (it.rawImage.isNotBlank()) {
+                            IconButton(onClick = { showMenu = !showMenu }) {
+                                Icon(
+                                    imageVector = Icons.Default.MoreVert,
+                                    contentDescription = "More"
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = showMenu,
+                                onDismissRequest = { showMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("View Raw Image") },
+                                    onClick = {
+                                        showRawImage = true
+                                        showMenu = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                )
+            )
+        }
+    }
+
+    if (showRawImage) {
+        product?.rawImage?.let {
+            RawImageDialog(
+                imageUrl = it,
+                onDismiss = { showRawImage = false }
+            )
+        }
     }
 
     if (product == null) {

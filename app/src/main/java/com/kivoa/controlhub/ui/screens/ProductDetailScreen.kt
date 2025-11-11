@@ -20,6 +20,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
@@ -83,6 +84,7 @@ fun ProductDetailScreen(
     productDetailViewModel: ProductDetailViewModel = viewModel()
 ) {
     var showZoomedImage by remember { mutableStateOf(false) }
+    var showRawImage by remember { mutableStateOf(false) }
     var showDeleteConfirmationDialog by remember { mutableStateOf(false) }
     var showGenerateImageDialog by remember { mutableStateOf(false) }
     var showDeleteImageConfirmationDialog by remember { mutableStateOf<Long?>(null) }
@@ -179,6 +181,15 @@ fun ProductDetailScreen(
                                     }
                                 )
                             }
+                            if (it.rawImage.isNotBlank()) {
+                                DropdownMenuItem(
+                                    text = { Text("View Raw Image") },
+                                    onClick = {
+                                        showRawImage = true
+                                        showMenu = false
+                                    }
+                                )
+                            }
                         }
                     }
                 )
@@ -249,6 +260,15 @@ fun ProductDetailScreen(
                     .crossfade(true)
                     .build(),
                 contentDescription = "Product Image",
+            )
+        }
+    }
+
+    if (showRawImage) {
+        product?.rawImage?.let {
+            RawImageDialog(
+                imageUrl = it,
+                onDismiss = { showRawImage = false }
             )
         }
     }
@@ -369,6 +389,48 @@ fun ProductDetailScreen(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun RawImageDialog(imageUrl: String, onDismiss: () -> Unit) {
+    var finalImageUrl = imageUrl
+    if (imageUrl.contains("drive.google.com")) {
+        val fileId = if (imageUrl.contains("/d/")) {
+            imageUrl.substringAfter("/d/").substringBefore("/view")
+        } else {
+            imageUrl.substringAfter("id=").substringBefore("&")
+        }
+        finalImageUrl = "https://drive.google.com/uc?export=download&id=$fileId"
+    }
+    Dialog(onDismissRequest = onDismiss) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            SubcomposeAsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(finalImageUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = "Raw Product Image",
+                modifier = Modifier.fillMaxSize(),
+                loading = {
+                    Box(modifier = Modifier
+                        .fillMaxSize()
+                        .shimmer())
+                }
+            )
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+            ) {
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = "Close",
+                    tint = Color.White
+                )
             }
         }
     }

@@ -182,7 +182,7 @@ class MainActivity : ComponentActivity() {
                             )
                         ) { backStackEntry ->
                             val productId = backStackEntry.arguments?.getLong("productId")
-                            EditProductScreen(productId = productId!!, navController = navController)
+                            EditProductScreen(productId = productId!!, navController = navController, appBarViewModel = appBarViewModel)
                         }
                         composable(
                             route = Screen.ReorderImages.route + "/{productId}",
