@@ -43,6 +43,7 @@ import androidx.navigation.navArgument
 import com.google.gson.Gson
 import com.kivoa.controlhub.api.RetrofitInstance
 import com.kivoa.controlhub.data.Prompt
+import com.kivoa.controlhub.ui.screens.CatalogsScreen
 import com.kivoa.controlhub.ui.screens.BrowseScreen
 import com.kivoa.controlhub.ui.screens.BrowseViewModel
 import com.kivoa.controlhub.ui.screens.CreateScreen
@@ -145,6 +146,9 @@ class MainActivity : ComponentActivity() {
                         composable(Screen.SettingsCategories.route) { CategoriesScreen(navController = navController, appBarViewModel = appBarViewModel) }
                         composable(Screen.CreateCategory.route) {
                             CreateCategoryScreen(navController = navController, appBarViewModel = appBarViewModel) { navController.popBackStack() } // Navigate back on success
+                        }
+                        composable(Screen.Catalogs.route) {
+                            CatalogsScreen(navController = navController, appBarViewModel = appBarViewModel)
                         }
                         composable(
                             route = Screen.ProductDetail.route + "/{productId}",
@@ -253,6 +257,7 @@ sealed class Screen(val route: String, val icon: ImageVector? = null) {
     object CategoryPrompts : Screen("Settings/Categories/{categoryName}/Prompts")
     object EditPrompt : Screen("Settings/Prompts/{promptJson}")
     object CreatePrompt : Screen("Settings/Categories/{categoryName}/CreatePrompt")
+    object Catalogs : Screen("Catalogs")
 
     fun withArgs(vararg args: Any): String {
         var finalRoute = route

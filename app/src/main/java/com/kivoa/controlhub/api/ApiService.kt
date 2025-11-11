@@ -1,5 +1,6 @@
 package com.kivoa.controlhub.api
 
+import com.kivoa.controlhub.data.CatalogsResponse
 import com.kivoa.controlhub.data.ApiCategory
 import com.kivoa.controlhub.data.BulkCreateRawImagesRequest
 import com.kivoa.controlhub.data.BulkCreateRawImagesResponse
@@ -23,6 +24,7 @@ import com.kivoa.controlhub.data.ProductDetailResponse
 import com.kivoa.controlhub.data.ProductsApiResponse
 import com.kivoa.controlhub.data.PromptsApiResponse
 import com.kivoa.controlhub.data.RawImagesApiResponse
+import com.kivoa.controlhub.data.RefreshCatalogResponse
 import com.kivoa.controlhub.data.SearchProductsResponse
 import com.kivoa.controlhub.data.UpdateCategoryRequest
 import com.kivoa.controlhub.data.UpdateImagePrioritiesRequest
@@ -83,6 +85,12 @@ interface ApiService {
 
     @POST("api/catalogs")
     suspend fun generatePdfCatalog(@Body request: GeneratePdfCatalogRequest): PdfCatalogResponse
+
+    @GET("api/catalogs")
+    suspend fun getAllCatalogs(): CatalogsResponse
+
+    @POST("api/catalogs/{catalog_id}/refresh")
+    suspend fun refreshCatalog(@Path("catalog_id") catalogId: Long): RefreshCatalogResponse
 
     @GET("api/products/{product_id}")
     suspend fun getProductById(@Path("product_id") productId: Long): ProductDetailResponse

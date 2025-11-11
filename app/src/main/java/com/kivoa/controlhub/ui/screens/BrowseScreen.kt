@@ -32,7 +32,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
@@ -113,6 +113,7 @@ fun BrowseScreen(
     var sortExpanded by remember { mutableStateOf(false) }
     val pdfCatalogUrl by browseViewModel.pdfCatalogUrl.collectAsState()
     var showPdfNameDialog by remember { mutableStateOf(false) }
+    var showCatalogMenu by remember { mutableStateOf(false) }
 
 
     LaunchedEffect(browseViewModel.selectionMode, browseViewModel.selectedProducts.size) {
@@ -144,8 +145,29 @@ fun BrowseScreen(
                             Icon(Icons.Default.Share, contentDescription = "Share")
                         }
                     } else {
-                        IconButton(onClick = { showPdfNameDialog = true }) {
-                            Icon(Icons.Default.PictureAsPdf, contentDescription = "Generate PDF Catalog")
+                        Box {
+                            IconButton(onClick = { showCatalogMenu = true }) {
+                                Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                            }
+                            DropdownMenu(
+                                expanded = showCatalogMenu,
+                                onDismissRequest = { showCatalogMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Generate new catalog") },
+                                    onClick = {
+                                        showPdfNameDialog = true
+                                        showCatalogMenu = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("View all catalogs") },
+                                    onClick = {
+                                        navController.navigate(Screen.Catalogs.route)
+                                        showCatalogMenu = false
+                                    }
+                                )
+                            }
                         }
                         Box {
                             IconButton(onClick = { sortExpanded = true }) {
