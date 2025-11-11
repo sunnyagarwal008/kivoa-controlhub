@@ -26,7 +26,8 @@ data class FilterParams(
     val priceRange: ClosedFloatingPointRange<Float> = 0f..5000f,
     val excludeOutOfStock: Boolean = true,
     val sortBy: String = "created_at",
-    val sortOrder: String = "desc"
+    val sortOrder: String = "desc",
+    val selectedTags: Set<String> = emptySet()
 )
 
 class BrowseViewModel : ViewModel() {
@@ -38,6 +39,9 @@ class BrowseViewModel : ViewModel() {
 
     private val _categories = MutableStateFlow<List<ApiCategory>>(emptyList())
     val categories: StateFlow<List<ApiCategory>> = _categories.asStateFlow()
+
+    private val _tags = MutableStateFlow<List<String>>(emptyList())
+    val tags: StateFlow<List<String>> = _tags.asStateFlow()
 
     private val _pdfCatalogUrl = MutableStateFlow<String?>(null)
     val pdfCatalogUrl: StateFlow<String?> = _pdfCatalogUrl.asStateFlow()
@@ -57,7 +61,8 @@ class BrowseViewModel : ViewModel() {
                 minPrice = params.priceRange.start.toInt(),
                 maxPrice = params.priceRange.endInclusive.toInt(),
                 sortBy = params.sortBy,
-                sortOrder = params.sortOrder
+                sortOrder = params.sortOrder,
+                tags = params.selectedTags.joinToString(",")
             )
         }.flow
     }.cachedIn(viewModelScope)
@@ -92,6 +97,10 @@ class BrowseViewModel : ViewModel() {
         filterParams.value = filterParams.value.copy(sortBy = sortBy, sortOrder = sortOrder)
     }
 
+    fun updateSelectedTags(tags: Set<String>) {
+        filterParams.value = filterParams.value.copy(selectedTags = tags)
+    }
+
     fun generatePdfCatalog(name: String, onSuccess: () -> Unit) {
         viewModelScope.launch {
             generatingPdf = true
@@ -104,7 +113,8 @@ class BrowseViewModel : ViewModel() {
                     maxPrice = params.priceRange.endInclusive.toInt(),
                     sortBy = params.sortBy,
                     sortOrder = params.sortOrder,
-                    name = name
+                    name = name,
+                    selectedTags = params.selectedTags.joinToString(",")
                 )
                 val response = RetrofitInstance.api.generatePdfCatalog(request)
                 if (response.success) {
@@ -128,6 +138,7 @@ class BrowseViewModel : ViewModel() {
             try {
                 val response = RetrofitInstance.api.getCategories()
                 _categories.value = response.data
+                _tags.value = response.data.flatMap { it.tags?.split(",") ?: emptyList() }.distinct()
             } catch (e: Exception) {
                 // Handle error
             }

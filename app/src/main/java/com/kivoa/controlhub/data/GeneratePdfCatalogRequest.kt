@@ -11,5 +11,6 @@ data class GeneratePdfCatalogRequest(
     val maxPrice: Int? = null,
     val sortBy: String? = null,
     val sortOrder: String? = null,
-    val name: String? = null
+    val name: String? = null,
+    @Json(name = "tags") val selectedTags: String? = null
 )

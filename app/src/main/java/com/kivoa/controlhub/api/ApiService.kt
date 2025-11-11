@@ -80,7 +80,8 @@ interface ApiService {
         @Query("minPrice") minPrice: Int? = null,
         @Query("maxPrice") maxPrice: Int? = null,
         @Query("sortBy") sortBy: String? = null,
-        @Query("sortOrder") sortOrder: String? = null
+        @Query("sortOrder") sortOrder: String? = null,
+        @Query("tags") tags: String? = null
     ): ProductsApiResponse
 
     @POST("api/catalogs")

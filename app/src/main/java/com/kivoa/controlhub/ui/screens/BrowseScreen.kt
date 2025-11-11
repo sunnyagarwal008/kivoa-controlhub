@@ -15,6 +15,8 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
@@ -29,8 +31,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
@@ -90,7 +92,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalMaterialApi::class,
+    ExperimentalLayoutApi::class
+)
 @Composable
 fun BrowseScreen(
     browseViewModel: BrowseViewModel = viewModel(),
@@ -109,6 +113,7 @@ fun BrowseScreen(
     val shareViewModel: ShareViewModel = viewModel(factory = shareViewModelFactory)
 
     val categories by browseViewModel.categories.collectAsState()
+    val tags by browseViewModel.tags.collectAsState()
     val filterParams by browseViewModel.filterParams.collectAsState()
     var sortExpanded by remember { mutableStateOf(false) }
     val pdfCatalogUrl by browseViewModel.pdfCatalogUrl.collectAsState()
@@ -289,15 +294,16 @@ fun BrowseScreen(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        Row(
+        FlowRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalArrangement = Arrangement.Center
         ) {
 
             var categoryExpanded by remember { mutableStateOf(false) }
+            var tagsExpanded by remember { mutableStateOf(false) }
 
             Box {
                 FilterChip(
@@ -321,6 +327,38 @@ fun BrowseScreen(
                 }
             }
 
+            Box {
+                FilterChip(
+                    label = if (filterParams.selectedTags.isEmpty()) "All Tags" else "${filterParams.selectedTags.size} tags",
+                    onClick = { tagsExpanded = true }
+                )
+                DropdownMenu(
+                    expanded = tagsExpanded,
+                    onDismissRequest = { tagsExpanded = false }
+                ) {
+                    tags.forEach { tag ->
+                        DropdownMenuItem(
+                            text = { Text(tag) },
+                            onClick = {
+                                val currentTags = filterParams.selectedTags
+                                val newTags = if (currentTags.contains(tag)) {
+                                    currentTags - tag
+                                } else {
+                                    currentTags + tag
+                                }
+                                browseViewModel.updateSelectedTags(newTags)
+                            },
+                            leadingIcon = {
+                                if (filterParams.selectedTags.contains(tag)) {
+                                    Icon(Icons.Default.Check, contentDescription = "Selected")
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+
+
             FilterChip(
                 label = "₹${filterParams.priceRange.start.toInt()}-₹${filterParams.priceRange.endInclusive.toInt()}",
                 onClick = { browseViewModel.showPriceFilterDialog = true })
@@ -336,9 +374,10 @@ fun BrowseScreen(
                     modifier = Modifier.scale(0.8f))
             }
             Box {
-                IconButton(onClick = { sortExpanded = true }) {
-                    Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "Sort products")
-                }
+                FilterChip(
+                    label = "Sort By: ${filterParams.sortBy} ${filterParams.sortOrder}",
+                    onClick = { sortExpanded = true }
+                )
                 DropdownMenu(
                     expanded = sortExpanded,
                     onDismissRequest = { sortExpanded = false }
