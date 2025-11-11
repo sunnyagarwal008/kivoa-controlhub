@@ -141,7 +141,20 @@ class MainActivity : ComponentActivity() {
                     ) {
                         composable(Screen.Search.route) { HomeScreen(modifier = Modifier.fillMaxSize(), navController = navController, appBarViewModel = appBarViewModel) }
                         composable(Screen.Browse.route) { BrowseScreen(navController = navController, browseViewModel = browseViewModel, appBarViewModel = appBarViewModel) }
-                        composable(Screen.Create.route) { CreateScreen(appBarViewModel = appBarViewModel, navController = navController) }
+                        composable(
+                            route = Screen.Create.route + "?tabIndex={tabIndex}",
+                            arguments = listOf(navArgument("tabIndex") {
+                                type = NavType.IntType
+                                defaultValue = 0
+                            })
+                        ) { backStackEntry ->
+                            val tabIndex = backStackEntry.arguments?.getInt("tabIndex") ?: 0
+                            CreateScreen(
+                                appBarViewModel = appBarViewModel,
+                                navController = navController,
+                                initialTabIndex = tabIndex
+                            )
+                        }
                         composable(Screen.Settings.route) { SettingsScreen(navController = navController, appBarViewModel = appBarViewModel) }
                         composable(Screen.SettingsCategories.route) { CategoriesScreen(navController = navController, appBarViewModel = appBarViewModel) }
                         composable(Screen.CreateCategory.route) {
@@ -159,10 +172,16 @@ class MainActivity : ComponentActivity() {
                             ProductDetailScreen(productId = productId!!, navController = navController, shareViewModel = shareViewModelForDetail, appBarViewModel = appBarViewModel)
                         }
                         composable(
-                            route = Screen.EditProduct.route + "/{productId}",
-                            arguments = listOf(navArgument("productId") { type = NavType.LongType })
-                        ) {
-                            val productId = it.arguments?.getLong("productId")
+                            route = Screen.EditProduct.route + "/{productId}?tabIndex={tabIndex}",
+                            arguments = listOf(
+                                navArgument("productId") { type = NavType.LongType },
+                                navArgument("tabIndex") {
+                                    type = NavType.IntType
+                                    defaultValue = 0
+                                }
+                            )
+                        ) { backStackEntry ->
+                            val productId = backStackEntry.arguments?.getLong("productId")
                             EditProductScreen(productId = productId!!, navController = navController)
                         }
                         composable(

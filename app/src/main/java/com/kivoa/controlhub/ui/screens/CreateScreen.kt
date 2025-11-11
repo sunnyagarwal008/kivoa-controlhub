@@ -44,9 +44,10 @@ import kotlinx.collections.immutable.persistentListOf
 fun CreateScreen(
     createViewModel: CreateViewModel = viewModel(),
     appBarViewModel: AppBarViewModel,
-    navController: NavController
+    navController: NavController,
+    initialTabIndex: Int = 0
 ) {
-    var tabIndex by remember { mutableIntStateOf(0) }
+    var tabIndex by remember { mutableIntStateOf(initialTabIndex) }
     val tabs = listOf("Pending", "In Progress", "In Review")
 
     val rawProducts = createViewModel.rawProducts.collectAsLazyPagingItems()
@@ -156,7 +157,14 @@ fun CreateScreen(
                 Tab(
                     text = { Text(title) },
                     selected = tabIndex == index,
-                    onClick = { tabIndex = index }
+                    onClick = {
+                        navController.navigate(Screen.Create.route + "?tabIndex=$index") {
+                            popUpTo(Screen.Create.route) {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
+                        }
+                    }
                 )
             }
         }
@@ -202,7 +210,7 @@ fun CreateScreen(
                                 !selectedInReviewProductIds.contains(product.id)
                             )
                         } else {
-                            navController.navigate(Screen.EditProduct.route + "/${product.id}")
+                            navController.navigate(Screen.EditProduct.route + "/${product.id}" + "?tabIndex=$tabIndex")
                         }
                     },
                     selectedProductIds = selectedInReviewProductIds,
