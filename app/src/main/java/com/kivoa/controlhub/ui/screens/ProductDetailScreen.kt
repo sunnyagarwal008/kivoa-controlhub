@@ -21,6 +21,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Reorder
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material3.AlertDialog
@@ -134,6 +135,11 @@ fun ProductDetailScreen(
                         }
                         IconButton(onClick = { showGenerateImageDialog = true }) {
                             Icon(Icons.Default.AddAPhoto, contentDescription = "Generate Image")
+                        }
+                        if (it.images.size > 1) {
+                            IconButton(onClick = { navController.navigate("reorder_images/${it.id}") }) {
+                                Icon(Icons.Default.Reorder, contentDescription = "Reorder Images")
+                            }
                         }
                     }
                 )

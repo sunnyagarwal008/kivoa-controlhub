@@ -49,6 +49,7 @@ import com.kivoa.controlhub.ui.screens.CreateScreen
 import com.kivoa.controlhub.ui.screens.EditProductScreen
 import com.kivoa.controlhub.ui.screens.HomeScreen
 import com.kivoa.controlhub.ui.screens.ProductDetailScreen
+import com.kivoa.controlhub.ui.screens.ReorderImagesScreen
 import com.kivoa.controlhub.ui.screens.ShareViewModel
 import com.kivoa.controlhub.ui.screens.ShareViewModelFactory
 import com.kivoa.controlhub.ui.screens.settings.CategoriesScreen // Added CategoriesScreen import
@@ -161,6 +162,13 @@ class MainActivity : ComponentActivity() {
                             EditProductScreen(productId = productId!!, navController = navController)
                         }
                         composable(
+                            route = Screen.ReorderImages.route + "/{productId}",
+                            arguments = listOf(navArgument("productId") { type = NavType.LongType })
+                        ) {
+                            val productId = it.arguments?.getLong("productId")
+                            ReorderImagesScreen(productId = productId!!, navController = navController)
+                        }
+                        composable(
                             route = Screen.CategoryDetail.route + "/{categoryJson}",
                             arguments = listOf(navArgument("categoryJson") { type = NavType.StringType })
                         ) {
@@ -236,6 +244,7 @@ sealed class Screen(val route: String, val icon: ImageVector? = null) {
     object Create : Screen("Create", Icons.Default.AddCircle)
     object ProductDetail : Screen("ProductDetail")
     object EditProduct : Screen("edit_product")
+    object ReorderImages : Screen("reorder_images")
     object Settings : Screen("Settings", Icons.Default.Settings) // Added Settings object
     object SettingsCategories : Screen("Settings/Categories")
     object CreateCategory : Screen("CreateCategory")

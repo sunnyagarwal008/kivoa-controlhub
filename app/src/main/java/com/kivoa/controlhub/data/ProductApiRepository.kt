@@ -66,6 +66,14 @@ class ProductApiRepository(private val apiService: ApiService) {
         return response.success
     }
 
+    suspend fun updateProductImagePriorities(
+        productId: Long,
+        priorities: List<ImagePriority>
+    ): UpdateImagePrioritiesResponse {
+        val request = UpdateImagePrioritiesRequest(priorities)
+        return apiService.updateProductImagePriorities(productId, request)
+    }
+
     suspend fun deleteProduct(productId: Long) {
         apiService.deleteProduct(productId)
     }

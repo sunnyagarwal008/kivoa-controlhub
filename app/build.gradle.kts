@@ -82,6 +82,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
     implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.7")
     implementation("androidx.compose.runtime:runtime-livedata")
+    implementation("org.burnoutcrew.composereorderable:reorderable:0.9.6")
 
 
     // Retrofit

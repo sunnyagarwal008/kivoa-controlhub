@@ -24,6 +24,8 @@ import com.kivoa.controlhub.data.PromptsApiResponse
 import com.kivoa.controlhub.data.RawImagesApiResponse
 import com.kivoa.controlhub.data.SearchProductsResponse
 import com.kivoa.controlhub.data.UpdateCategoryRequest
+import com.kivoa.controlhub.data.UpdateImagePrioritiesRequest
+import com.kivoa.controlhub.data.UpdateImagePrioritiesResponse
 import com.kivoa.controlhub.data.UpdateProductApiResponse
 import com.kivoa.controlhub.data.UpdateProductRequest
 import com.kivoa.controlhub.data.UpdateProductStatusRequest
@@ -104,6 +106,12 @@ interface ApiService {
         @Path("product_id") productId: Long,
         @Body request: GenerateProductImageRequest
     ): GenerateProductImageResponse
+
+    @PUT("api/products/{product_id}/images/update-priorities")
+    suspend fun updateProductImagePriorities(
+        @Path("product_id") productId: Long,
+        @Body request: UpdateImagePrioritiesRequest
+    ): UpdateImagePrioritiesResponse
 
     @PUT("api/products/{product_id}/status")
     suspend fun updateProductStatus(

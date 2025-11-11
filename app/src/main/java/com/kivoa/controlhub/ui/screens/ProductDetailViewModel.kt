@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.kivoa.controlhub.api.RetrofitInstance
 import com.kivoa.controlhub.data.ApiProduct
 import com.kivoa.controlhub.data.GenerateProductImageRequest
+import com.kivoa.controlhub.data.ImagePriority
+import com.kivoa.controlhub.data.ProductApiRepository
 import com.kivoa.controlhub.data.Prompt
 import com.kivoa.controlhub.data.UpdateProductStockRequest
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,6 +15,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class ProductDetailViewModel : ViewModel() {
+
+    private val productRepository = ProductApiRepository(RetrofitInstance.api)
 
     private val _product = MutableStateFlow<ApiProduct?>(null)
     val product: StateFlow<ApiProduct?> = _product.asStateFlow()
@@ -50,6 +54,17 @@ class ProductDetailViewModel : ViewModel() {
                 getProductById(productId)
             } finally {
                 _isLoading.value = false
+            }
+        }
+    }
+
+    fun updateProductImagePriorities(productId: Long, priorities: List<ImagePriority>) {
+        viewModelScope.launch {
+            try {
+                productRepository.updateProductImagePriorities(productId, priorities)
+                getProductById(productId)
+            } catch (e: Exception) {
+                _error.value = "Failed to update image priorities: ${e.message}"
             }
         }
     }
