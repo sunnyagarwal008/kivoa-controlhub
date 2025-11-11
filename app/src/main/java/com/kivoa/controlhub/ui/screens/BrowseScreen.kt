@@ -169,58 +169,6 @@ fun BrowseScreen(
                                 )
                             }
                         }
-                        Box {
-                            IconButton(onClick = { sortExpanded = true }) {
-                                Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "Sort products")
-                            }
-                            DropdownMenu(
-                                expanded = sortExpanded,
-                                onDismissRequest = { sortExpanded = false }
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text("SKU (Ascending)") },
-                                    onClick = {
-                                        browseViewModel.updateSort("sku_sequence_number", "asc")
-                                        sortExpanded = false
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("SKU (Descending)") },
-                                    onClick = {
-                                        browseViewModel.updateSort("sku_sequence_number", "desc")
-                                        sortExpanded = false
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Price (Ascending)") },
-                                    onClick = {
-                                        browseViewModel.updateSort("price", "asc")
-                                        sortExpanded = false
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Price (Descending)") },
-                                    onClick = {
-                                        browseViewModel.updateSort("price", "desc")
-                                        sortExpanded = false
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Created At (Newest First)") },
-                                    onClick = {
-                                        browseViewModel.updateSort("created_at", "desc")
-                                        sortExpanded = false
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Created At (Oldest First)") },
-                                    onClick = {
-                                        browseViewModel.updateSort("created_at", "asc")
-                                        sortExpanded = false
-                                    }
-                                )
-                            }
-                        }
                     }
                 }
             )
@@ -239,7 +187,9 @@ fun BrowseScreen(
                         label = { Text("Catalog Name") }
                     )
                     Button(onClick = {
-                        browseViewModel.generatePdfCatalog(catalogName)
+                        browseViewModel.generatePdfCatalog(catalogName) {
+                            navController.navigate(Screen.Catalogs.route)
+                        }
                         showPdfNameDialog = false
                     }) {
                         Text("Generate")
@@ -384,6 +334,58 @@ fun BrowseScreen(
                     checked = filterParams.excludeOutOfStock,
                     onCheckedChange = { browseViewModel.updateExcludeOutOfStock(it) },
                     modifier = Modifier.scale(0.8f))
+            }
+            Box {
+                IconButton(onClick = { sortExpanded = true }) {
+                    Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "Sort products")
+                }
+                DropdownMenu(
+                    expanded = sortExpanded,
+                    onDismissRequest = { sortExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("SKU (Ascending)") },
+                        onClick = {
+                            browseViewModel.updateSort("sku_sequence_number", "asc")
+                            sortExpanded = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("SKU (Descending)") },
+                        onClick = {
+                            browseViewModel.updateSort("sku_sequence_number", "desc")
+                            sortExpanded = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Price (Ascending)") },
+                        onClick = {
+                            browseViewModel.updateSort("price", "asc")
+                            sortExpanded = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Price (Descending)") },
+                        onClick = {
+                            browseViewModel.updateSort("price", "desc")
+                            sortExpanded = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Created At (Newest First)") },
+                        onClick = {
+                            browseViewModel.updateSort("created_at", "desc")
+                            sortExpanded = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Created At (Oldest First)") },
+                        onClick = {
+                            browseViewModel.updateSort("created_at", "asc")
+                            sortExpanded = false
+                        }
+                    )
+                }
             }
         }
         val refreshing = lazyPagingItems.loadState.refresh is LoadState.Loading

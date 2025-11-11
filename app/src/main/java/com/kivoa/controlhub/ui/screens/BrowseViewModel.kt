@@ -92,7 +92,7 @@ class BrowseViewModel : ViewModel() {
         filterParams.value = filterParams.value.copy(sortBy = sortBy, sortOrder = sortOrder)
     }
 
-    fun generatePdfCatalog(name: String) {
+    fun generatePdfCatalog(name: String, onSuccess: () -> Unit) {
         viewModelScope.launch {
             generatingPdf = true
             try {
@@ -109,6 +109,7 @@ class BrowseViewModel : ViewModel() {
                 val response = RetrofitInstance.api.generatePdfCatalog(request)
                 if (response.success) {
                     _pdfCatalogUrl.value = response.data.catalogUrl
+                    onSuccess()
                 }
             } catch (e: Exception) {
                 // Handle error
