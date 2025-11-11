@@ -166,7 +166,7 @@ class MainActivity : ComponentActivity() {
                             arguments = listOf(navArgument("productId") { type = NavType.LongType })
                         ) {
                             val productId = it.arguments?.getLong("productId")
-                            ReorderImagesScreen(productId = productId!!, navController = navController)
+                            ReorderImagesScreen(productId = productId!!, navController = navController, appBarViewModel = appBarViewModel)
                         }
                         composable(
                             route = Screen.CategoryDetail.route + "/{categoryJson}",

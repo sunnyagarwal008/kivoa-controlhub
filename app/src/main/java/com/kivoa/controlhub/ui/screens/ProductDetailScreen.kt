@@ -21,12 +21,15 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Reorder
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -84,6 +87,8 @@ fun ProductDetailScreen(
     var currentImageIndex by remember { mutableIntStateOf(0) }
     val error by productDetailViewModel.error.collectAsState()
     val context = LocalContext.current
+    var showMenu by remember { mutableStateOf(false) }
+
 
     LaunchedEffect(error) {
         error?.let {
@@ -122,23 +127,52 @@ fun ProductDetailScreen(
                         }
                     },
                     actions = {
-                        IconButton(onClick = {
-                            navController.navigate("edit_product/${it.id}")
-                        }) {
-                            Icon(Icons.Default.Edit, contentDescription = "Edit")
+                        IconButton(onClick = { showMenu = !showMenu }) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = "More"
+                            )
                         }
-                        IconButton(onClick = { shareViewModel.shareProduct(it) }) {
-                            Icon(Icons.Default.Share, contentDescription = "Share")
-                        }
-                        IconButton(onClick = { showDeleteConfirmationDialog = true }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete")
-                        }
-                        IconButton(onClick = { showGenerateImageDialog = true }) {
-                            Icon(Icons.Default.AddAPhoto, contentDescription = "Generate Image")
-                        }
-                        if (it.images.size > 1) {
-                            IconButton(onClick = { navController.navigate("reorder_images/${it.id}") }) {
-                                Icon(Icons.Default.Reorder, contentDescription = "Reorder Images")
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Edit") },
+                                onClick = {
+                                    navController.navigate("edit_product/${it.id}")
+                                    showMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Share") },
+                                onClick = {
+                                    shareViewModel.shareProduct(it)
+                                    showMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Delete") },
+                                onClick = {
+                                    showDeleteConfirmationDialog = true
+                                    showMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Generate Image") },
+                                onClick = {
+                                    showGenerateImageDialog = true
+                                    showMenu = false
+                                }
+                            )
+                            if (it.images.size > 1) {
+                                DropdownMenuItem(
+                                    text = { Text("Reorder Images") },
+                                    onClick = {
+                                        navController.navigate("reorder_images/${it.id}")
+                                        showMenu = false
+                                    }
+                                )
                             }
                         }
                     }

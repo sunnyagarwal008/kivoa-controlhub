@@ -11,7 +11,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DragHandle
-import androidx.compose.material.icons.filled.Save
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -76,7 +76,6 @@ fun ReorderImagesScreen(
             add(to.index, removeAt(from.index))
         }
     })
-
     LaunchedEffect(Unit) {
         appBarViewModel.setAppBarState(
             AppBarState(
@@ -88,29 +87,12 @@ fun ReorderImagesScreen(
                             contentDescription = "Back"
                         )
                     }
-                },
-                actions = {
-                    IconButton(onClick = {
-                        val priorities = images.mapIndexed { index, image ->
-                            ImagePriority(image.id, index)
-                        }
-                        productDetailViewModel.updateProductImagePriorities(productId, priorities)
-                        navController.previousBackStackEntry
-                            ?.savedStateHandle
-                            ?.set("refresh", true)
-                        navController.popBackStack()
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Save,
-                            contentDescription = "Save"
-                        )
-                    }
                 }
             )
         )
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column {
         LazyColumn(
             state = state.listState,
             modifier = Modifier
@@ -152,6 +134,21 @@ fun ReorderImagesScreen(
                     }
                 }
             }
+        }
+        Button(
+            onClick = {
+                val priorities = images.mapIndexed { index, image ->
+                    ImagePriority(image.id, index)
+                }
+                productDetailViewModel.updateProductImagePriorities(productId, priorities)
+                navController.previousBackStackEntry
+                    ?.savedStateHandle
+                    ?.set("refresh", true)
+                navController.popBackStack()
+            },
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text("Save")
         }
     }
 }
