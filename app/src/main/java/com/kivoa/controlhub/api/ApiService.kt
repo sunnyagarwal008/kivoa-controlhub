@@ -13,6 +13,7 @@ import com.kivoa.controlhub.data.CreateProductsResponse
 import com.kivoa.controlhub.data.CreatePromptRequest
 import com.kivoa.controlhub.data.CreatePromptResponse
 import com.kivoa.controlhub.data.DeletePromptResponse
+import com.kivoa.controlhub.data.GeneratePdfCatalogRequest
 import com.kivoa.controlhub.data.GenerateProductImageRequest
 import com.kivoa.controlhub.data.GenerateProductImageResponse
 import com.kivoa.controlhub.data.PdfCatalogResponse
@@ -80,17 +81,8 @@ interface ApiService {
         @Query("sortOrder") sortOrder: String? = null
     ): ProductsApiResponse
 
-    @GET("api/products/catalog")
-    suspend fun generatePdfCatalog(
-        @Query("status") status: String = "live",
-        @Query("category") category: String? = null,
-        @Query("tags") tags: String? = null,
-        @Query("excludeOutOfStock") excludeOutOfStock: Boolean = false,
-        @Query("minPrice") minPrice: Int? = null,
-        @Query("maxPrice") maxPrice: Int? = null,
-        @Query("sortBy") sortBy: String? = null,
-        @Query("sortOrder") sortOrder: String? = null
-    ): PdfCatalogResponse
+    @POST("api/catalogs")
+    suspend fun generatePdfCatalog(@Body request: GeneratePdfCatalogRequest): PdfCatalogResponse
 
     @GET("api/products/{product_id}")
     suspend fun getProductById(@Path("product_id") productId: Long): ProductDetailResponse

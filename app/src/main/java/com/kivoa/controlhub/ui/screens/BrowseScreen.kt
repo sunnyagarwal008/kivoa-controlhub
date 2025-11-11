@@ -49,6 +49,7 @@ import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -111,6 +112,7 @@ fun BrowseScreen(
     val filterParams by browseViewModel.filterParams.collectAsState()
     var sortExpanded by remember { mutableStateOf(false) }
     val pdfCatalogUrl by browseViewModel.pdfCatalogUrl.collectAsState()
+    var showPdfNameDialog by remember { mutableStateOf(false) }
 
 
     LaunchedEffect(browseViewModel.selectionMode, browseViewModel.selectedProducts.size) {
@@ -142,7 +144,7 @@ fun BrowseScreen(
                             Icon(Icons.Default.Share, contentDescription = "Share")
                         }
                     } else {
-                        IconButton(onClick = { browseViewModel.generatePdfCatalog() }) {
+                        IconButton(onClick = { showPdfNameDialog = true }) {
                             Icon(Icons.Default.PictureAsPdf, contentDescription = "Generate PDF Catalog")
                         }
                         Box {
@@ -201,6 +203,28 @@ fun BrowseScreen(
                 }
             )
         )
+    }
+
+    if (showPdfNameDialog) {
+        var catalogName by remember { mutableStateOf("") }
+        Dialog(onDismissRequest = { showPdfNameDialog = false }) {
+            Surface(shape = RoundedCornerShape(16.dp), color = Color.White) {
+                Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Enter catalog name")
+                    TextField(
+                        value = catalogName,
+                        onValueChange = { catalogName = it },
+                        label = { Text("Catalog Name") }
+                    )
+                    Button(onClick = {
+                        browseViewModel.generatePdfCatalog(catalogName)
+                        showPdfNameDialog = false
+                    }) {
+                        Text("Generate")
+                    }
+                }
+            }
+        }
     }
 
     if (browseViewModel.generatingPdf) {

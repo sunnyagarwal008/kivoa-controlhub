@@ -12,6 +12,7 @@ import androidx.paging.cachedIn
 import com.kivoa.controlhub.api.RetrofitInstance
 import com.kivoa.controlhub.data.ApiCategory
 import com.kivoa.controlhub.data.ApiProduct
+import com.kivoa.controlhub.data.GeneratePdfCatalogRequest
 import com.kivoa.controlhub.data.ProductPagingSource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -91,19 +92,21 @@ class BrowseViewModel : ViewModel() {
         filterParams.value = filterParams.value.copy(sortBy = sortBy, sortOrder = sortOrder)
     }
 
-    fun generatePdfCatalog() {
+    fun generatePdfCatalog(name: String) {
         viewModelScope.launch {
             generatingPdf = true
             try {
                 val params = filterParams.value
-                val response = RetrofitInstance.api.generatePdfCatalog(
+                val request = GeneratePdfCatalogRequest(
                     category = if (params.selectedCategory == "All products") null else params.selectedCategory,
                     excludeOutOfStock = params.excludeOutOfStock,
                     minPrice = params.priceRange.start.toInt(),
                     maxPrice = params.priceRange.endInclusive.toInt(),
                     sortBy = params.sortBy,
-                    sortOrder = params.sortOrder
+                    sortOrder = params.sortOrder,
+                    name = name
                 )
+                val response = RetrofitInstance.api.generatePdfCatalog(request)
                 if (response.success) {
                     _pdfCatalogUrl.value = response.data.catalogUrl
                 }
