@@ -7,6 +7,8 @@ import com.kivoa.controlhub.data.BulkCreateRawImagesResponse
 import com.kivoa.controlhub.data.BulkDeleteRawImagesRequest
 import com.kivoa.controlhub.data.BulkDeleteRawImagesResponse
 import com.kivoa.controlhub.data.BulkProductRequest
+import com.kivoa.controlhub.data.BulkUpdateProductStatusRequest
+import com.kivoa.controlhub.data.BulkUpdateProductStatusResponse
 import com.kivoa.controlhub.data.CategoriesApiResponse
 import com.kivoa.controlhub.data.CreateCategoryRequest
 import com.kivoa.controlhub.data.CreateCategoryResponse
@@ -117,11 +119,8 @@ interface ApiService {
         @Body request: UpdateImagePrioritiesRequest
     ): UpdateImagePrioritiesResponse
 
-    @PUT("api/products/{product_id}/status")
-    suspend fun updateProductStatus(
-        @Path("product_id") productId: Long,
-        @Body request: UpdateProductStatusRequest
-    ): UpdateProductApiResponse
+    @PUT("api/products/status")
+    suspend fun bulkUpdateProductStatus(@Body request: BulkUpdateProductStatusRequest): BulkUpdateProductStatusResponse
 
     @PUT("api/products/{product_id}/stock")
     suspend fun updateProductStock(

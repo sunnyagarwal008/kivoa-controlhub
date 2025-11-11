@@ -201,11 +201,13 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             _inReviewProductsLoading.value = true
             try {
-                productIds.forEach { productId ->
-                    productApiRepository.updateProductStatus(productId, status)
+                val response = productApiRepository.bulkUpdateProductStatus(productIds, status)
+                if (response.success) {
+                    fetchInReviewProducts()
+                    clearSelectedInReviewProductIds()
+                } else {
+                    Log.e(TAG, "Error updating product status: ${response.message}")
                 }
-                fetchInReviewProducts()
-                clearSelectedInReviewProductIds()
             } catch (e: Exception) {
                 Log.e(TAG, "Error updating product status: ${e.message}", e)
             } finally {

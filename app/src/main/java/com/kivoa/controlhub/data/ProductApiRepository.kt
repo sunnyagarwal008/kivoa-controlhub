@@ -60,10 +60,9 @@ class ProductApiRepository(private val apiService: ApiService) {
         return if (response.success) response.data else emptyList()
     }
 
-    suspend fun updateProductStatus(productId: Long, status: String): Boolean {
-        val request = UpdateProductStatusRequest(status = status)
-        val response = apiService.updateProductStatus(productId, request)
-        return response.success
+    suspend fun bulkUpdateProductStatus(productIds: List<Long>, status: String): BulkUpdateProductStatusResponse {
+        val request = BulkUpdateProductStatusRequest(product_ids = productIds, status = status)
+        return apiService.bulkUpdateProductStatus(request)
     }
 
     suspend fun updateProductImagePriorities(
