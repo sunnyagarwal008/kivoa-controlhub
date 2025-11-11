@@ -43,13 +43,15 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.core.net.toUri
 import coil.compose.rememberAsyncImagePainter
 import com.kivoa.controlhub.data.RawProduct
+import java.math.BigDecimal
+import java.text.NumberFormat
 
 data class ProductFormState(
     val rawImage: String,
     var mrp: String = "",
     var price: String = "",
-    var discount: String = "",
-    var gst: String = "",
+    var discount: String = "0",
+    var gst: String = "3",
     var purchaseMonth: String = "",
     var category: String = "", // Default category
     var priceCode: String = "",
@@ -59,7 +61,6 @@ data class ProductFormState(
 ) {
     val isValid: Boolean
         get() = mrp.isNotBlank() &&
-                price.isNotBlank() &&
                 discount.isNotBlank() &&
                 gst.isNotBlank() &&
                 purchaseMonth.isNotBlank() &&
@@ -178,7 +179,19 @@ fun ProductForm(
                     onValueChange = { newValue ->
                         mrpError = newValue.isBlank()
                         if (newValue.matches(Regex("""^\d*\.?\d*$"""))) {
-                            onUpdateField(productFormState.copy(mrp = newValue))
+                            val mrp = newValue.toBigDecimalOrNull()
+                            val discount = productFormState.discount.toBigDecimalOrNull()
+                            if (mrp != null && discount != null) {
+                                val sellingPrice = mrp - (mrp * discount.divide(BigDecimal(100)))
+                                onUpdateField(
+                                    productFormState.copy(
+                                        mrp = newValue,
+                                        price = NumberFormat.getInstance().format(sellingPrice)
+                                    )
+                                )
+                            } else {
+                                onUpdateField(productFormState.copy(mrp = newValue))
+                            }
                         }
                         onValidationChange(productFormState.isValid)
                     },
@@ -189,29 +202,23 @@ fun ProductForm(
                     supportingText = { if (mrpError) Text("Field cannot be empty") }
                 )
                 OutlinedTextField(
-                    value = productFormState.price,
-                    onValueChange = { newValue ->
-                        priceError = newValue.isBlank()
-                        if (newValue.matches(Regex("""^\d*\.?\d*$"""))) {
-                            onUpdateField(productFormState.copy(price = newValue))
-                        }
-                        onValidationChange(productFormState.isValid)
-                    },
-                    label = { Text("Price") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.weight(1f),
-                    isError = priceError,
-                    supportingText = { if (priceError) Text("Field cannot be empty") }
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
                     value = productFormState.discount,
                     onValueChange = { newValue ->
                         discountError = newValue.isBlank()
                         if (newValue.matches(Regex("""^\d*\.?\d*$"""))) {
-                            onUpdateField(productFormState.copy(discount = newValue))
+                            val mrp = productFormState.mrp.toBigDecimalOrNull()
+                            val discount = newValue.toBigDecimalOrNull()
+                            if (mrp != null && discount != null) {
+                                val sellingPrice = mrp - (mrp * discount.divide(BigDecimal(100)))
+                                onUpdateField(
+                                    productFormState.copy(
+                                        discount = newValue,
+                                        price = NumberFormat.getInstance().format(sellingPrice)
+                                    )
+                                )
+                            } else {
+                                onUpdateField(productFormState.copy(discount = newValue))
+                            }
                         }
                         onValidationChange(productFormState.isValid)
                     },
@@ -220,6 +227,19 @@ fun ProductForm(
                     modifier = Modifier.weight(1f),
                     isError = discountError,
                     supportingText = { if (discountError) Text("Field cannot be empty") }
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = productFormState.price,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Price") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.weight(1f),
+                    isError = priceError,
+                    supportingText = { if (priceError) Text("Field cannot be empty") }
                 )
                 OutlinedTextField(
                     value = productFormState.gst,

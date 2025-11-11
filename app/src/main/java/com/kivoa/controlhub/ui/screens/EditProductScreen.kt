@@ -55,6 +55,8 @@ import com.kivoa.controlhub.AppBarState
 import com.kivoa.controlhub.AppBarViewModel
 import com.kivoa.controlhub.api.RetrofitInstance
 import com.kivoa.controlhub.data.UpdateProductRequest
+import java.math.BigDecimal
+import java.text.NumberFormat
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -217,15 +219,41 @@ fun EditProductScreen(
             Row(Modifier.fillMaxWidth()) {
                 OutlinedTextField(
                     value = mrp,
-                    onValueChange = { mrp = it },
+                    onValueChange = { newValue ->
+                        if (newValue.matches(Regex("""^\d*\.?\d*$"""))) {
+                            mrp = newValue
+                            val mrpBigDecimal = newValue.toBigDecimalOrNull()
+                            val discountBigDecimal = discount.toBigDecimalOrNull()
+                            if (mrpBigDecimal != null && discountBigDecimal != null) {
+                                val sellingPrice =
+                                    mrpBigDecimal - (mrpBigDecimal * discountBigDecimal.divide(
+                                        BigDecimal(100)
+                                    ))
+                                price = NumberFormat.getInstance().format(sellingPrice)
+                            }
+                        }
+                    },
                     label = { Text("MRP") },
                     modifier = Modifier.weight(1f)
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 OutlinedTextField(
-                    value = price,
-                    onValueChange = { price = it },
-                    label = { Text("Price") },
+                    value = discount,
+                    onValueChange = { newValue ->
+                        if (newValue.matches(Regex("""^\d*\.?\d*$"""))) {
+                            discount = newValue
+                            val mrpBigDecimal = mrp.toBigDecimalOrNull()
+                            val discountBigDecimal = newValue.toBigDecimalOrNull()
+                            if (mrpBigDecimal != null && discountBigDecimal != null) {
+                                val sellingPrice =
+                                    mrpBigDecimal - (mrpBigDecimal * discountBigDecimal.divide(
+                                        BigDecimal(100)
+                                    ))
+                                price = NumberFormat.getInstance().format(sellingPrice)
+                            }
+                        }
+                    },
+                    label = { Text("Discount") },
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -234,9 +262,10 @@ fun EditProductScreen(
 
             Row(Modifier.fillMaxWidth()) {
                 OutlinedTextField(
-                    value = discount,
-                    onValueChange = { discount = it },
-                    label = { Text("Discount") },
+                    value = price,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Price") },
                     modifier = Modifier.weight(1f)
                 )
                 Spacer(modifier = Modifier.width(16.dp))
@@ -322,7 +351,7 @@ fun EditProductScreen(
                         category = category,
                         purchaseMonth = purchaseMonth,
                         mrp = mrp.toDouble(),
-                        price = price.toDouble(),
+                        price = NumberFormat.getInstance().parse(price).toDouble(),
                         discount = discount.toDouble(),
                         gst = gst.toDouble(),
                         priceCode = priceCode,
