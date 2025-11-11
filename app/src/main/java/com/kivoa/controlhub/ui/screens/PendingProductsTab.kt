@@ -64,7 +64,10 @@ fun PendingProductsTab(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                items(rawProducts.itemCount) { index ->
+                items(
+                    count = rawProducts.itemCount,
+                    key = { index -> rawProducts.peek(index)?.id ?: index }
+                ) { index ->
                     val product = rawProducts[index]
                     if (product != null) {
                         val isSelected = selectedProductIds.contains(product.id)

@@ -15,7 +15,7 @@ class RawImagePagingSource(
             LoadResult.Page(
                 data = response.data,
                 prevKey = if (page == 1) null else page - 1,
-                nextKey = if (response.data.isEmpty()) null else page + 1
+                nextKey = if (response.pagination.pages <= page) null else page + 1
             )
         } catch (e: Exception) {
             LoadResult.Error(e)
