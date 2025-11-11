@@ -350,7 +350,7 @@ fun BrowseScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically)
+            verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)
         ) {
 
             var categoryExpanded by remember { mutableStateOf(false) }
