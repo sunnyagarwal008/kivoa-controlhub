@@ -2,6 +2,7 @@ package com.kivoa.controlhub.ui.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,12 +20,9 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Reorder
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -42,6 +41,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,9 +49,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -67,6 +71,7 @@ import com.kivoa.controlhub.AppBarViewModel
 import com.kivoa.controlhub.data.Prompt
 import com.kivoa.controlhub.ui.components.shimmer
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
@@ -238,16 +243,12 @@ fun ProductDetailScreen(
 
     if (showZoomedImage) {
         Dialog(onDismissRequest = { showZoomedImage = false }) {
-            SubcomposeAsyncImage(
+            ZoomableAsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(product?.images?.get(currentImageIndex)?.imageUrl)
                     .crossfade(true)
                     .build(),
                 contentDescription = "Product Image",
-                modifier = Modifier.fillMaxSize(),
-                loading = {
-                    Box(modifier = Modifier.fillMaxSize().shimmer())
-                }
             )
         }
     }
@@ -445,7 +446,13 @@ fun GenerateImageDialog(
                             customPrompt.ifBlank { null }
                         )
                         if (success) {
-                            Toast.makeText(context, "Image generated successfully", Toast.LENGTH_SHORT).show()
+                            Toast
+                                .makeText(
+                                    context,
+                                    "Image generated successfully",
+                                    Toast.LENGTH_SHORT
+                                )
+                                .show()
                             onDismiss()
                         }
                         isGenerating = false
@@ -462,4 +469,42 @@ fun GenerateImageDialog(
             }
         }
     )
+}
+
+@Composable
+fun ZoomableAsyncImage(
+    model: ImageRequest,
+    contentDescription: String,
+    modifier: Modifier = Modifier
+) {
+    var scale by remember { mutableFloatStateOf(1f) }
+    var offset by remember { mutableStateOf(Offset.Zero) }
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .pointerInput(Unit) {
+                detectTransformGestures { _, pan, zoom, _ ->
+                    scale *= zoom
+                    offset += pan
+                }
+            }
+    ) {
+        SubcomposeAsyncImage(
+            model = model,
+            contentDescription = contentDescription,
+            modifier = Modifier
+                .fillMaxSize()
+                .offset { IntOffset(offset.x.roundToInt(), offset.y.roundToInt()) }
+                .graphicsLayer(
+                    scaleX = scale,
+                    scaleY = scale,
+                ),
+            loading = {
+                Box(modifier = Modifier
+                    .fillMaxSize()
+                    .shimmer())
+            }
+        )
+    }
 }

@@ -63,13 +63,13 @@ fun CreateScreen(
 
     var showFullScreenImageDialog by remember { mutableStateOf(false) }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-    var selectedProductUris by remember { mutableStateOf<PersistentList<Uri>>(persistentListOf()) }
     var showCreateProductFormsDialog by remember { mutableStateOf(false) }
 
     if (bulkProductCreationSuccess && showCreateProductFormsDialog) {
         showCreateProductFormsDialog = false
-        selectedProductUris = persistentListOf()
         createViewModel.resetBulkProductCreationSuccess()
+        createViewModel.clearSelectedRawProductIds()
+        rawProducts.refresh()
     }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
@@ -80,6 +80,10 @@ fun CreateScreen(
 
     LaunchedEffect(tabIndex) {
         when (tabIndex) {
+            0 -> {
+                createViewModel.clearSelectedRawProductIds()
+                rawProducts.refresh()
+            }
             1 -> createViewModel.fetchInProgressProducts()
             2 -> createViewModel.fetchInReviewProducts()
         }
@@ -102,7 +106,9 @@ fun CreateScreen(
                             }) {
                                 Icon(Icons.Default.Delete, "Delete Products")
                             }
-                            IconButton(onClick = { showCreateProductFormsDialog = true }) {
+                            IconButton(onClick = {
+                                showCreateProductFormsDialog = true
+                            }) {
                                 Icon(Icons.Default.Done, "Create Products")
                             }
                         }
@@ -227,7 +233,6 @@ fun CreateScreen(
             createViewModel = createViewModel,
             onProductCreationSuccess = {
                 showCreateProductFormsDialog = false
-                selectedProductUris = persistentListOf()
             }
         )
     }
