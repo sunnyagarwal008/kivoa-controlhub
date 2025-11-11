@@ -15,10 +15,25 @@ class CatalogsViewModel : ViewModel() {
     var catalogs by mutableStateOf<List<ApiCatalog>>(emptyList())
     var isLoading by mutableStateOf(false)
     var errorMessage by mutableStateOf<String?>(null)
+    var selectedCatalogs by mutableStateOf(emptySet<Long>())
+        private set
 
     init {
         fetchAllCatalogs()
     }
+
+    fun onCatalogSelected(catalogId: Long) {
+        selectedCatalogs = if (selectedCatalogs.contains(catalogId)) {
+            selectedCatalogs - catalogId
+        } else {
+            selectedCatalogs + catalogId
+        }
+    }
+
+    fun clearSelection() {
+        selectedCatalogs = emptySet()
+    }
+
 
     fun fetchAllCatalogs() {
         viewModelScope.launch {
@@ -38,6 +53,20 @@ class CatalogsViewModel : ViewModel() {
             }
         }
     }
+
+    fun deleteSelectedCatalogs() {
+        viewModelScope.launch {
+            try {
+                selectedCatalogs.forEach { apiService.deleteCatalog(it) }
+                fetchAllCatalogs()
+            } catch (e: Exception) {
+                errorMessage = "Error: ${e.message}"
+            } finally {
+                clearSelection()
+            }
+        }
+    }
+
 
     fun refreshCatalog(catalogId: Long) {
         viewModelScope.launch {

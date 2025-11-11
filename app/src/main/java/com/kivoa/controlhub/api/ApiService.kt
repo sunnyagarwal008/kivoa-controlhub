@@ -89,6 +89,9 @@ interface ApiService {
     @GET("api/catalogs")
     suspend fun getAllCatalogs(): CatalogsResponse
 
+    @DELETE("api/catalogs/{catalog_id}")
+    suspend fun deleteCatalog(@Path("catalog_id") catalogId: Long): Unit
+
     @POST("api/catalogs/{catalog_id}/refresh")
     suspend fun refreshCatalog(@Path("catalog_id") catalogId: Long): RefreshCatalogResponse
 

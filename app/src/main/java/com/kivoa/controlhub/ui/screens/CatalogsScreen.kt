@@ -2,8 +2,10 @@ package com.kivoa.controlhub.ui.screens
 
 import android.app.DownloadManager
 import android.content.Context
-import android.net.Uri
 import android.os.Environment
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,9 +17,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -26,8 +31,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.kivoa.controlhub.AppBarState
@@ -41,18 +48,41 @@ fun CatalogsScreen(
     appBarViewModel: AppBarViewModel
 ) {
     val context = LocalContext.current
+    val inSelectionMode = viewModel.selectedCatalogs.isNotEmpty()
 
-    LaunchedEffect(Unit) {
-        appBarViewModel.setAppBarState(
-            AppBarState(
-                title = { Text("All Catalogs") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+    BackHandler(enabled = inSelectionMode) {
+        viewModel.clearSelection()
+    }
+
+    LaunchedEffect(inSelectionMode, viewModel.selectedCatalogs.size) {
+        if (inSelectionMode) {
+            appBarViewModel.setAppBarState(
+                AppBarState(
+                    title = { Text("${viewModel.selectedCatalogs.size} selected") },
+                    navigationIcon = {
+                        IconButton(onClick = { viewModel.clearSelection() }) {
+                            Icon(Icons.Default.Close, contentDescription = "Close")
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { viewModel.deleteSelectedCatalogs() }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete")
+                        }
                     }
-                }
+                )
             )
-        )
+        } else {
+            appBarViewModel.setAppBarState(
+                AppBarState(
+                    title = { Text("All Catalogs") },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    }
+                )
+            )
+        }
     }
 
     Box(
@@ -70,11 +100,19 @@ fun CatalogsScreen(
             LazyColumn(
                 modifier = Modifier.fillMaxSize()
             ) {
-                items(viewModel.catalogs) { catalog ->
+                items(viewModel.catalogs, key = { it.id }) { catalog ->
+                    val isSelected = viewModel.selectedCatalogs.contains(catalog.id)
                     CatalogItem(
                         catalog = catalog,
+                        isSelected = isSelected,
                         onDownload = { downloadCatalog(context, it) },
-                        onRefresh = { viewModel.refreshCatalog(it) }
+                        onRefresh = { viewModel.refreshCatalog(it) },
+                        onClick = {
+                            if (inSelectionMode) {
+                                viewModel.onCatalogSelected(catalog.id)
+                            }
+                        },
+                        onLongClick = { viewModel.onCatalogSelected(catalog.id) }
                     )
                 }
             }
@@ -82,16 +120,27 @@ fun CatalogsScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CatalogItem(
     catalog: ApiCatalog,
+    isSelected: Boolean,
     onDownload: (ApiCatalog) -> Unit,
-    onRefresh: (Long) -> Unit
+    onRefresh: (Long) -> Unit,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            ),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) Color.LightGray else Color.White
+        )
     ) {
         Row(
             modifier = Modifier
@@ -117,7 +166,7 @@ fun CatalogItem(
 
 private fun downloadCatalog(context: Context, catalog: ApiCatalog) {
     val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-    val request = DownloadManager.Request(Uri.parse(catalog.s3Url))
+    val request = DownloadManager.Request(catalog.s3Url.toUri())
         .setTitle(catalog.name)
         .setDescription("Downloading")
         .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
