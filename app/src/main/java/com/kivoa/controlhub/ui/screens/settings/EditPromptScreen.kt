@@ -148,7 +148,10 @@ fun EditPromptScreen(
             value = text,
             onValueChange = { text = it },
             label = { Text("Prompt Text") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            singleLine = false
         )
         OutlinedTextField(
             value = type,
