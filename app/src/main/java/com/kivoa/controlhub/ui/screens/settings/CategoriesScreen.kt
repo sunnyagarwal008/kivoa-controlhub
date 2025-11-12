@@ -3,13 +3,17 @@ package com.kivoa.controlhub.ui.screens.settings
 import android.app.Application
 import android.util.Log
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -18,6 +22,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,7 +48,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class CategoriesViewModel(application: Application, private val apiService: ApiService) : ViewModel() {
+class CategoriesViewModel(private val apiService: ApiService) : ViewModel() {
     private val _categories = MutableStateFlow<List<ApiCategory>>(emptyList())
     val categories: StateFlow<List<ApiCategory>> = _categories
 
@@ -74,13 +79,13 @@ class CategoriesViewModelFactory(private val application: Application, private v
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(CategoriesViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return CategoriesViewModel(application, apiService) as T
+            return CategoriesViewModel(apiService) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CategoriesScreen(navController: NavController, appBarViewModel: AppBarViewModel) {
     val context = LocalContext.current
@@ -133,7 +138,7 @@ fun CategoriesScreen(navController: NavController, appBarViewModel: AppBarViewMo
                                 headlineContent = { Text(category.name) },
                                 supportingContent = {
                                     Column {
-                                        Text("Prefix: ${category.prefix}, SKU Seq: ${category.skuSequenceNumber}, Tags: ${category.tags}")
+                                        Text("Prefix: ${category.prefix}, SKU Seq: ${category.skuSequenceNumber}")
                                         Text(
                                             text = "Prompts",
                                             modifier = Modifier
@@ -143,6 +148,12 @@ fun CategoriesScreen(navController: NavController, appBarViewModel: AppBarViewMo
                                             textDecoration = TextDecoration.Underline
                                         )
                                     }
+                                },
+                                trailingContent = {
+                                    Icon(
+                                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                        contentDescription = "View Category"
+                                    )
                                 }
                             )
                             Divider()

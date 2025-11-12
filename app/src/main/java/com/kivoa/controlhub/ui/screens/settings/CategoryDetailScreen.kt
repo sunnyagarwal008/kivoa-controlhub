@@ -1,6 +1,9 @@
 package com.kivoa.controlhub.ui.screens.settings
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -26,7 +30,7 @@ import com.kivoa.controlhub.AppBarViewModel
 import com.kivoa.controlhub.Screen
 import com.kivoa.controlhub.data.ApiCategory
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CategoryDetailScreen(navController: NavController, appBarViewModel: AppBarViewModel, categoryJson: String?) {
     val category = categoryJson?.let { Gson().fromJson(it, ApiCategory::class.java) }
@@ -62,13 +66,12 @@ fun CategoryDetailScreen(navController: NavController, appBarViewModel: AppBarVi
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("SKU Sequence Number: ${category.skuSequenceNumber}", style = MaterialTheme.typography.bodyLarge)
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("Tags: ${category.tags}", style = MaterialTheme.typography.bodyLarge)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    category.tags?.split(",")?.forEach { tag ->
+                        SuggestionChip(onClick = {}, label = { Text(tag.trim()) })
+                    }
+                }
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("Created At: ${category.createdAt}", style = MaterialTheme.typography.bodyLarge)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("Updated At: ${category.updatedAt}", style = MaterialTheme.typography.bodyLarge)
-                Spacer(modifier = Modifier.height(16.dp))
-
                 Button(
                     onClick = {
                         val categoryJsonForEdit = Gson().toJson(category)
