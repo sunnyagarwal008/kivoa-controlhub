@@ -90,7 +90,7 @@ class ProductDetailViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val allPrompts = RetrofitInstance.api.getPrompts(category = category).data
-                _prompts.value = allPrompts.distinctBy { it.type }
+                _prompts.value = allPrompts.distinctBy { it.type }.filter { it.type?.isNotBlank() == true }
             } catch (_: Exception) {
                 // Handle error
             }

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -458,14 +459,14 @@ fun GenerateImageDialog(
         onDismissRequest = onDismiss,
         title = { Text("Generate Image") },
         text = {
-            Column {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 if (isGenerating) {
                     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
                     }
                 }
                 Text("Select a prompt type or enter a custom prompt.")
-                LazyColumn(modifier = Modifier.height(200.dp)) {
+                LazyColumn(modifier = Modifier.heightIn(max = 100.dp)) {
                     items(prompts) { prompt ->
                         Row(
                             Modifier
@@ -474,7 +475,7 @@ fun GenerateImageDialog(
                                     selected = (selectedPrompt?.id == prompt.id),
                                     onClick = { selectedPrompt = prompt }
                                 )
-                                .padding(vertical = 8.dp),
+                                .padding(vertical = 3.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RadioButton(

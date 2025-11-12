@@ -83,7 +83,16 @@ class BrowseViewModel : ViewModel() {
     }
 
     fun updateSelectedCategory(category: String) {
-        filterParams.value = filterParams.value.copy(selectedCategory = category)
+        filterParams.value = filterParams.value.copy(selectedCategory = category, selectedTags = emptySet())
+        updateTagsForCategory(category)
+    }
+
+    private fun updateTagsForCategory(category: String) {
+        if (category == "All products") {
+            _tags.value = _categories.value.flatMap { it.tags?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() } ?: emptyList() }.distinct()
+        } else {
+            _tags.value = _categories.value.find { it.name == category }?.tags?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() } ?: emptyList()
+        }
     }
 
     fun updatePriceRange(newRange: ClosedFloatingPointRange<Float>) {
@@ -138,7 +147,7 @@ class BrowseViewModel : ViewModel() {
             try {
                 val response = RetrofitInstance.api.getCategories()
                 _categories.value = response.data
-                _tags.value = response.data.flatMap { it.tags?.split(",") ?: emptyList() }.distinct()
+                updateTagsForCategory("All products")
             } catch (e: Exception) {
                 // Handle error
             }
