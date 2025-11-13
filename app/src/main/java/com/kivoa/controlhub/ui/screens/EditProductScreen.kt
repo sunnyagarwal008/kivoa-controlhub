@@ -141,11 +141,16 @@ fun EditProductScreen(
         val categoryTags = remember(product!!.categoryDetails.tags) {
             product!!.categoryDetails.tags.split(",").map { it.trim() }
         }
-        var selectedTags by remember {
-            mutableStateOf(
-                product!!.tags?.split(",")?.map { it.trim() }?.toSet() ?: emptySet()
-            )
+        val initialProductTags = remember(product!!.tags) {
+            product!!.tags?.split(",")?.map { it.trim() }?.toSet() ?: emptySet()
         }
+        var selectedTags by remember {
+            mutableStateOf(initialProductTags)
+        }
+        val extraTags = initialProductTags.filter { it !in categoryTags }
+        val allDisplayTags = (extraTags + categoryTags).distinct()
+
+
         var boxNumber by remember { mutableStateOf(product!!.boxNumber?.toString() ?: "") }
         var expanded by remember { mutableStateOf(false) }
 
@@ -331,7 +336,7 @@ fun EditProductScreen(
                     expanded = expanded,
                     onDismissRequest = { expanded = false }
                 ) {
-                    categoryTags.forEach { tag ->
+                    allDisplayTags.forEach { tag ->
                         DropdownMenuItem(
                             text = {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
