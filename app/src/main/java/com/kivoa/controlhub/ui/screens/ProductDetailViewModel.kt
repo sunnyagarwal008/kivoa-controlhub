@@ -8,6 +8,7 @@ import com.kivoa.controlhub.data.GenerateProductImageRequest
 import com.kivoa.controlhub.data.ImagePriority
 import com.kivoa.controlhub.data.ProductApiRepository
 import com.kivoa.controlhub.data.Prompt
+import com.kivoa.controlhub.data.UpdateProductFlaggedRequest
 import com.kivoa.controlhub.data.UpdateProductStockRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -52,6 +53,23 @@ class ProductDetailViewModel : ViewModel() {
                     UpdateProductStockRequest(inStock)
                 )
                 getProductById(productId)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun updateProductFlagged(productId: Long, flagged: Boolean) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                RetrofitInstance.api.updateProductFlagged(
+                    productId,
+                    UpdateProductFlaggedRequest(flagged)
+                )
+                getProductById(productId)
+            } catch (e: Exception) {
+                _error.value = "Failed to update flagged status: ${e.message}"
             } finally {
                 _isLoading.value = false
             }

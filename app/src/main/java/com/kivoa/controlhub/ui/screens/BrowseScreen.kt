@@ -34,6 +34,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Sort
@@ -585,6 +586,16 @@ fun ProductCard(product: ApiProduct, isSelected: Boolean, onClick: () -> Unit, o
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
+            if (product.flagged) {
+                Icon(
+                    imageVector = Icons.Default.Flag,
+                    contentDescription = "Flagged",
+                    tint = Color.Red,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(4.dp)
+                )
+            }
             if (product.boxNumber != null) {
                 Box(
                     modifier = Modifier

@@ -68,7 +68,8 @@ data class ApiProduct(
     val boxNumber: Int?,
     val title : String?,
     val description : String?,
-    val handle: String?
+    val handle: String?,
+    val flagged: Boolean
 )
 
 data class CategoryDetails(

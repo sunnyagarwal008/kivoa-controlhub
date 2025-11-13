@@ -32,6 +32,8 @@ import com.kivoa.controlhub.data.UpdateCategoryRequest
 import com.kivoa.controlhub.data.UpdateImagePrioritiesRequest
 import com.kivoa.controlhub.data.UpdateImagePrioritiesResponse
 import com.kivoa.controlhub.data.UpdateProductApiResponse
+import com.kivoa.controlhub.data.UpdateProductFlaggedRequest
+import com.kivoa.controlhub.data.UpdateProductFlaggedResponse
 import com.kivoa.controlhub.data.UpdateProductRequest
 import com.kivoa.controlhub.data.UpdateProductStatusRequest
 import com.kivoa.controlhub.data.UpdateProductStockApiResponse
@@ -108,6 +110,12 @@ interface ApiService {
         @Body request: UpdateProductRequest
     ): UpdateProductApiResponse
     
+    @PUT("api/products/{product_id}/flagged")
+    suspend fun updateProductFlagged(
+        @Path("product_id") productId: Long,
+        @Body request: UpdateProductFlaggedRequest
+    ): UpdateProductFlaggedResponse
+
     @POST("api/products/{product_id}/generate-image")
     suspend fun generateProductImage(
         @Path("product_id") productId: Long,

@@ -24,6 +24,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material3.AlertDialog
@@ -135,6 +136,15 @@ fun ProductDetailScreen(
                         }
                     },
                     actions = {
+                        IconButton(onClick = {
+                            productDetailViewModel.updateProductFlagged(it.id, !it.flagged)
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Flag,
+                                contentDescription = "Flag",
+                                tint = if (it.flagged) Color.Red else Color.Gray
+                            )
+                        }
                         IconButton(onClick = { showMenu = !showMenu }) {
                             Icon(
                                 imageVector = Icons.Default.MoreVert,
