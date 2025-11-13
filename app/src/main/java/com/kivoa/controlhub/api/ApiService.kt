@@ -1,6 +1,5 @@
 package com.kivoa.controlhub.api
 
-import com.kivoa.controlhub.data.CatalogsResponse
 import com.kivoa.controlhub.data.ApiCategory
 import com.kivoa.controlhub.data.BulkCreateRawImagesRequest
 import com.kivoa.controlhub.data.BulkCreateRawImagesResponse
@@ -9,6 +8,7 @@ import com.kivoa.controlhub.data.BulkDeleteRawImagesResponse
 import com.kivoa.controlhub.data.BulkProductRequest
 import com.kivoa.controlhub.data.BulkUpdateProductStatusRequest
 import com.kivoa.controlhub.data.BulkUpdateProductStatusResponse
+import com.kivoa.controlhub.data.CatalogsResponse
 import com.kivoa.controlhub.data.CategoriesApiResponse
 import com.kivoa.controlhub.data.CreateCategoryRequest
 import com.kivoa.controlhub.data.CreateCategoryResponse
@@ -35,11 +35,11 @@ import com.kivoa.controlhub.data.UpdateProductApiResponse
 import com.kivoa.controlhub.data.UpdateProductFlaggedRequest
 import com.kivoa.controlhub.data.UpdateProductFlaggedResponse
 import com.kivoa.controlhub.data.UpdateProductRequest
-import com.kivoa.controlhub.data.UpdateProductStatusRequest
 import com.kivoa.controlhub.data.UpdateProductStockApiResponse
 import com.kivoa.controlhub.data.UpdateProductStockRequest
 import com.kivoa.controlhub.data.UpdatePromptRequest
 import com.kivoa.controlhub.data.UpdatePromptResponse
+import com.kivoa.controlhub.data.UploadProductImageRequest
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -110,7 +110,7 @@ interface ApiService {
         @Path("product_id") productId: Long,
         @Body request: UpdateProductRequest
     ): UpdateProductApiResponse
-    
+
     @PUT("api/products/{product_id}/flagged")
     suspend fun updateProductFlagged(
         @Path("product_id") productId: Long,
@@ -122,6 +122,12 @@ interface ApiService {
         @Path("product_id") productId: Long,
         @Body request: GenerateProductImageRequest
     ): GenerateProductImageResponse
+
+    @POST("api/products/{product_id}/upload-image")
+    suspend fun uploadProductImage(
+        @Path("product_id") productId: Long,
+        @Body request: UploadProductImageRequest
+    ): Any
 
     @PUT("api/products/{product_id}/images/update-priorities")
     suspend fun updateProductImagePriorities(

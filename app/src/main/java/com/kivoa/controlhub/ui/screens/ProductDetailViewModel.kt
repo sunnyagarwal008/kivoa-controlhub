@@ -1,7 +1,10 @@
 package com.kivoa.controlhub.ui.screens
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.gson.Gson
 import com.kivoa.controlhub.api.RetrofitInstance
 import com.kivoa.controlhub.data.ApiProduct
 import com.kivoa.controlhub.data.GenerateProductImageRequest
@@ -10,14 +13,18 @@ import com.kivoa.controlhub.data.ProductApiRepository
 import com.kivoa.controlhub.data.Prompt
 import com.kivoa.controlhub.data.UpdateProductFlaggedRequest
 import com.kivoa.controlhub.data.UpdateProductStockRequest
+import com.kivoa.controlhub.data.UploadProductImageRequest
+import com.kivoa.controlhub.utils.S3ImageUploader
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
 
 class ProductDetailViewModel : ViewModel() {
 
     private val productRepository = ProductApiRepository(RetrofitInstance.api)
+    private val s3ImageUploader = S3ImageUploader(RetrofitInstance.api, OkHttpClient(), Gson())
 
     private val _product = MutableStateFlow<ApiProduct?>(null)
     val product: StateFlow<ApiProduct?> = _product.asStateFlow()
@@ -124,6 +131,28 @@ class ProductDetailViewModel : ViewModel() {
         } catch (e: Exception) {
             _error.value = "Failed to generate image: ${e.message}"
             false
+        }
+    }
+
+    fun uploadProductImage(productId: Long, imageUri: Uri, context: Context) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                val imageUrl = s3ImageUploader.uploadImageToS3(imageUri, context)
+                if (imageUrl != null) {
+                    RetrofitInstance.api.uploadProductImage(
+                        productId,
+                        UploadProductImageRequest(imageUrl)
+                    )
+                    getProductById(productId)
+                } else {
+                    _error.value = "Failed to upload image"
+                }
+            } catch (e: Exception) {
+                _error.value = "Failed to upload image: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 

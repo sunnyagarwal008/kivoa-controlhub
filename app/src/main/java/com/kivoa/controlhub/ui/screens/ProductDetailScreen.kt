@@ -1,6 +1,9 @@
 package com.kivoa.controlhub.ui.screens
 
+import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
@@ -98,6 +101,14 @@ fun ProductDetailScreen(
     val context = LocalContext.current
     var showMenu by remember { mutableStateOf(false) }
 
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            productDetailViewModel.uploadProductImage(productId, it, context)
+        }
+    }
+
 
     LaunchedEffect(error) {
         error?.let {
@@ -181,6 +192,13 @@ fun ProductDetailScreen(
                                 text = { Text("Generate Image") },
                                 onClick = {
                                     showGenerateImageDialog = true
+                                    showMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Upload Image") },
+                                onClick = {
+                                    imagePickerLauncher.launch("image/*")
                                     showMenu = false
                                 }
                             )
