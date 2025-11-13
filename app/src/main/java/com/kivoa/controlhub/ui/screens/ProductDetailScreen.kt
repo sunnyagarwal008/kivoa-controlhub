@@ -363,7 +363,9 @@ fun ProductDetailScreen(
                     Text(text = "Discount: ${it.discount}%")
                     Text(text = "Selling Price: ₹${it.price}")
                     it.tags?.let { tags -> Text(text = "Tags: $tags") }
-                    it.boxNumber?.let { boxNumber -> Text(text = "Box Number: $boxNumber") }
+                    if (it.boxNumber != null) {
+                        Text(text = "Box Number: ${it.boxNumber}")
+                    }
                     val outOfStock = !it.inStock
                     if (outOfStock) {
                         Text(

@@ -27,7 +27,8 @@ data class FilterParams(
     val excludeOutOfStock: Boolean = true,
     val sortBy: String = "created_at",
     val sortOrder: String = "desc",
-    val selectedTags: Set<String> = emptySet()
+    val selectedTags: Set<String> = emptySet(),
+    val boxNumber: String? = null
 )
 
 class BrowseViewModel : ViewModel() {
@@ -62,7 +63,8 @@ class BrowseViewModel : ViewModel() {
                 maxPrice = params.priceRange.endInclusive.toInt(),
                 sortBy = params.sortBy,
                 sortOrder = params.sortOrder,
-                tags = params.selectedTags.joinToString(",")
+                tags = params.selectedTags.joinToString(","),
+                boxNumber = params.boxNumber
             )
         }.flow
     }.cachedIn(viewModelScope)
@@ -110,6 +112,10 @@ class BrowseViewModel : ViewModel() {
         filterParams.value = filterParams.value.copy(selectedTags = tags)
     }
 
+    fun updateBoxNumber(boxNumber: String?) {
+        filterParams.value = filterParams.value.copy(boxNumber = boxNumber)
+    }
+
     fun generatePdfCatalog(name: String, onSuccess: () -> Unit) {
         viewModelScope.launch {
             generatingPdf = true
@@ -123,7 +129,7 @@ class BrowseViewModel : ViewModel() {
                     sortBy = params.sortBy,
                     sortOrder = params.sortOrder,
                     name = name,
-                    selectedTags = params.selectedTags.joinToString(",")
+                    selectedTags = params.selectedTags.joinToString(","),
                 )
                 val response = RetrofitInstance.api.generatePdfCatalog(request)
                 if (response.success) {

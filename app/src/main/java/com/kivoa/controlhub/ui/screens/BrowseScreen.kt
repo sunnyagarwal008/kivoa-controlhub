@@ -116,6 +116,7 @@ fun BrowseScreen(
     val filterParams by browseViewModel.filterParams.collectAsState()
     val pdfCatalogUrl by browseViewModel.pdfCatalogUrl.collectAsState()
     var showPdfNameDialog by remember { mutableStateOf(false) }
+    var showBoxNumberDialog by remember { mutableStateOf(false) }
 
 
     LaunchedEffect(browseViewModel.selectionMode, browseViewModel.selectedProducts.size) {
@@ -249,6 +250,36 @@ fun BrowseScreen(
                         showPdfNameDialog = false
                     }) {
                         Text("Generate")
+                    }
+                }
+            }
+        }
+    }
+
+    if (showBoxNumberDialog) {
+        var boxNumber by remember { mutableStateOf(filterParams.boxNumber ?: "") }
+        Dialog(onDismissRequest = { showBoxNumberDialog = false }) {
+            Surface(shape = RoundedCornerShape(16.dp), color = Color.White) {
+                Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Enter Box Number")
+                    TextField(
+                        value = boxNumber,
+                        onValueChange = { boxNumber = it },
+                        label = { Text("Box Number") }
+                    )
+                    Row {
+                        Button(onClick = {
+                            browseViewModel.updateBoxNumber(boxNumber.ifBlank { null })
+                            showBoxNumberDialog = false
+                        }) {
+                            Text("Apply")
+                        }
+                        Button(onClick = {
+                            browseViewModel.updateBoxNumber(null)
+                            showBoxNumberDialog = false
+                        }) {
+                            Text("Clear")
+                        }
                     }
                 }
             }
@@ -410,6 +441,10 @@ fun BrowseScreen(
                 }
             }
 
+            FilterChip(
+                label = filterParams.boxNumber ?: "Box Number",
+                onClick = { showBoxNumberDialog = true }
+            )
 
             FilterChip(
                 label = "₹${filterParams.priceRange.start.toInt()}-₹${filterParams.priceRange.endInclusive.toInt()}",
@@ -550,6 +585,26 @@ fun ProductCard(product: ApiProduct, isSelected: Boolean, onClick: () -> Unit, o
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
+            if (product.boxNumber != null) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(4.dp)
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(Color.Black.copy(alpha = 0.7f), Color.Transparent)
+                            ),
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                        .padding(horizontal = 4.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = "Box: ${product.boxNumber}",
+                        color = Color.White,
+                        fontSize = 10.sp
+                    )
+                }
+            }
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

@@ -13,7 +13,8 @@ class ProductPagingSource(
     private val maxPrice: Int?,
     private val sortBy: String?,
     private val sortOrder: String?,
-    private val tags: String?
+    private val tags: String?,
+    private val boxNumber: String?
 ) : PagingSource<Int, ApiProduct>() {
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, ApiProduct> {
@@ -27,7 +28,8 @@ class ProductPagingSource(
                 maxPrice = maxPrice,
                 sortBy = sortBy,
                 sortOrder = sortOrder,
-                tags = tags
+                tags = tags,
+                boxNumber = boxNumber
             )
             val products = response.data
             LoadResult.Page(
