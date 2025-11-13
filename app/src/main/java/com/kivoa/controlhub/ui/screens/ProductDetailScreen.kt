@@ -137,6 +137,14 @@ fun ProductDetailScreen(
                     },
                     actions = {
                         IconButton(onClick = {
+                            navController.navigate("edit_product/${it.id}")
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Edit"
+                            )
+                        }
+                        IconButton(onClick = {
                             productDetailViewModel.updateProductFlagged(it.id, !it.flagged)
                         }) {
                             Icon(
@@ -155,13 +163,6 @@ fun ProductDetailScreen(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false }
                         ) {
-                            DropdownMenuItem(
-                                text = { Text("Edit") },
-                                onClick = {
-                                    navController.navigate("edit_product/${it.id}")
-                                    showMenu = false
-                                }
-                            )
                             DropdownMenuItem(
                                 text = { Text("Share") },
                                 onClick = {
