@@ -28,7 +28,8 @@ data class FilterParams(
     val sortBy: String = "created_at",
     val sortOrder: String = "desc",
     val selectedTags: Set<String> = emptySet(),
-    val boxNumber: String? = null
+    val boxNumber: String? = null,
+    val flagged: Boolean? = null
 )
 
 class BrowseViewModel : ViewModel() {
@@ -64,7 +65,8 @@ class BrowseViewModel : ViewModel() {
                 sortBy = params.sortBy,
                 sortOrder = params.sortOrder,
                 tags = params.selectedTags.joinToString(","),
-                boxNumber = params.boxNumber
+                boxNumber = params.boxNumber,
+                flagged = params.flagged
             )
         }.flow
     }.cachedIn(viewModelScope)
@@ -114,6 +116,10 @@ class BrowseViewModel : ViewModel() {
 
     fun updateBoxNumber(boxNumber: String?) {
         filterParams.value = filterParams.value.copy(boxNumber = boxNumber)
+    }
+
+    fun updateFlagged(flagged: Boolean?) {
+        filterParams.value = filterParams.value.copy(flagged = flagged)
     }
 
     fun generatePdfCatalog(name: String, onSuccess: () -> Unit) {

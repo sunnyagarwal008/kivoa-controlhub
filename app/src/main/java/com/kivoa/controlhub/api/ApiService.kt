@@ -86,7 +86,8 @@ interface ApiService {
         @Query("sortBy") sortBy: String? = null,
         @Query("sortOrder") sortOrder: String? = null,
         @Query("tags") tags: String? = null,
-        @Query("boxNumber") boxNumber: String? = null
+        @Query("boxNumber") boxNumber: String? = null,
+        @Query("flagged") flagged: Boolean? = null
     ): ProductsApiResponse
 
     @POST("api/catalogs")

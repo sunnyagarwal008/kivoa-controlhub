@@ -388,6 +388,7 @@ fun BrowseScreen(
             var categoryExpanded by remember { mutableStateOf(false) }
             var tagsExpanded by remember { mutableStateOf(false) }
             var inStockExpanded by remember { mutableStateOf(false) }
+            var flaggedExpanded by remember { mutableStateOf(false) }
 
             Box {
                 FilterChip(
@@ -472,6 +473,42 @@ fun BrowseScreen(
                         onClick = {
                             browseViewModel.updateExcludeOutOfStock(true)
                             inStockExpanded = false
+                        }
+                    )
+                }
+            }
+            Box {
+                FilterChip(
+                    label = when (filterParams.flagged) {
+                        true -> "Flagged"
+                        false -> "Not Flagged"
+                        else -> "All"
+                    },
+                    onClick = { flaggedExpanded = true }
+                )
+                DropdownMenu(
+                    expanded = flaggedExpanded,
+                    onDismissRequest = { flaggedExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("All") },
+                        onClick = {
+                            browseViewModel.updateFlagged(null)
+                            flaggedExpanded = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Flagged") },
+                        onClick = {
+                            browseViewModel.updateFlagged(true)
+                            flaggedExpanded = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Not Flagged") },
+                        onClick = {
+                            browseViewModel.updateFlagged(false)
+                            flaggedExpanded = false
                         }
                     )
                 }
