@@ -44,6 +44,7 @@ import androidx.core.net.toUri
 import coil.compose.rememberAsyncImagePainter
 import com.kivoa.controlhub.data.RawProduct
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.text.NumberFormat
 
 data class ProductFormState(
@@ -186,7 +187,7 @@ fun ProductForm(
                                 onUpdateField(
                                     productFormState.copy(
                                         mrp = newValue,
-                                        price = NumberFormat.getInstance().format(sellingPrice)
+                                        price = sellingPrice.setScale(2, RoundingMode.HALF_UP).toPlainString()
                                     )
                                 )
                             } else {
@@ -213,7 +214,7 @@ fun ProductForm(
                                 onUpdateField(
                                     productFormState.copy(
                                         discount = newValue,
-                                        price = NumberFormat.getInstance().format(sellingPrice)
+                                        price = sellingPrice.setScale(2, RoundingMode.HALF_UP).toPlainString()
                                     )
                                 )
                             } else {
