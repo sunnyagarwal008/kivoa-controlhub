@@ -22,5 +22,5 @@ data class ProductDetailRequest(
     val isRawImage: Boolean,
     @Json(name = "box_number")
     val boxNumber: Int?,
-    val tags: String
+    val tags: String,
 )

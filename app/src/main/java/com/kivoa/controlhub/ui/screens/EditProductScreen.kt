@@ -136,6 +136,8 @@ fun EditProductScreen(
         var discount by remember { mutableStateOf(product!!.discount.toString()) }
         var gst by remember { mutableStateOf(product!!.gst.toString()) }
         var priceCode by remember { mutableStateOf(product!!.priceCode ?: "") }
+        var title by remember { mutableStateOf(product!!.title ?: "") }
+        var description by remember { mutableStateOf(product!!.description ?: "") }
         val categoryTags = remember(product!!.categoryDetails.tags) {
             product!!.categoryDetails.tags.split(",").map { it.trim() }
         }
@@ -201,6 +203,20 @@ fun EditProductScreen(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
+            OutlinedTextField(
+                value = title,
+                onValueChange = { title = it },
+                label = { Text("Title") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            OutlinedTextField(
+                value = description,
+                onValueChange = { description = it },
+                label = { Text("Description") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(16.dp))
             OutlinedTextField(
                 value = category,
                 onValueChange = { category = it },
@@ -348,6 +364,8 @@ fun EditProductScreen(
             Button(
                 onClick = {
                     val request = UpdateProductRequest(
+                        title = title,
+                        description = description,
                         category = category,
                         purchaseMonth = purchaseMonth,
                         mrp = mrp.toDouble(),

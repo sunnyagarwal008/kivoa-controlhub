@@ -356,6 +356,12 @@ fun ProductDetailScreen(
                     modifier = Modifier
                         .padding(16.dp)
                 ) {
+                    it.title?.let { title ->
+                        Text(text = "Title: $title", style = MaterialTheme.typography.titleLarge)
+                    }
+                    it.description?.let { description ->
+                        Text(text = "Description: $description", style = MaterialTheme.typography.bodyLarge)
+                    }
                     Text(text = "SKU: ${it.sku}", style = MaterialTheme.typography.titleLarge)
                     Text(text = "Purchase Month: ${it.purchaseMonth}")
                     Text(text = "Product Code: ${it.priceCode}")
