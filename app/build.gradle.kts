@@ -84,6 +84,7 @@ dependencies {
     implementation("androidx.compose.runtime:runtime-livedata")
     implementation("org.burnoutcrew.composereorderable:reorderable:0.9.6")
     implementation("androidx.datastore:datastore-preferences:1.0.0")
+    implementation("androidx.compose.ui:ui-text-google-fonts:1.6.8")
 
 
     // Retrofit

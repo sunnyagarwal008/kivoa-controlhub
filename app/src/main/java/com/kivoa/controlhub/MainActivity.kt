@@ -118,7 +118,7 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     topBar = { KivoaAppBar(appBarState = appBarState) },
                     bottomBar = {
-                        NavigationBar(modifier = Modifier.height(100.dp)) {
+                        NavigationBar {
                             val items = listOf(
                                 Screen.Search,
                                 Screen.Browse,
@@ -128,7 +128,7 @@ class MainActivity : ComponentActivity() {
                             items.forEach { screen ->
                                 NavigationBarItem(
                                     icon = { Icon(screen.icon!!, contentDescription = null) },
-                                    label = { Text(screen.route, modifier = Modifier.offset(y = (-4).dp)) },
+                                    label = { Text(screen.route) },
                                     selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
                                     onClick = {
                                         navController.navigate(screen.route) {
