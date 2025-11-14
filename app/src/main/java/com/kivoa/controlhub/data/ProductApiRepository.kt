@@ -47,7 +47,8 @@ class ProductApiRepository(private val apiService: ApiService) {
                 priceCode = formState.priceCode,
                 isRawImage = formState.isRawImage,
                 boxNumber = formState.boxNumber.toIntOrNull(),
-                tags = formState.tags.joinToString(",")
+                tags = formState.tags.joinToString(","),
+                promptType = formState.promptType
             )
         }
         val bulkProductRequest = BulkProductRequest(products = productDetails)

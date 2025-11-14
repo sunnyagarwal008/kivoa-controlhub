@@ -23,4 +23,6 @@ data class ProductDetailRequest(
     @Json(name = "box_number")
     val boxNumber: Int?,
     val tags: String,
+    @Json(name = "prompt_type")
+    val promptType: String?,
 )

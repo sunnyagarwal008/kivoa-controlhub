@@ -62,6 +62,9 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
     private val _categories = MutableStateFlow<List<ApiCategory>>(emptyList())
     val categories: StateFlow<List<ApiCategory>> = _categories.asStateFlow()
 
+    private val _promptTypes = MutableStateFlow<List<String>>(emptyList())
+    val promptTypes: StateFlow<List<String>> = _promptTypes.asStateFlow()
+
 
     init {
         val apiService = RetrofitInstance.api
@@ -244,6 +247,21 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error fetching categories: ${e.message}", e)
+            }
+        }
+    }
+
+    fun fetchPromptTypes(category: String) {
+        viewModelScope.launch {
+            try {
+                val response = RetrofitInstance.api.getPrompts(category)
+                if (response.success) {
+                    _promptTypes.value = response.data.mapNotNull { it.type }.distinct()
+                } else {
+                    Log.e(TAG, "Error fetching prompt types: ${response.success}")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error fetching prompt types: ${e.message}", e)
             }
         }
     }

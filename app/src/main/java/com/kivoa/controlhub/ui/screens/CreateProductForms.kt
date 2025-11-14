@@ -61,7 +61,8 @@ data class ProductFormState(
     var priceCode: String = "",
     var isRawImage: Boolean = false,
     var boxNumber: String = "",
-    var tags: List<String> = emptyList()
+    var tags: List<String> = emptyList(),
+    var promptType: String = ""
 ) {
     val isValid: Boolean
         get() = mrp.isNotBlank() &&
@@ -69,7 +70,8 @@ data class ProductFormState(
                 gst.isNotBlank() &&
                 purchaseMonth.isNotBlank() &&
                 category.isNotBlank() &&
-                priceCode.isNotBlank()
+                priceCode.isNotBlank() &&
+                (!isRawImage || promptType.isNotBlank())
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -103,20 +105,20 @@ fun CreateProductFormsDialog(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp),
+                    .padding(8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     "Create Products",
                     style = androidx.compose.material3.MaterialTheme.typography.headlineMedium
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 LazyColumn(
                     modifier = Modifier
                         .weight(1f)
                         .padding(bottom = bottomPadding),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     itemsIndexed(initialProductForms) { index, productFormState ->
                         ProductForm(
@@ -144,7 +146,7 @@ fun CreateProductFormsDialog(
                         }
                     }
                     item { // Add a spacer after the button for padding at the bottom
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
             }
@@ -169,20 +171,21 @@ fun ProductForm(
     var categoryError by remember { mutableStateOf(false) }
     var boxNumberError by remember { mutableStateOf(false) }
     val categories by createViewModel.categories.collectAsState()
+    val promptTypes by createViewModel.promptTypes.collectAsState()
 
 
     Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(8.dp)) {
             Image(
                 painter = rememberAsyncImagePainter(model = productFormState.rawImage.toUri()),
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp),
+                    .height(150.dp),
                 contentScale = ContentScale.Crop
             )
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 OutlinedTextField(
                     value = productFormState.mrp,
                     onValueChange = { newValue ->
@@ -197,7 +200,7 @@ fun ProductForm(
                                         mrp = newValue,
                                         price = sellingPrice.setScale(2, RoundingMode.HALF_UP).toPlainString()
                                     )
-                                )
+                                 )
                             } else {
                                 onUpdateField(productFormState.copy(mrp = newValue))
                             }
@@ -238,8 +241,8 @@ fun ProductForm(
                     supportingText = { if (discountError) Text("Field cannot be empty") }
                 )
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 OutlinedTextField(
                     value = productFormState.price,
                     onValueChange = {},
@@ -266,159 +269,208 @@ fun ProductForm(
                     supportingText = { if (gstError) Text("Field cannot be empty") }
                 )
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
-                value = productFormState.purchaseMonth,
-                onValueChange = { newValue ->
-                    purchaseMonthError = newValue.isBlank()
-                    if (newValue.length <= 4 && newValue.all { it.isDigit() }) {
-                        onUpdateField(productFormState.copy(purchaseMonth = newValue))
-                    }
-                    onValidationChange(productFormState.isValid)
-                },
-                label = { Text("Purchase Month") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth(),
-                isError = purchaseMonthError,
-                supportingText = { if (purchaseMonthError) Text("Field cannot be empty") }
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
-                value = productFormState.priceCode,
-                onValueChange = { newValue ->
-                    priceCodeError = newValue.isBlank()
-                    onUpdateField(productFormState.copy(priceCode = newValue))
-                    onValidationChange(productFormState.isValid)
-                },
-                label = { Text("Price Code") },
-                modifier = Modifier.fillMaxWidth(),
-                isError = priceCodeError,
-                supportingText = { if (priceCodeError) Text("Field cannot be empty") }
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            var expanded by remember { mutableStateOf(false) }
-            val icon =
-                if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
-
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = !expanded },
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 OutlinedTextField(
-                    value = productFormState.category,
-                    onValueChange = {
-                        // Category is read-only, validation is done on the current value
-                        categoryError = productFormState.category.isBlank()
+                    value = productFormState.purchaseMonth,
+                    onValueChange = { newValue ->
+                        purchaseMonthError = newValue.isBlank()
+                        if (newValue.length <= 4 && newValue.all { it.isDigit() }) {
+                            onUpdateField(productFormState.copy(purchaseMonth = newValue))
+                        }
                         onValidationChange(productFormState.isValid)
                     },
-                    readOnly = true,
-                    label = { Text("Category")},
-                    trailingIcon = {
-                        Icon(
-                            icon,
-                            "contentDescription",
-                            Modifier.clickable { expanded = !expanded })
-                    },
-                    modifier = Modifier
-                        .menuAnchor()
-                        .fillMaxWidth(),
-                    isError = categoryError,
-                    supportingText = { if (categoryError) Text("Field cannot be empty") }
+                    label = { Text("Purchase Month") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.weight(1f),
+                    isError = purchaseMonthError,
+                    supportingText = { if (purchaseMonthError) Text("Field cannot be empty") }
                 )
-                ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false },
-                ) {
-                    categories.forEach { selectionOption ->
-                        DropdownMenuItem(
-                            text = { Text(selectionOption.name) },
-                            onClick = {
-                                onUpdateField(productFormState.copy(category = selectionOption.name))
-                                categoryError = selectionOption.name.isBlank()
-                                expanded = false
-                                onValidationChange(productFormState.isValid)
-                            }
-                        )
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            // Tags multiselect dropdown (placeholder)
-            // In a real app, you'd fetch these from your view model
-            val allTags = categories.find { it.name == productFormState.category }?.tags?.split(",") ?: emptyList()
-            var tagsExpanded by remember { mutableStateOf(false) }
-            ExposedDropdownMenuBox(
-                expanded = tagsExpanded,
-                onExpandedChange = { tagsExpanded = !tagsExpanded },
-                modifier = Modifier.fillMaxWidth()
-            ) {
                 OutlinedTextField(
-                    value = productFormState.tags.joinToString(", "),
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Tags") },
-                    trailingIcon = {
-                        Icon(
-                            Icons.Default.KeyboardArrowDown,
-                            "contentDescription",
-                            Modifier.clickable { tagsExpanded = !tagsExpanded })
+                    value = productFormState.priceCode,
+                    onValueChange = { newValue ->
+                        priceCodeError = newValue.isBlank()
+                        onUpdateField(productFormState.copy(priceCode = newValue))
+                        onValidationChange(productFormState.isValid)
                     },
-                    modifier = Modifier
-                        .menuAnchor()
-                        .fillMaxWidth()
+                    label = { Text("Price Code") },
+                    modifier = Modifier.weight(1f),
+                    isError = priceCodeError,
+                    supportingText = { if (priceCodeError) Text("Field cannot be empty") }
                 )
-                ExposedDropdownMenu(
-                    expanded = tagsExpanded,
-                    onDismissRequest = { tagsExpanded = false }
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                var expanded by remember { mutableStateOf(false) }
+                val icon =
+                    if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
+
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded },
+                    modifier = Modifier.weight(1f)
                 ) {
-                    allTags.forEach { tag ->
-                        DropdownMenuItem(
-                            text = { Text(tag) },
-                            onClick = {
-                                val currentTags = productFormState.tags.toMutableList()
-                                if (currentTags.contains(tag)) {
-                                    currentTags.remove(tag)
-                                } else {
-                                    currentTags.add(tag)
+                    OutlinedTextField(
+                        value = productFormState.category,
+                        onValueChange = {
+                            // Category is read-only, validation is done on the current value
+                            categoryError = productFormState.category.isBlank()
+                            onValidationChange(productFormState.isValid)
+                        },
+                        readOnly = true,
+                        label = { Text("Category") },
+                        trailingIcon = {
+                            Icon(
+                                icon,
+                                "contentDescription",
+                                Modifier.clickable { expanded = !expanded })
+                        },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth(),
+                        isError = categoryError,
+                        supportingText = { if (categoryError) Text("Field cannot be empty") }
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                    ) {
+                        categories.forEach { selectionOption ->
+                            DropdownMenuItem(
+                                text = { Text(selectionOption.name) },
+                                onClick = {
+                                    onUpdateField(productFormState.copy(category = selectionOption.name))
+                                    categoryError = selectionOption.name.isBlank()
+                                    expanded = false
+                                    onValidationChange(productFormState.isValid)
+                                    createViewModel.fetchPromptTypes(selectionOption.name)
                                 }
-                                onUpdateField(productFormState.copy(tags = currentTags))
-                                onValidationChange(productFormState.isValid)
-                            }
-                        )
+                            )
+                        }
+                    }
+                }
+                // Tags multiselect dropdown (placeholder)
+                // In a real app, you'd fetch these from your view model
+                val allTags =
+                    categories.find { it.name == productFormState.category }?.tags?.split(",")
+                        ?: emptyList()
+                var tagsExpanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    expanded = tagsExpanded,
+                    onExpandedChange = { tagsExpanded = !tagsExpanded },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    OutlinedTextField(
+                        value = productFormState.tags.joinToString(", "),
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Tags") },
+                        trailingIcon = {
+                            Icon(
+                                Icons.Default.KeyboardArrowDown,
+                                "contentDescription",
+                                Modifier.clickable { tagsExpanded = !tagsExpanded })
+                        },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = tagsExpanded,
+                        onDismissRequest = { tagsExpanded = false }
+                    ) {
+                        allTags.forEach { tag ->
+                            DropdownMenuItem(
+                                text = { Text(tag) },
+                                onClick = {
+                                    val currentTags = productFormState.tags.toMutableList()
+                                    if (currentTags.contains(tag)) {
+                                        currentTags.remove(tag)
+                                    } else {
+                                        currentTags.add(tag)
+                                    }
+                                    onUpdateField(productFormState.copy(tags = currentTags))
+                                    onValidationChange(productFormState.isValid)
+                                }
+                            )
+                        }
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
-                value = productFormState.boxNumber,
-                onValueChange = { newValue ->
-                    if (newValue.all { it.isDigit() }) {
-                        onUpdateField(productFormState.copy(boxNumber = newValue))
-                    }
-                    onValidationChange(productFormState.isValid)
-                },
-                label = { Text("Box Number") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth(),
-                isError = boxNumberError,
-                supportingText = { if (boxNumberError) Text("Field cannot be empty") }
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Text("Is Raw Image?")
-                Switch(
-                    checked = productFormState.isRawImage,
-                    onCheckedChange = { isChecked ->
-                        onUpdateField(productFormState.copy(isRawImage = isChecked))
+                OutlinedTextField(
+                    value = productFormState.boxNumber,
+                    onValueChange = { newValue ->
+                        if (newValue.all { it.isDigit() }) {
+                            onUpdateField(productFormState.copy(boxNumber = newValue))
+                        }
                         onValidationChange(productFormState.isValid)
-                    }
+                    },
+                    label = { Text("Box Number") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.weight(1f),
+                    isError = boxNumberError,
+                    supportingText = { if (boxNumberError) Text("Field cannot be empty") }
                 )
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Is Raw Image?")
+                    Switch(
+                        checked = productFormState.isRawImage,
+                        onCheckedChange = { isChecked ->
+                            onUpdateField(productFormState.copy(isRawImage = isChecked))
+                            onValidationChange(productFormState.isValid)
+                        }
+                    )
+                }
+            }
+            if (productFormState.isRawImage) {
+                Spacer(modifier = Modifier.height(4.dp))
+                var promptTypeExpanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    expanded = promptTypeExpanded,
+                    onExpandedChange = { promptTypeExpanded = !promptTypeExpanded },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = productFormState.promptType,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Prompt Type") },
+                        trailingIcon = {
+                            Icon(
+                                Icons.Default.KeyboardArrowDown,
+                                "contentDescription",
+                                Modifier.clickable { promptTypeExpanded = !promptTypeExpanded })
+                        },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = promptTypeExpanded,
+                        onDismissRequest = { promptTypeExpanded = false }
+                    ) {
+                        promptTypes.forEach { promptType ->
+                            DropdownMenuItem(
+                                text = { Text(promptType) },
+                                onClick = {
+                                    onUpdateField(productFormState.copy(promptType = promptType))
+                                    promptTypeExpanded = false
+                                    onValidationChange(productFormState.isValid)
+                                }
+                            )
+                        }
+                    }
+                }
             }
         }
     }
