@@ -83,6 +83,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.7")
     implementation("androidx.compose.runtime:runtime-livedata")
     implementation("org.burnoutcrew.composereorderable:reorderable:0.9.6")
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
 
 
     // Retrofit

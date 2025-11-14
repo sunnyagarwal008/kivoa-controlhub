@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -14,7 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.Settings // Added import for Settings icon
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -53,16 +54,17 @@ import com.kivoa.controlhub.ui.screens.ProductDetailScreen
 import com.kivoa.controlhub.ui.screens.ReorderImagesScreen
 import com.kivoa.controlhub.ui.screens.ShareViewModel
 import com.kivoa.controlhub.ui.screens.ShareViewModelFactory
-import com.kivoa.controlhub.ui.screens.settings.CategoriesScreen // Added CategoriesScreen import
+import com.kivoa.controlhub.ui.screens.settings.CategoriesScreen
 import com.kivoa.controlhub.ui.screens.settings.CategoryDetailScreen
 import com.kivoa.controlhub.ui.screens.settings.CategoryPromptsScreen
 import com.kivoa.controlhub.ui.screens.settings.CategoryPromptsViewModel
 import com.kivoa.controlhub.ui.screens.settings.CategoryPromptsViewModelFactory
-import com.kivoa.controlhub.ui.screens.settings.CreateCategoryScreen // Added CreateCategoryScreen import
+import com.kivoa.controlhub.ui.screens.settings.CreateCategoryScreen
 import com.kivoa.controlhub.ui.screens.settings.CreatePromptScreen
-import com.kivoa.controlhub.ui.screens.settings.EditCategoryScreen // Added EditCategoryScreen import
+import com.kivoa.controlhub.ui.screens.settings.EditCategoryScreen
 import com.kivoa.controlhub.ui.screens.settings.EditPromptScreen
-import com.kivoa.controlhub.ui.screens.settings.SettingsScreen // Added SettingsScreen import
+import com.kivoa.controlhub.ui.screens.settings.SettingsScreen
+import com.kivoa.controlhub.ui.screens.settings.SettingsViewModel
 import com.kivoa.controlhub.ui.theme.ControlHubTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -88,7 +90,16 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            ControlHubTheme {
+            val settingsViewModel: SettingsViewModel = viewModel()
+            val theme by settingsViewModel.theme.collectAsState()
+
+            ControlHubTheme(
+                darkTheme = when (theme) {
+                    "Light" -> false
+                    "Dark" -> true
+                    else -> isSystemInDarkTheme()
+                }
+            ) {
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentDestination = navBackStackEntry?.destination
@@ -96,7 +107,6 @@ class MainActivity : ComponentActivity() {
                 val context = LocalContext.current
                 val application = context.applicationContext as Application
                 val apiService = RetrofitInstance.api
-                // For ProductDetailScreen, no refresh is needed, so pass null
                 val shareViewModelFactoryForDetail =
                     remember { ShareViewModelFactory(application, apiService, null) }
 
@@ -113,7 +123,7 @@ class MainActivity : ComponentActivity() {
                                 Screen.Search,
                                 Screen.Browse,
                                 Screen.Create,
-                                Screen.Settings, // Added Settings to the bottom navigation bar
+                                Screen.Settings,
                             )
                             items.forEach { screen ->
                                 NavigationBarItem(
@@ -155,10 +165,10 @@ class MainActivity : ComponentActivity() {
                                 initialTabIndex = tabIndex
                             )
                         }
-                        composable(Screen.Settings.route) { SettingsScreen(navController = navController, appBarViewModel = appBarViewModel) }
+                        composable(Screen.Settings.route) { SettingsScreen(navController = navController, appBarViewModel = appBarViewModel, settingsViewModel = settingsViewModel) }
                         composable(Screen.SettingsCategories.route) { CategoriesScreen(navController = navController, appBarViewModel = appBarViewModel) }
                         composable(Screen.CreateCategory.route) {
-                            CreateCategoryScreen(navController = navController, appBarViewModel = appBarViewModel) { navController.popBackStack() } // Navigate back on success
+                            CreateCategoryScreen(navController = navController, appBarViewModel = appBarViewModel) { navController.popBackStack() }
                         }
                         composable(Screen.Catalogs.route) {
                             CatalogsScreen(navController = navController, appBarViewModel = appBarViewModel)
@@ -205,7 +215,7 @@ class MainActivity : ComponentActivity() {
                             val categoryJson = it.arguments?.getString("categoryJson")
                             val category = Gson().fromJson(categoryJson, com.kivoa.controlhub.data.ApiCategory::class.java)
                             if (category != null) {
-                                EditCategoryScreen(navController = navController, appBarViewModel = appBarViewModel, category = category) { navController.popBackStack() } // Navigate back on success
+                                EditCategoryScreen(navController = navController, appBarViewModel = appBarViewModel, category = category) { navController.popBackStack() }
                             }
                         }
                         composable(
@@ -268,11 +278,11 @@ sealed class Screen(val route: String, val icon: ImageVector? = null) {
     object ProductDetail : Screen("ProductDetail")
     object EditProduct : Screen("edit_product")
     object ReorderImages : Screen("reorder_images")
-    object Settings : Screen("Settings", Icons.Default.Settings) // Added Settings object
+    object Settings : Screen("Settings", Icons.Default.Settings)
     object SettingsCategories : Screen("Settings/Categories")
     object CreateCategory : Screen("CreateCategory")
     object CategoryDetail : Screen("CategoryDetail")
-    object EditCategory : Screen("EditCategory") // Added EditCategory object
+    object EditCategory : Screen("EditCategory")
     object CategoryPrompts : Screen("Settings/Categories/{categoryName}/Prompts")
     object EditPrompt : Screen("Settings/Prompts/{promptJson}")
     object CreatePrompt : Screen("Settings/Categories/{categoryName}/CreatePrompt")
