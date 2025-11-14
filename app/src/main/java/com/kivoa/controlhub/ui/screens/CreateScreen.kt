@@ -245,6 +245,7 @@ fun CreateScreen(
             onProductCreationSuccess = {
                 showCreateProductFormsDialog = false
                 createViewModel.clearSelectedRawProductIds()
+                rawProducts.refresh()
             }
         )
     }
