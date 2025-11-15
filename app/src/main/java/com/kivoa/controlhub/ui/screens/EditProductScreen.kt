@@ -70,6 +70,7 @@ fun EditProductScreen(
 ) {
     val product by editProductViewModel.product.collectAsState()
     val updateState by editProductViewModel.updateState.collectAsState()
+    val categories by editProductViewModel.categories.collectAsState()
     var showRawImage by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
 
@@ -153,6 +154,7 @@ fun EditProductScreen(
 
         var boxNumber by remember { mutableStateOf(product!!.boxNumber?.toString() ?: "") }
         var expanded by remember { mutableStateOf(false) }
+        var categoryExpanded by remember { mutableStateOf(false) }
 
         Column(
             modifier = Modifier
@@ -222,12 +224,36 @@ fun EditProductScreen(
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(16.dp))
-            OutlinedTextField(
-                value = category,
-                onValueChange = { category = it },
-                label = { Text("Category") },
+            ExposedDropdownMenuBox(
+                expanded = categoryExpanded,
+                onExpandedChange = { categoryExpanded = !categoryExpanded },
                 modifier = Modifier.fillMaxWidth()
-            )
+            ) {
+                OutlinedTextField(
+                    value = category,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Category") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
+                    modifier = Modifier
+                        .menuAnchor(MenuAnchorType.PrimaryEditable)
+                        .fillMaxWidth()
+                )
+                ExposedDropdownMenu(
+                    expanded = categoryExpanded,
+                    onDismissRequest = { categoryExpanded = false }
+                ) {
+                    categories.forEach { selectionOption ->
+                        DropdownMenuItem(
+                            text = { Text(selectionOption.name) },
+                            onClick = {
+                                category = selectionOption.name
+                                categoryExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
             Spacer(modifier = Modifier.height(16.dp))
             OutlinedTextField(
                 value = purchaseMonth,

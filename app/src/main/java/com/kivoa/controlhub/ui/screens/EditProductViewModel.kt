@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.kivoa.controlhub.api.ApiService
+import com.kivoa.controlhub.data.ApiCategory
 import com.kivoa.controlhub.data.ApiProduct
 import com.kivoa.controlhub.data.UpdateProductRequest
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +27,13 @@ class EditProductViewModel(private val apiService: ApiService) : ViewModel() {
     private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Idle)
     val updateState: StateFlow<UpdateState> = _updateState.asStateFlow()
 
+    private val _categories = MutableStateFlow<List<ApiCategory>>(emptyList())
+    val categories: StateFlow<List<ApiCategory>> = _categories.asStateFlow()
+
+    init {
+        fetchCategories()
+    }
+
     fun getProductById(productId: Long) {
         viewModelScope.launch {
             try {
@@ -44,6 +52,19 @@ class EditProductViewModel(private val apiService: ApiService) : ViewModel() {
                 _updateState.value = UpdateState.Success(updatedProduct.data)
             } catch (e: Exception) {
                 _updateState.value = UpdateState.Error(e.message ?: "An error occurred")
+            }
+        }
+    }
+
+    private fun fetchCategories() {
+        viewModelScope.launch {
+            try {
+                val response = apiService.getCategories()
+                if (response.success) {
+                    _categories.value = response.data
+                }
+            } catch (e: Exception) {
+                // Handle error
             }
         }
     }
