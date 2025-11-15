@@ -20,6 +20,8 @@ import com.kivoa.controlhub.data.GeneratePdfCatalogRequest
 import com.kivoa.controlhub.data.GenerateProductImageRequest
 import com.kivoa.controlhub.data.GenerateProductImageResponse
 import com.kivoa.controlhub.data.PdfCatalogResponse
+import com.kivoa.controlhub.data.PlaceOrderRequest
+import com.kivoa.controlhub.data.PlaceOrderResponse
 import com.kivoa.controlhub.data.PresignedUrlRequest
 import com.kivoa.controlhub.data.PresignedUrlResponse
 import com.kivoa.controlhub.data.ProductDetailResponse
@@ -193,4 +195,7 @@ interface ApiService {
 
     @DELETE("api/prompts/{prompt_id}")
     suspend fun deletePrompt(@Path("prompt_id") promptId: Long): DeletePromptResponse
+
+    @POST("api/orders/place")
+    suspend fun placeOrder(@Body request: PlaceOrderRequest): PlaceOrderResponse
 }

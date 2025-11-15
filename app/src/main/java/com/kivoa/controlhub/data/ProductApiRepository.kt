@@ -74,6 +74,10 @@ class ProductApiRepository(private val apiService: ApiService) {
         return apiService.updateProductImagePriorities(productId, request)
     }
 
+    suspend fun placeOrder(request: PlaceOrderRequest): PlaceOrderResponse {
+        return apiService.placeOrder(request)
+    }
+
     suspend fun deleteProduct(productId: Long) {
         apiService.deleteProduct(productId)
     }

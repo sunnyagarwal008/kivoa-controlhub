@@ -6,9 +6,11 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,11 +19,13 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
@@ -35,13 +39,17 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -74,12 +82,13 @@ import com.google.accompanist.pager.HorizontalPagerIndicator
 import com.google.accompanist.pager.rememberPagerState
 import com.kivoa.controlhub.AppBarState
 import com.kivoa.controlhub.AppBarViewModel
+import com.kivoa.controlhub.data.ApiProduct
 import com.kivoa.controlhub.data.Prompt
 import com.kivoa.controlhub.ui.components.shimmer
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalPagerApi::class)
+@OptIn(ExperimentalPagerApi::class, ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ProductDetailScreen(
     productId: Long,
@@ -100,7 +109,8 @@ fun ProductDetailScreen(
     val error by productDetailViewModel.error.collectAsState()
     val context = LocalContext.current
     var showMenu by remember { mutableStateOf(false) }
-
+    var showOrderSheet by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -312,121 +322,300 @@ fun ProductDetailScreen(
             CircularProgressIndicator()
         }
     } else {
-        product?.let {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                if (it.images.isNotEmpty()) {
-                    val pagerState = rememberPagerState()
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(1f)
-                    ) {
-                        HorizontalPager(
-                            count = it.images.size,
-                            state = pagerState,
-                            modifier = Modifier.fillMaxSize()
-                        ) { page ->
-                            Box(modifier = Modifier.fillMaxSize()) {
-                                SubcomposeAsyncImage(
-                                    model = ImageRequest.Builder(LocalContext.current)
-                                        .data(it.images[page].imageUrl)
-                                        .crossfade(true)
-                                        .build(),
-                                    contentDescription = "Product Image",
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .clickable {
-                                            currentImageIndex = page
-                                            showZoomedImage = true
-                                        },
-                                    loading = {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .shimmer()
-                                        )
-                                    }
-                                )
-                                if (it.images.size > 1) {
-                                    IconButton(
-                                        onClick = {
-                                            showDeleteImageConfirmationDialog = it.images[page].id
-                                        },
+        product?.let { product ->
+            val bottomSheetState = rememberModalBottomSheetState(
+                skipPartiallyExpanded = true
+            )
+
+            if (showOrderSheet) {
+                ModalBottomSheet(
+                    onDismissRequest = { showOrderSheet = false },
+                    sheetState = bottomSheetState
+                ) {
+                    PlaceOrderForm(
+                        product = product,
+                        productDetailViewModel = productDetailViewModel,
+                        isLoading = isLoading,
+                        onPlaceOrder = {
+                            scope.launch {
+                                bottomSheetState.hide()
+                                showOrderSheet = false
+                            }
+                        }
+                    )
+                }
+            }
+            Scaffold { padding ->
+                Column(
+                    modifier = Modifier
+                        .verticalScroll(rememberScrollState())
+                        .padding(padding)
+                ) {
+                    if (product.images.isNotEmpty()) {
+                        val pagerState = rememberPagerState()
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(1f)
+                        ) {
+                            HorizontalPager(
+                                count = product.images.size,
+                                state = pagerState,
+                                modifier = Modifier.fillMaxSize()
+                            ) { page ->
+                                Box(modifier = Modifier.fillMaxSize()) {
+                                    SubcomposeAsyncImage(
+                                        model = ImageRequest.Builder(LocalContext.current)
+                                            .data(product.images[page].imageUrl)
+                                            .crossfade(true)
+                                            .build(),
+                                        contentDescription = "Product Image",
+                                        contentScale = ContentScale.Crop,
                                         modifier = Modifier
-                                            .align(Alignment.TopEnd)
-                                            .padding(8.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Default.Delete,
-                                            contentDescription = "Delete Image",
-                                            tint = Color.White
-                                        )
+                                            .fillMaxSize()
+                                            .clickable {
+                                                currentImageIndex = page
+                                                showZoomedImage = true
+                                            },
+                                        loading = {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .shimmer()
+                                            )
+                                        }
+                                    )
+                                    if (product.images.size > 1) {
+                                        IconButton(
+                                            onClick = {
+                                                showDeleteImageConfirmationDialog =
+                                                    product.images[page].id
+                                            },
+                                            modifier = Modifier
+                                                .align(Alignment.TopEnd)
+                                                .padding(8.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Delete,
+                                                contentDescription = "Delete Image",
+                                                tint = Color.White
+                                            )
+                                        }
                                     }
                                 }
                             }
-                        }
-                        Icon(
-                            imageVector = Icons.Filled.ZoomIn,
-                            contentDescription = "Zoom In",
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .padding(16.dp)
-                        )
-                        HorizontalPagerIndicator(
-                            pagerState = pagerState,
-                            modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .padding(16.dp),
-                        )
-                    }
-                }
-                Column(
-                    modifier = Modifier
-                        .padding(16.dp)
-                ) {
-                    it.title?.let { title ->
-                        Text(text = "Title: $title", style = MaterialTheme.typography.titleLarge)
-                    }
-                    it.description?.let { description ->
-                        Text(text = "Description: $description", style = MaterialTheme.typography.bodyLarge)
-                    }
-                    Text(text = "SKU: ${it.sku}", style = MaterialTheme.typography.titleLarge)
-                    Text(text = "Purchase Month: ${it.purchaseMonth}")
-                    Text(text = "Product Code: ${it.priceCode}")
-                    Text(text = "MRP: ₹${it.mrp}")
-                    Text(text = "Discount: ${it.discount}%")
-                    Text(text = "Selling Price: ₹${it.price}")
-                    it.tags?.let { tags -> Text(text = "Tags: $tags") }
-                    if (it.boxNumber != null) {
-                        Text(text = "Box Number: ${it.boxNumber}")
-                    }
-                    val outOfStock = !it.inStock
-                    if (outOfStock) {
-                        Text(
-                            text = "Out of stock",
-                            color = Color.Red,
-                        )
-                    }
-                    Button(
-                        onClick = {
-                            productDetailViewModel.updateProductStock(
-                                it.id,
-                                !it.inStock
+                            Icon(
+                                imageVector = Icons.Filled.ZoomIn,
+                                contentDescription = "Zoom In",
+                                modifier = Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .padding(16.dp)
                             )
-                        },
-                        enabled = !isLoading
+                            HorizontalPagerIndicator(
+                                pagerState = pagerState,
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .padding(16.dp),
+                            )
+                        }
+                    }
+                    Column(
+                        modifier = Modifier
+                            .padding(16.dp)
                     ) {
-                        if (isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                color = MaterialTheme.colorScheme.onPrimary
+                        product.title?.let { title ->
+                            Text(
+                                text = "Title: $title",
+                                style = MaterialTheme.typography.titleLarge
                             )
+                        }
+                        product.description?.let { description ->
+                            Text(
+                                text = "Description: $description",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                        Text(
+                            text = "SKU: ${product.sku}",
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                        Text(text = "Purchase Month: ${product.purchaseMonth}")
+                        Text(text = "Product Code: ${product.priceCode}")
+                        Text(text = "MRP: ₹${product.mrp}")
+                        Text(text = "Discount: ${product.discount}%")
+                        Text(text = "Selling Price: ₹${product.price}")
+                        product.tags?.let { tags -> Text(text = "Tags: $tags") }
+                        if (product.boxNumber != null) {
+                            Text(text = "Box Number: ${product.boxNumber}")
+                        }
+                        val outOfStock = !product.inStock
+                        if (outOfStock) {
+                            Text(
+                                text = "Out of stock",
+                                color = Color.Red,
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Button(
+                                onClick = {
+                                    productDetailViewModel.updateProductStock(productId, true)
+                                },
+                                enabled = !isLoading
+                            ) {
+                                if (isLoading) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(24.dp),
+                                        color = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                } else {
+                                    Text("Mark in Stock")
+                                }
+                            }
                         } else {
-                            Text(if (it.inStock) "Mark Out of Stock" else "Mark In Stock")
+                            Button(
+                                onClick = {
+                                    showOrderSheet = true
+                                },
+                                enabled = !isLoading
+                            ) {
+                                if (isLoading) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(24.dp),
+                                        color = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                } else {
+                                    Text("Place Order")
+                                }
+                            }
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun PlaceOrderForm(
+    product: ApiProduct,
+    productDetailViewModel: ProductDetailViewModel,
+    isLoading: Boolean,
+    onPlaceOrder: () -> Unit
+) {
+    var customerName by remember { mutableStateOf("") }
+    var customerPhone by remember { mutableStateOf("") }
+    var address1 by remember { mutableStateOf("") }
+    var city by remember { mutableStateOf("Panchkula") }
+    var province by remember { mutableStateOf("Haryana") }
+    var zip by remember { mutableStateOf("134107") }
+    var shippingCharges by remember { mutableStateOf("0.0") }
+    var orderPrice by remember { mutableStateOf(product.price.toString()) }
+    val context = LocalContext.current
+
+    Column(
+        modifier = Modifier
+            .padding(16.dp)
+            .fillMaxWidth()
+    ) {
+        Text("Place Order", style = MaterialTheme.typography.titleLarge)
+        Spacer(modifier = Modifier.height(16.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            TextField(
+                value = orderPrice,
+                onValueChange = { orderPrice = it },
+                label = { Text("Price") },
+                modifier = Modifier.weight(1f),
+            )
+            TextField(
+                value = shippingCharges,
+                onValueChange = { shippingCharges = it },
+                label = { Text("Shipping Charges") },
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        TextField(
+            value = customerName,
+            onValueChange = { customerName = it },
+            label = { Text("Customer Name") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        TextField(
+            value = customerPhone,
+            onValueChange = { customerPhone = it },
+            label = { Text("Customer Phone") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        TextField(
+            value = address1,
+            onValueChange = { address1 = it },
+            label = { Text("Address") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            TextField(
+                value = city,
+                onValueChange = { city = it },
+                label = { Text("City") },
+                modifier = Modifier.weight(1f)
+            )
+            TextField(
+                value = province,
+                onValueChange = { province = it },
+                label = { Text("State") },
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        TextField(
+            value = zip,
+            onValueChange = { zip = it },
+            label = { Text("Pincode") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(
+            onClick = {
+                productDetailViewModel.placeOrder(
+                    customerName = customerName,
+                    customerPhone = customerPhone,
+                    address1 = address1,
+                    city = city,
+                    province = province,
+                    zip = zip,
+                    shippingCharges = shippingCharges.toDoubleOrNull() ?: 0.0,
+                    perUnitPrice = orderPrice.toDoubleOrNull() ?: 0.0,
+                    onSuccess = {
+                        Toast
+                            .makeText(context, "Order placed successfully", Toast.LENGTH_SHORT)
+                            .show()
+                        onPlaceOrder()
+                    },
+                    onError = {
+                        Toast
+                            .makeText(context, it, Toast.LENGTH_SHORT)
+                            .show()
+                    }
+                )
+            },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !isLoading
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            } else {
+                Text("Submit")
             }
         }
     }
@@ -453,9 +642,11 @@ fun RawImageDialog(imageUrl: String, onDismiss: () -> Unit) {
                 contentDescription = "Raw Product Image",
                 modifier = Modifier.fillMaxSize(),
                 loading = {
-                    Box(modifier = Modifier
-                        .fillMaxSize()
-                        .shimmer())
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .shimmer()
+                    )
                 }
             )
             IconButton(
@@ -601,9 +792,11 @@ fun ZoomableAsyncImage(
                     scaleY = scale,
                 ),
             loading = {
-                Box(modifier = Modifier
-                    .fillMaxSize()
-                    .shimmer())
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .shimmer()
+                )
             }
         )
     }

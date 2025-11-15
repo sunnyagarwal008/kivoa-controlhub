@@ -7,8 +7,10 @@ import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.kivoa.controlhub.api.RetrofitInstance
 import com.kivoa.controlhub.data.ApiProduct
+import com.kivoa.controlhub.data.CustomerAddress
 import com.kivoa.controlhub.data.GenerateProductImageRequest
 import com.kivoa.controlhub.data.ImagePriority
+import com.kivoa.controlhub.data.PlaceOrderRequest
 import com.kivoa.controlhub.data.ProductApiRepository
 import com.kivoa.controlhub.data.Prompt
 import com.kivoa.controlhub.data.UpdateProductFlaggedRequest
@@ -47,6 +49,52 @@ class ProductDetailViewModel : ViewModel() {
                 _product.value = RetrofitInstance.api.getProductById(productId).data
             } catch (_: Exception) {
                 _productNotFound.value = true
+            }
+        }
+    }
+
+    fun placeOrder(
+        customerName: String,
+        customerPhone: String,
+        address1: String,
+        city: String,
+        province: String,
+        zip: String,
+        shippingCharges: Double,
+        perUnitPrice: Double,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                val product = _product.value
+                if (product != null) {
+                    val request = PlaceOrderRequest(
+                        sku = product.sku,
+                        quantity = 1,
+                        perUnitPrice = perUnitPrice,
+                        shippingCharges = shippingCharges,
+                        customerName = customerName,
+                        customerPhone = customerPhone,
+                        customerAddress = CustomerAddress(
+                            address1 = address1,
+                            city = city,
+                            province = province,
+                            country = "India",
+                            zip = zip
+                        )
+                    )
+                    productRepository.placeOrder(request)
+                    getProductById(product.id)
+                    onSuccess()
+                } else {
+                    onError("Product not found")
+                }
+            } catch (e: Exception) {
+                onError("Failed to place order: ${e.message}")
+            } finally {
+                _isLoading.value = false
             }
         }
     }
