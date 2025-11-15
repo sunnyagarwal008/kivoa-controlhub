@@ -525,7 +525,7 @@ fun PlaceOrderForm(
             TextField(
                 value = orderPrice,
                 onValueChange = { orderPrice = it },
-                label = { Text("Price") },
+                label = { Text("Selling Price") },
                 modifier = Modifier.weight(1f),
             )
             TextField(
