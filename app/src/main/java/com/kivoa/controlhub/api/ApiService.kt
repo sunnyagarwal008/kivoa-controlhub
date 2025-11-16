@@ -87,6 +87,8 @@ interface ApiService {
         @Query("excludeOutOfStock") excludeOutOfStock: Boolean = false,
         @Query("minPrice") minPrice: Int? = null,
         @Query("maxPrice") maxPrice: Int? = null,
+        @Query("minDiscount") minDiscount: Int? = null,
+        @Query("maxDiscount") maxDiscount: Int? = null,
         @Query("sortBy") sortBy: String? = null,
         @Query("sortOrder") sortOrder: String? = null,
         @Query("tags") tags: String? = null,

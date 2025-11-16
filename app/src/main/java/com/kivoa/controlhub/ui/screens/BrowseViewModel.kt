@@ -25,6 +25,7 @@ import kotlinx.coroutines.launch
 data class FilterParams(
     val selectedCategory: String = "All products",
     val priceRange: ClosedFloatingPointRange<Float> = 0f..5000f,
+    val discountRange: ClosedFloatingPointRange<Float> = 0f..100f,
     val excludeOutOfStock: Boolean = true,
     val sortBy: String = "created_at",
     val sortOrder: String = "desc",
@@ -38,6 +39,7 @@ class BrowseViewModel : ViewModel() {
     var selectionMode by mutableStateOf(false)
     var selectedProducts by mutableStateOf(emptySet<ApiProduct>())
     var showPriceFilterDialog by mutableStateOf(false)
+    var showDiscountFilterDialog by mutableStateOf(false)
     var showDiscountDialog by mutableStateOf(false)
     var applyingDiscount by mutableStateOf(false)
     val filterParams = MutableStateFlow(FilterParams())
@@ -68,6 +70,8 @@ class BrowseViewModel : ViewModel() {
                 excludeOutOfStock = params.excludeOutOfStock,
                 minPrice = params.priceRange.start.toInt(),
                 maxPrice = params.priceRange.endInclusive.toInt(),
+                minDiscount = params.discountRange.start.toInt(),
+                maxDiscount = params.discountRange.endInclusive.toInt(),
                 sortBy = params.sortBy,
                 sortOrder = params.sortOrder,
                 tags = params.selectedTags.joinToString(","),
@@ -107,6 +111,10 @@ class BrowseViewModel : ViewModel() {
 
     fun updatePriceRange(newRange: ClosedFloatingPointRange<Float>) {
         filterParams.value = filterParams.value.copy(priceRange = newRange)
+    }
+
+    fun updateDiscountRange(newRange: ClosedFloatingPointRange<Float>) {
+        filterParams.value = filterParams.value.copy(discountRange = newRange)
     }
 
     fun updateExcludeOutOfStock(exclude: Boolean) {

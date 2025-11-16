@@ -435,6 +435,10 @@ fun BrowseScreen(
         PriceFilterDialog(viewModel = browseViewModel, currentPriceRange = filterParams.priceRange)
     }
 
+    if (browseViewModel.showDiscountFilterDialog) {
+        DiscountFilterDialog(viewModel = browseViewModel, currentDiscountRange = filterParams.discountRange)
+    }
+
     if (shareViewModel.shareState is ShareViewModel.ShareState.Processing) {
         Dialog(onDismissRequest = {}) {
             Surface(shape = RoundedCornerShape(16.dp), color = Color.White) {
@@ -524,6 +528,11 @@ fun BrowseScreen(
             FilterChip(
                 label = "₹${filterParams.priceRange.start.toInt()}-₹${filterParams.priceRange.endInclusive.toInt()}",
                 onClick = { browseViewModel.showPriceFilterDialog = true })
+
+            FilterChip(
+                label = "${filterParams.discountRange.start.toInt()}%-${filterParams.discountRange.endInclusive.toInt()}%",
+                onClick = { browseViewModel.showDiscountFilterDialog = true }
+            )
 
             Box {
                 FilterChip(
@@ -666,6 +675,30 @@ fun PriceFilterDialog(viewModel: BrowseViewModel, currentPriceRange: ClosedFloat
                 )
                 Text(text = "₹${currentPriceRange.start.toInt()}-₹${currentPriceRange.endInclusive.toInt()}")
                 Button(onClick = { viewModel.showPriceFilterDialog = false }) {
+                    Text("Done")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DiscountFilterDialog(viewModel: BrowseViewModel, currentDiscountRange: ClosedFloatingPointRange<Float>) {
+    Dialog(onDismissRequest = { viewModel.showDiscountFilterDialog = false }) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = Color.White
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(text = "Discount Range", fontSize = 20.sp)
+                RangeSlider(
+                    value = currentDiscountRange,
+                    onValueChange = { viewModel.updateDiscountRange(it) },
+                    valueRange = 0f..100f,
+                    steps = 100
+                )
+                Text(text = "${currentDiscountRange.start.toInt()}%-${currentDiscountRange.endInclusive.toInt()}%")
+                Button(onClick = { viewModel.showDiscountFilterDialog = false }) {
                     Text("Done")
                 }
             }
