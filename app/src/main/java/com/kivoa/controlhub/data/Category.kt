@@ -52,6 +52,7 @@ data class Prompt(
     val type: String?,
     val tags: String?,
     @Json(name = "is_active") val isActive: Boolean,
+    @Json(name = "is_default") val isDefault: Boolean,
     @Json(name = "created_at") val createdAt: String,
     @Json(name = "updated_at") val updatedAt: String
 )

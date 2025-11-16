@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,6 +25,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -46,6 +48,9 @@ class EditPromptViewModel(private val apiService: ApiService) : ViewModel() {
 
     private val _deleteState = MutableStateFlow<DeleteState>(DeleteState.Idle)
     val deleteState: StateFlow<DeleteState> = _deleteState
+
+    private val _setDefaultState = MutableStateFlow<SetDefaultState>(SetDefaultState.Idle)
+    val setDefaultState: StateFlow<SetDefaultState> = _setDefaultState
 
     fun updatePrompt(promptId: Long, request: UpdatePromptRequest) {
         viewModelScope.launch {
@@ -78,6 +83,23 @@ class EditPromptViewModel(private val apiService: ApiService) : ViewModel() {
             }
         }
     }
+
+    fun setDefaultPrompt(promptId: Long) {
+        viewModelScope.launch {
+            _setDefaultState.value = SetDefaultState.Loading
+            try {
+                val response = apiService.setDefaultPrompt(promptId)
+                if (response.success) {
+                    _setDefaultState.value = SetDefaultState.Success(response.data)
+                } else {
+                    _setDefaultState.value = SetDefaultState.Error(response.message)
+                }
+            } catch (e: Exception) {
+                _setDefaultState.value =
+                    SetDefaultState.Error(e.message ?: "An unknown error occurred")
+            }
+        }
+    }
 }
 
 sealed class UpdateState {
@@ -92,6 +114,13 @@ sealed class DeleteState {
     object Loading : DeleteState()
     object Success : DeleteState()
     data class Error(val message: String) : DeleteState()
+}
+
+sealed class SetDefaultState {
+    object Idle : SetDefaultState()
+    object Loading : SetDefaultState()
+    data class Success(val prompt: Prompt) : SetDefaultState()
+    data class Error(val message: String) : SetDefaultState()
 }
 
 class EditPromptViewModelFactory(private val apiService: ApiService) : ViewModelProvider.Factory {
@@ -115,11 +144,13 @@ fun EditPromptScreen(
     val viewModel: EditPromptViewModel = viewModel(factory = EditPromptViewModelFactory(apiService))
     val updateState by viewModel.updateState.collectAsState()
     val deleteState by viewModel.deleteState.collectAsState()
+    val setDefaultState by viewModel.setDefaultState.collectAsState()
 
     var text by remember { mutableStateOf(prompt.text) }
     var type by remember { mutableStateOf(prompt.type ?: "") }
     var tags by remember { mutableStateOf(prompt.tags ?: "") }
     var isActive by remember { mutableStateOf(prompt.isActive) }
+    var isDefault by remember { mutableStateOf(prompt.isDefault) }
 
     LaunchedEffect(Unit) {
         appBarViewModel.setAppBarState(
@@ -131,6 +162,13 @@ fun EditPromptScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { viewModel.setDefaultPrompt(prompt.id) }) {
+                        Icon(
+                            Icons.Default.Star,
+                            contentDescription = "Set as default",
+                            tint = if (isDefault) Color.Yellow else Color.Gray
+                        )
+                    }
                     IconButton(onClick = { viewModel.deletePrompt(prompt.id) }) {
                         Icon(Icons.Default.Delete, contentDescription = "Delete")
                     }
@@ -217,6 +255,19 @@ fun EditPromptScreen(
 
             is DeleteState.Error -> {
                 Text("Error: ${(deleteState as DeleteState.Error).message}")
+            }
+
+            else -> {}
+        }
+
+        when (val state = setDefaultState) {
+            is SetDefaultState.Loading -> CircularProgressIndicator()
+            is SetDefaultState.Success -> {
+                isDefault = state.prompt.isDefault
+            }
+
+            is SetDefaultState.Error -> {
+                Text("Error: ${state.message}")
             }
 
             else -> {}

@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -30,6 +31,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -154,6 +156,15 @@ fun CategoryPromptsScreen(
                                     modifier = Modifier.clickable {
                                         val promptJson = Gson().toJson(prompt)
                                         navController.navigate(Screen.EditPrompt.withArgs(promptJson))
+                                    },
+                                    leadingContent = {
+                                        if (prompt.isDefault) {
+                                            Icon(
+                                                Icons.Default.Star,
+                                                contentDescription = "Default",
+                                                tint = Color.Yellow
+                                            )
+                                        }
                                     },
                                     trailingContent = {
                                         Icon(

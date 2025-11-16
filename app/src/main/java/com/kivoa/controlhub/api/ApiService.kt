@@ -196,6 +196,9 @@ interface ApiService {
     @DELETE("api/prompts/{prompt_id}")
     suspend fun deletePrompt(@Path("prompt_id") promptId: Long): DeletePromptResponse
 
+    @POST("api/prompts/{prompt_id}/set-default")
+    suspend fun setDefaultPrompt(@Path("prompt_id") promptId: Long): UpdatePromptResponse
+
     @POST("api/orders/place")
     suspend fun placeOrder(@Body request: PlaceOrderRequest): PlaceOrderResponse
 }
