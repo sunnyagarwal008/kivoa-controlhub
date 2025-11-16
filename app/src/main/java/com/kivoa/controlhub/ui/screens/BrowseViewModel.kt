@@ -12,6 +12,7 @@ import androidx.paging.cachedIn
 import com.kivoa.controlhub.api.RetrofitInstance
 import com.kivoa.controlhub.data.ApiCategory
 import com.kivoa.controlhub.data.ApiProduct
+import com.kivoa.controlhub.data.ApplyDiscountRequest
 import com.kivoa.controlhub.data.GeneratePdfCatalogRequest
 import com.kivoa.controlhub.data.ProductPagingSource
 import kotlinx.coroutines.flow.Flow
@@ -37,6 +38,8 @@ class BrowseViewModel : ViewModel() {
     var selectionMode by mutableStateOf(false)
     var selectedProducts by mutableStateOf(emptySet<ApiProduct>())
     var showPriceFilterDialog by mutableStateOf(false)
+    var showDiscountDialog by mutableStateOf(false)
+    var applyingDiscount by mutableStateOf(false)
     val filterParams = MutableStateFlow(FilterParams())
 
     private val _categories = MutableStateFlow<List<ApiCategory>>(emptyList())
@@ -47,6 +50,9 @@ class BrowseViewModel : ViewModel() {
 
     private val _pdfCatalogUrl = MutableStateFlow<String?>(null)
     val pdfCatalogUrl: StateFlow<String?> = _pdfCatalogUrl.asStateFlow()
+
+    private val _discountAppliedMessage = MutableStateFlow<String?>(null)
+    val discountAppliedMessage: StateFlow<String?> = _discountAppliedMessage.asStateFlow()
 
     var generatingPdf by mutableStateOf(false)
 
@@ -142,6 +148,7 @@ class BrowseViewModel : ViewModel() {
                     _pdfCatalogUrl.value = response.data.catalogUrl
                     onSuccess()
                 }
+
             } catch (e: Exception) {
                 // Handle error
             } finally {
@@ -150,8 +157,40 @@ class BrowseViewModel : ViewModel() {
         }
     }
 
+    fun applyDiscount(discount: Int) {
+        viewModelScope.launch {
+            applyingDiscount = true
+            try {
+                val params = filterParams.value
+                val request = ApplyDiscountRequest(
+                    discount = discount,
+                    category = if (params.selectedCategory == "All products") null else params.selectedCategory,
+                    excludeOutOfStock = params.excludeOutOfStock,
+                    minPrice = params.priceRange.start.toInt(),
+                    maxPrice = params.priceRange.endInclusive.toInt(),
+                    tags = params.selectedTags.joinToString(",").ifEmpty { null },
+                    boxNumber = params.boxNumber,
+                    flagged = params.flagged
+                )
+                val response = RetrofitInstance.api.applyDiscount(request)
+                if (response.success) {
+                    _discountAppliedMessage.value = response.message
+                }
+            } catch (e: Exception) {
+                // Handle error
+                 _discountAppliedMessage.value = "Failed to apply discount: ${e.message}"
+            } finally {
+                applyingDiscount = false
+            }
+        }
+    }
+
     fun onPdfShared() {
         _pdfCatalogUrl.value = null
+    }
+
+    fun onDiscountMessageShown() {
+        _discountAppliedMessage.value = null
     }
 
     private fun fetchCategories() {

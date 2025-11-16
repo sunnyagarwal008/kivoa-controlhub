@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
 import android.os.Environment
+import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -49,10 +50,12 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -60,6 +63,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -87,6 +91,7 @@ import com.kivoa.controlhub.Screen
 import com.kivoa.controlhub.ShimmerEffect
 import com.kivoa.controlhub.api.RetrofitInstance
 import com.kivoa.controlhub.data.ApiProduct
+import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -116,8 +121,12 @@ fun BrowseScreen(
     val tags by browseViewModel.tags.collectAsState()
     val filterParams by browseViewModel.filterParams.collectAsState()
     val pdfCatalogUrl by browseViewModel.pdfCatalogUrl.collectAsState()
+    val discountAppliedMessage by browseViewModel.discountAppliedMessage.collectAsState()
+
     var showPdfNameDialog by remember { mutableStateOf(false) }
     var showBoxNumberDialog by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState()
+    val scope = rememberCoroutineScope()
 
 
     LaunchedEffect(browseViewModel.selectionMode, browseViewModel.selectedProducts.size) {
@@ -225,6 +234,13 @@ fun BrowseScreen(
                                         showCatalogMenu = false
                                     }
                                 )
+                                DropdownMenuItem(
+                                    text = { Text("Apply Discount") },
+                                    onClick = {
+                                        browseViewModel.showDiscountDialog = true
+                                        showCatalogMenu = false
+                                    }
+                                )
                             }
                         }
                     }
@@ -254,6 +270,63 @@ fun BrowseScreen(
                     }
                 }
             }
+        }
+    }
+
+    if (browseViewModel.showDiscountDialog) {
+        var discount by remember { mutableStateOf("") }
+        ModalBottomSheet(
+            onDismissRequest = { browseViewModel.showDiscountDialog = false },
+            sheetState = sheetState
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text("Enter discount percentage")
+                TextField(
+                    value = discount,
+                    onValueChange = { discount = it },
+                    label = { Text("Discount %") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Button(
+                    onClick = {
+                        val discountValue = discount.toIntOrNull()
+                        if (discountValue != null) {
+                            browseViewModel.applyDiscount(discountValue)
+                        }
+                        scope.launch { sheetState.hide() }.invokeOnCompletion {
+                            if (!sheetState.isVisible) {
+                                browseViewModel.showDiscountDialog = false
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Apply")
+                }
+            }
+        }
+    }
+
+    if (browseViewModel.applyingDiscount) {
+        Dialog(onDismissRequest = {}) {
+            Surface(shape = RoundedCornerShape(16.dp), color = Color.White) {
+                Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Applying discount...")
+                    CircularProgressIndicator()
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(discountAppliedMessage) {
+        discountAppliedMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            lazyPagingItems.refresh()
+            browseViewModel.onDiscountMessageShown()
         }
     }
 

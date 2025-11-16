@@ -1,6 +1,8 @@
 package com.kivoa.controlhub.api
 
 import com.kivoa.controlhub.data.ApiCategory
+import com.kivoa.controlhub.data.ApplyDiscountRequest
+import com.kivoa.controlhub.data.ApplyDiscountResponse
 import com.kivoa.controlhub.data.BulkCreateRawImagesRequest
 import com.kivoa.controlhub.data.BulkCreateRawImagesResponse
 import com.kivoa.controlhub.data.BulkDeleteRawImagesRequest
@@ -94,6 +96,9 @@ interface ApiService {
 
     @POST("api/catalogs")
     suspend fun generatePdfCatalog(@Body request: GeneratePdfCatalogRequest): PdfCatalogResponse
+    
+    @POST("api/catalogs/apply-discount")
+    suspend fun applyDiscount(@Body request: ApplyDiscountRequest): ApplyDiscountResponse
 
     @GET("api/catalogs")
     suspend fun getAllCatalogs(): CatalogsResponse
