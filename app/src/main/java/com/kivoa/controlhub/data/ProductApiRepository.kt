@@ -48,7 +48,7 @@ class ProductApiRepository(private val apiService: ApiService) {
                 isRawImage = formState.isRawImage,
                 boxNumber = formState.boxNumber.toIntOrNull(),
                 tags = formState.tags.joinToString(","),
-                promptType = formState.promptType
+                promptId = formState.promptId
             )
         }
         val bulkProductRequest = BulkProductRequest(products = productDetails)
@@ -80,22 +80,5 @@ class ProductApiRepository(private val apiService: ApiService) {
 
     suspend fun deleteProduct(productId: Long) {
         apiService.deleteProduct(productId)
-    }
-
-    suspend fun deleteProductImage(productId: Long, imageId: Long) {
-        apiService.rejectProductImage(productId, imageId)
-    }
-
-    suspend fun generateProductImage(
-        productId: Long,
-        promptType: String?,
-        promptText: String?
-    ): GenerateProductImageResponse {
-        val request = GenerateProductImageRequest(promptType, promptText)
-        return apiService.generateProductImage(productId, request)
-    }
-
-    suspend fun getPrompts(category: String?): PromptsApiResponse {
-        return apiService.getPrompts(category = category)
     }
 }

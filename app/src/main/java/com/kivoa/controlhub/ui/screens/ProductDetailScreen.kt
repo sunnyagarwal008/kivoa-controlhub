@@ -28,6 +28,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -37,9 +39,12 @@ import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
+import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -69,6 +74,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -100,7 +106,7 @@ fun ProductDetailScreen(
     var showZoomedImage by remember { mutableStateOf(false) }
     var showRawImage by remember { mutableStateOf(false) }
     var showDeleteConfirmationDialog by remember { mutableStateOf(false) }
-    var showGenerateImageDialog by remember { mutableStateOf(false) }
+    var showGenerateImageBottomSheet by remember { mutableStateOf(false) }
     var showDeleteImageConfirmationDialog by remember { mutableStateOf<Long?>(null) }
     val product by productDetailViewModel.product.collectAsState()
     val isLoading by productDetailViewModel.isLoading.collectAsState()
@@ -201,7 +207,7 @@ fun ProductDetailScreen(
                             DropdownMenuItem(
                                 text = { Text("Generate Image") },
                                 onClick = {
-                                    showGenerateImageDialog = true
+                                    showGenerateImageBottomSheet = true
                                     showMenu = false
                                 }
                             )
@@ -260,11 +266,11 @@ fun ProductDetailScreen(
         )
     }
 
-    if (showGenerateImageDialog) {
-        GenerateImageDialog(
+    if (showGenerateImageBottomSheet) {
+        GenerateImageBottomSheet(
             productDetailViewModel = productDetailViewModel,
             productId = productId,
-            onDismiss = { showGenerateImageDialog = false }
+            onDismiss = { showGenerateImageBottomSheet = false }
         )
     }
 
@@ -420,46 +426,65 @@ fun ProductDetailScreen(
                         }
                     }
                     Column(
-                        modifier = Modifier
-                            .padding(16.dp)
+                        modifier = Modifier.padding(16.dp)
                     ) {
-                        product.title?.let { title ->
-                            Text(
-                                text = "Title: $title",
-                                style = MaterialTheme.typography.titleLarge
-                            )
-                        }
-                        product.description?.let { description ->
-                            Text(
-                                text = "Description: $description",
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                        }
                         Text(
-                            text = "SKU: ${product.sku}",
-                            style = MaterialTheme.typography.titleLarge
+                            text = product.title ?: "No Title",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
                         )
-                        Text(text = "Purchase Month: ${product.purchaseMonth}")
-                        Text(text = "Product Code: ${product.priceCode}")
-                        Text(text = "MRP: ₹${product.mrp}")
-                        Text(text = "Discount: ${product.discount}%")
-                        Text(text = "Selling Price: ₹${product.price}")
-                        product.tags?.let { tags -> Text(text = "Tags: $tags") }
-                        if (product.boxNumber != null) {
-                            Text(text = "Box Number: ${product.boxNumber}")
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = product.description ?: "No Description",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Divider()
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        ProductDetailRow(label = "SKU", value = product.sku)
+                        ProductDetailRow(label = "Purchase Month", value = product.purchaseMonth)
+                        ProductDetailRow(label = "Product Code", value = product.priceCode ?: "")
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Pricing",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        ProductDetailRow(label = "MRP", value = "₹${product.mrp}")
+                        ProductDetailRow(label = "Discount", value = "${product.discount}%")
+                        ProductDetailRow(label = "Selling Price", value = "₹${product.price}")
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Divider()
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        product.tags?.let {
+                            ProductDetailRow(label = "Tags", value = it)
                         }
+                        product.boxNumber?.let {
+                            ProductDetailRow(label = "Box Number", value = it.toString())
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+
                         val outOfStock = !product.inStock
                         if (outOfStock) {
                             Text(
                                 text = "Out of stock",
                                 color = Color.Red,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Button(
                                 onClick = {
                                     productDetailViewModel.updateProductStock(productId, true)
                                 },
-                                enabled = !isLoading
+                                enabled = !isLoading,
+                                modifier = Modifier.fillMaxWidth()
                             ) {
                                 if (isLoading) {
                                     CircularProgressIndicator(
@@ -472,10 +497,9 @@ fun ProductDetailScreen(
                             }
                         } else {
                             Button(
-                                onClick = {
-                                    showOrderSheet = true
-                                },
-                                enabled = !isLoading
+                                onClick = { showOrderSheet = true },
+                                enabled = !isLoading,
+                                modifier = Modifier.fillMaxWidth()
                             ) {
                                 if (isLoading) {
                                     CircularProgressIndicator(
@@ -491,6 +515,26 @@ fun ProductDetailScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun ProductDetailRow(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium
+        )
     }
 }
 
@@ -665,101 +709,118 @@ fun RawImageDialog(imageUrl: String, onDismiss: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GenerateImageDialog(
+fun GenerateImageBottomSheet(
     productDetailViewModel: ProductDetailViewModel,
     productId: Long,
     onDismiss: () -> Unit
 ) {
     val prompts by productDetailViewModel.prompts.collectAsState()
-    var selectedPrompt by remember { mutableStateOf<Prompt?>(null) }
-    var customPrompt by remember { mutableStateOf("") }
     val product by productDetailViewModel.product.collectAsState()
     var isGenerating by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var selectedPromptType by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(product) {
         product?.category?.let { productDetailViewModel.getPrompts(it) }
     }
 
-    AlertDialog(
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        title = { Text("Generate Image") },
-        text = {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                if (isGenerating) {
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
+        sheetState = sheetState
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            if (isGenerating) {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
                 }
-                Text("Select a prompt type or enter a custom prompt.")
-                LazyColumn(modifier = Modifier.heightIn(max = 100.dp)) {
-                    items(prompts) { prompt ->
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .selectable(
-                                    selected = (selectedPrompt?.id == prompt.id),
-                                    onClick = { selectedPrompt = prompt }
+            } else {
+                if (selectedPromptType == null) {
+                    Text("Select a prompt type", style = MaterialTheme.typography.titleLarge)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    val promptTypes = prompts.mapNotNull { it.type }.distinct()
+                    LazyColumn {
+                        items(promptTypes) { type ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { selectedPromptType = type }
+                                    .padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = type,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier.padding(start = 8.dp)
                                 )
-                                .padding(vertical = 3.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = (selectedPrompt?.id == prompt.id),
-                                onClick = { selectedPrompt = prompt }
+                                Spacer(modifier = Modifier.weight(1f))
+                                Icon(
+                                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                    contentDescription = "Select"
+                                )
+                            }
+                            HorizontalDivider(thickness = 0.5.dp, color = DividerDefaults.color)
+                        }
+                    }
+                } else {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = { selectedPromptType = null }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back"
                             )
-                            Text(
-                                text = prompt.type ?: "",
-                                style = MaterialTheme.typography.bodyLarge,
-                                modifier = Modifier.padding(start = 8.dp)
-                            )
+                        }
+                        Text("Select a prompt", style = MaterialTheme.typography.titleLarge)
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    val promptsForType = prompts.filter { it.type == selectedPromptType }
+                    LazyColumn {
+                        items(promptsForType) { prompt ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        scope.launch {
+                                            isGenerating = true
+                                            val success =
+                                                productDetailViewModel.generateProductImage(
+                                                    productId,
+                                                    prompt.id
+                                                )
+                                            if (success) {
+                                                Toast
+                                                    .makeText(
+                                                        context,
+                                                        "Image generated successfully",
+                                                        Toast.LENGTH_SHORT
+                                                    )
+                                                    .show()
+                                                onDismiss()
+                                            }
+                                            isGenerating = false
+                                        }
+                                    }
+                                    .padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = prompt.text,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier.padding(start = 8.dp)
+                                )
+                            }
+                            HorizontalDivider(thickness = 0.5.dp, color = DividerDefaults.color)
                         }
                     }
                 }
-                TextField(
-                    value = customPrompt,
-                    onValueChange = { customPrompt = it },
-                    label = { Text("Custom Prompt") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    scope.launch {
-                        isGenerating = true
-                        val success = productDetailViewModel.generateProductImage(
-                            productId,
-                            selectedPrompt?.type,
-                            customPrompt.ifBlank { null }
-                        )
-                        if (success) {
-                            Toast
-                                .makeText(
-                                    context,
-                                    "Image generated successfully",
-                                    Toast.LENGTH_SHORT
-                                )
-                                .show()
-                            onDismiss()
-                        }
-                        isGenerating = false
-                    }
-                },
-                enabled = !isGenerating
-            ) {
-                Text("Generate")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
             }
         }
-    )
+    }
 }
 
 @Composable

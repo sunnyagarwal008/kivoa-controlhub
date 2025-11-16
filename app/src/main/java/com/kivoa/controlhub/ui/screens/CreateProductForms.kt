@@ -13,9 +13,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Button
@@ -23,11 +26,16 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -45,10 +53,10 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.net.toUri
 import coil.compose.rememberAsyncImagePainter
+import com.kivoa.controlhub.data.Prompt
 import com.kivoa.controlhub.data.RawProduct
 import java.math.BigDecimal
 import java.math.RoundingMode
-import java.text.NumberFormat
 
 data class ProductFormState(
     val rawImage: String,
@@ -62,7 +70,8 @@ data class ProductFormState(
     var isRawImage: Boolean = false,
     var boxNumber: String = "",
     var tags: List<String> = emptyList(),
-    var promptType: String = ""
+    var promptId: Long? = null,
+    var promptText: String = ""
 ) {
     val isValid: Boolean
         get() = mrp.isNotBlank() &&
@@ -71,7 +80,7 @@ data class ProductFormState(
                 purchaseMonth.isNotBlank() &&
                 category.isNotBlank() &&
                 priceCode.isNotBlank() &&
-                (!isRawImage || promptType.isNotBlank())
+                (!isRawImage || promptId != null)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -110,7 +119,7 @@ fun CreateProductFormsDialog(
             ) {
                 Text(
                     "Create Products",
-                    style = androidx.compose.material3.MaterialTheme.typography.headlineMedium
+                    style = MaterialTheme.typography.headlineMedium
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -171,7 +180,7 @@ fun ProductForm(
     var categoryError by remember { mutableStateOf(false) }
     var boxNumberError by remember { mutableStateOf(false) }
     val categories by createViewModel.categories.collectAsState()
-    val promptTypes by createViewModel.promptTypes.collectAsState()
+    val prompts by createViewModel.prompts.collectAsState()
 
 
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -200,7 +209,7 @@ fun ProductForm(
                                         mrp = newValue,
                                         price = sellingPrice.setScale(2, RoundingMode.HALF_UP).toPlainString()
                                     )
-                                 )
+                                )
                             } else {
                                 onUpdateField(productFormState.copy(mrp = newValue))
                             }
@@ -326,8 +335,8 @@ fun ProductForm(
                                 Modifier.clickable { expanded = !expanded })
                         },
                         modifier = Modifier
-                            .menuAnchor()
-                            .fillMaxWidth(),
+                            .fillMaxWidth()
+                            .menuAnchor(),
                         isError = categoryError,
                         supportingText = { if (categoryError) Text("Field cannot be empty") }
                     )
@@ -343,7 +352,7 @@ fun ProductForm(
                                     categoryError = selectionOption.name.isBlank()
                                     expanded = false
                                     onValidationChange(productFormState.isValid)
-                                    createViewModel.fetchPromptTypes(selectionOption.name)
+                                    createViewModel.fetchPrompts(selectionOption.name)
                                 }
                             )
                         }
@@ -372,8 +381,8 @@ fun ProductForm(
                                 Modifier.clickable { tagsExpanded = !tagsExpanded })
                         },
                         modifier = Modifier
-                            .menuAnchor()
                             .fillMaxWidth()
+                            .menuAnchor()
                     )
                     ExposedDropdownMenu(
                         expanded = tagsExpanded,
@@ -434,41 +443,114 @@ fun ProductForm(
             }
             if (productFormState.isRawImage) {
                 Spacer(modifier = Modifier.height(4.dp))
-                var promptTypeExpanded by remember { mutableStateOf(false) }
-                ExposedDropdownMenuBox(
-                    expanded = promptTypeExpanded,
-                    onExpandedChange = { promptTypeExpanded = !promptTypeExpanded },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    OutlinedTextField(
-                        value = productFormState.promptType,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Prompt Type") },
-                        trailingIcon = {
-                            Icon(
-                                Icons.Default.KeyboardArrowDown,
-                                "contentDescription",
-                                Modifier.clickable { promptTypeExpanded = !promptTypeExpanded })
-                        },
-                        modifier = Modifier
-                            .menuAnchor()
-                            .fillMaxWidth()
+                var showPromptSheet by remember { mutableStateOf(false) }
+
+                if (showPromptSheet) {
+                    PromptSelectionBottomSheet(
+                        prompts = prompts,
+                        onDismiss = { showPromptSheet = false },
+                        onPromptSelected = { prompt ->
+                            onUpdateField(
+                                productFormState.copy(
+                                    promptId = prompt.id,
+                                    promptText = prompt.text
+                                )
+                            )
+                            showPromptSheet = false
+                            onValidationChange(productFormState.isValid)
+                        }
                     )
-                    ExposedDropdownMenu(
-                        expanded = promptTypeExpanded,
-                        onDismissRequest = { promptTypeExpanded = false }
-                    ) {
-                        promptTypes.forEach { promptType ->
-                            DropdownMenuItem(
-                                text = { Text(promptType) },
-                                onClick = {
-                                    onUpdateField(productFormState.copy(promptType = promptType))
-                                    promptTypeExpanded = false
-                                    onValidationChange(productFormState.isValid)
-                                }
+                }
+
+                OutlinedTextField(
+                    value = productFormState.promptText.ifEmpty { "Click to select a prompt" },
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Prompt") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showPromptSheet = true }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PromptSelectionBottomSheet(
+    prompts: List<Prompt>,
+    onDismiss: () -> Unit,
+    onPromptSelected: (Prompt) -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var selectedPromptType by remember { mutableStateOf<String?>(null) }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            if (selectedPromptType == null) {
+                Text("Select a prompt type", style = MaterialTheme.typography.titleLarge)
+                Spacer(modifier = Modifier.height(16.dp))
+                val promptTypes = prompts.mapNotNull { it.type }.distinct()
+                LazyColumn {
+                    items(promptTypes) { type ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { selectedPromptType = type }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = type,
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.padding(start = 8.dp)
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = "Select"
                             )
                         }
+                        HorizontalDivider()
+                    }
+                }
+            } else {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = { selectedPromptType = null }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                    Text("Select a prompt", style = MaterialTheme.typography.titleLarge)
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                val promptsForType = prompts.filter { it.type == selectedPromptType }
+                LazyColumn {
+                    items(promptsForType) { prompt ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    onPromptSelected(prompt)
+                                    onDismiss()
+                                }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = prompt.text,
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.padding(start = 8.dp)
+                            )
+                        }
+                        HorizontalDivider()
                     }
                 }
             }

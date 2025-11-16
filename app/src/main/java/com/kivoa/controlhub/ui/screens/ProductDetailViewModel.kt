@@ -163,16 +163,16 @@ class ProductDetailViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val allPrompts = RetrofitInstance.api.getPrompts(category = category).data
-                _prompts.value = allPrompts.distinctBy { it.type }.filter { it.type?.isNotBlank() == true }
+                _prompts.value = allPrompts
             } catch (_: Exception) {
                 // Handle error
             }
         }
     }
 
-    suspend fun generateProductImage(productId: Long, promptType: String?, promptText: String?): Boolean {
+    suspend fun generateProductImage(productId: Long, promptId: Long): Boolean {
         return try {
-            val request = GenerateProductImageRequest(promptType, promptText)
+            val request = GenerateProductImageRequest(promptId)
             RetrofitInstance.api.generateProductImage(productId, request)
             getProductById(productId)
             true

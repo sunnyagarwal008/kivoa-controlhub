@@ -79,6 +79,10 @@ fun CreateScreen(
         createViewModel.onImagesSelected(uris, context)
     }
 
+    LaunchedEffect(Unit) {
+        createViewModel.fetchCategories()
+    }
+
     LaunchedEffect(tabIndex) {
         when (tabIndex) {
             0 -> {

@@ -8,14 +8,15 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
+import com.google.gson.Gson
 import com.kivoa.controlhub.api.RetrofitInstance
 import com.kivoa.controlhub.data.ApiCategory
 import com.kivoa.controlhub.data.ApiProduct
 import com.kivoa.controlhub.data.ApiRawImage
 import com.kivoa.controlhub.data.ProductApiRepository
+import com.kivoa.controlhub.data.Prompt
 import com.kivoa.controlhub.data.RawImageRequest
 import com.kivoa.controlhub.utils.S3ImageUploader
-import com.google.gson.Gson
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.Flow
@@ -57,13 +58,14 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
         _selectedInReviewProductIds.asStateFlow()
 
     private val _selectedRawProductIds = MutableStateFlow<PersistentList<Long>>(persistentListOf())
-    val selectedRawProductIds: StateFlow<PersistentList<Long>> = _selectedRawProductIds.asStateFlow()
+    val selectedRawProductIds: StateFlow<PersistentList<Long>> =
+        _selectedRawProductIds.asStateFlow()
 
     private val _categories = MutableStateFlow<List<ApiCategory>>(emptyList())
     val categories: StateFlow<List<ApiCategory>> = _categories.asStateFlow()
 
-    private val _promptTypes = MutableStateFlow<List<String>>(emptyList())
-    val promptTypes: StateFlow<List<String>> = _promptTypes.asStateFlow()
+    private val _prompts = MutableStateFlow<List<Prompt>>(emptyList())
+    val prompts: StateFlow<List<Prompt>> = _prompts.asStateFlow()
 
 
     init {
@@ -73,7 +75,6 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
         s3ImageUploader = S3ImageUploader(apiService, okHttpClient, gson)
         productApiRepository = ProductApiRepository(apiService)
         rawProducts = productApiRepository.rawImagesFlow.cachedIn(viewModelScope)
-        fetchCategories()
     }
 
     fun onImagesSelected(imageUris: List<Uri>, context: Context) {
@@ -123,7 +124,8 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
     fun deleteRawProducts() {
         viewModelScope.launch {
             try {
-                val response = productApiRepository.bulkDeleteRawImages(_selectedRawProductIds.value)
+                val response =
+                    productApiRepository.bulkDeleteRawImages(_selectedRawProductIds.value)
                 if (response.success) {
                     productApiRepository.invalidateRawImages()
                     _selectedRawProductIds.value = persistentListOf()
@@ -236,7 +238,10 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    private fun fetchCategories() {
+    fun fetchCategories() {
+        if (_categories.value.isNotEmpty()) {
+            return
+        }
         viewModelScope.launch {
             try {
                 val response = RetrofitInstance.api.getCategories()
@@ -251,17 +256,17 @@ class CreateViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun fetchPromptTypes(category: String) {
+    fun fetchPrompts(category: String) {
         viewModelScope.launch {
             try {
                 val response = RetrofitInstance.api.getPrompts(category)
                 if (response.success) {
-                    _promptTypes.value = response.data.mapNotNull { it.type }.distinct()
+                    _prompts.value = response.data
                 } else {
-                    Log.e(TAG, "Error fetching prompt types: ${response.success}")
+                    Log.e(TAG, "Error fetching prompts: ${response.success}")
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error fetching prompt types: ${e.message}", e)
+                Log.e(TAG, "Error fetching prompts: ${e.message}", e)
             }
         }
     }
