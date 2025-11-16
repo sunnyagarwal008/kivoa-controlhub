@@ -38,9 +38,10 @@ class BrowseViewModel : ViewModel() {
 
     var selectionMode by mutableStateOf(false)
     var selectedProducts by mutableStateOf(emptySet<ApiProduct>())
-    var showPriceFilterDialog by mutableStateOf(false)
-    var showDiscountFilterDialog by mutableStateOf(false)
+    var showPriceFilterSheet by mutableStateOf(false)
+    var showDiscountFilterSheet by mutableStateOf(false)
     var showDiscountDialog by mutableStateOf(false)
+    var showBoxNumberDialog by mutableStateOf(false)
     var applyingDiscount by mutableStateOf(false)
     val filterParams = MutableStateFlow(FilterParams())
 

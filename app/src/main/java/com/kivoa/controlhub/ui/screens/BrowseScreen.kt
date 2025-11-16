@@ -6,7 +6,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.net.Uri
 import android.os.Environment
 import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -20,11 +19,13 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
@@ -32,13 +33,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
@@ -50,10 +51,12 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -74,6 +77,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -97,7 +101,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalMaterialApi::class,
+@OptIn(
+    ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalMaterialApi::class,
     ExperimentalLayoutApi::class
 )
 @Composable
@@ -111,10 +116,13 @@ fun BrowseScreen(
     val apiService = RetrofitInstance.api
 
     val lazyPagingItems = browseViewModel.products.collectAsLazyPagingItems()
-    val shareViewModelFactory = remember { ShareViewModelFactory(application, apiService, { lazyPagingItems.refresh() }) {
-        browseViewModel.selectionMode = false
-        browseViewModel.selectedProducts = emptySet()
-    } }
+    val shareViewModelFactory =
+        remember {
+            ShareViewModelFactory(application, apiService, { lazyPagingItems.refresh() }) {
+                browseViewModel.selectionMode = false
+                browseViewModel.selectedProducts = emptySet()
+            }
+        }
     val shareViewModel: ShareViewModel = viewModel(factory = shareViewModelFactory)
 
     val categories by browseViewModel.categories.collectAsState()
@@ -124,7 +132,6 @@ fun BrowseScreen(
     val discountAppliedMessage by browseViewModel.discountAppliedMessage.collectAsState()
 
     var showPdfNameDialog by remember { mutableStateOf(false) }
-    var showBoxNumberDialog by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
 
@@ -161,7 +168,10 @@ fun BrowseScreen(
                         var sortExpanded by remember { mutableStateOf(false) }
                         Box {
                             IconButton(onClick = { sortExpanded = true }) {
-                                Icon(Icons.Default.Sort, contentDescription = "Sort options")
+                                Icon(
+                                    Icons.AutoMirrored.Filled.Sort,
+                                    contentDescription = "Sort options"
+                                )
                             }
                             DropdownMenu(
                                 expanded = sortExpanded,
@@ -253,7 +263,10 @@ fun BrowseScreen(
         var catalogName by remember { mutableStateOf("") }
         Dialog(onDismissRequest = { showPdfNameDialog = false }) {
             Surface(shape = RoundedCornerShape(16.dp), color = Color.White) {
-                Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Text("Enter catalog name")
                     TextField(
                         value = catalogName,
@@ -314,7 +327,10 @@ fun BrowseScreen(
     if (browseViewModel.applyingDiscount) {
         Dialog(onDismissRequest = {}) {
             Surface(shape = RoundedCornerShape(16.dp), color = Color.White) {
-                Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Text("Applying discount...")
                     CircularProgressIndicator()
                 }
@@ -330,40 +346,63 @@ fun BrowseScreen(
         }
     }
 
-    if (showBoxNumberDialog) {
+    if (browseViewModel.showBoxNumberDialog) {
         var boxNumber by remember { mutableStateOf(filterParams.boxNumber ?: "") }
-        Dialog(onDismissRequest = { showBoxNumberDialog = false }) {
-            Surface(shape = RoundedCornerShape(16.dp), color = Color.White) {
-                Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Enter Box Number")
-                    TextField(
-                        value = boxNumber,
-                        onValueChange = { boxNumber = it },
-                        label = { Text("Box Number") }
-                    )
-                    Row {
-                        Button(onClick = {
-                            browseViewModel.updateBoxNumber(boxNumber.ifBlank { null })
-                            showBoxNumberDialog = false
-                        }) {
-                            Text("Apply")
+        val boxNumberSheetState = rememberModalBottomSheetState()
+        ModalBottomSheet(
+            onDismissRequest = { browseViewModel.showBoxNumberDialog = false },
+            sheetState = boxNumberSheetState,
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text("Enter Box Number")
+                TextField(
+                    value = boxNumber,
+                    onValueChange = { boxNumber = it },
+                    label = { Text("Box Number") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = {
+                        browseViewModel.updateBoxNumber(null)
+                        scope.launch { boxNumberSheetState.hide() }.invokeOnCompletion {
+                            if (!boxNumberSheetState.isVisible) {
+                                browseViewModel.showBoxNumberDialog = false
+                            }
                         }
-                        Button(onClick = {
-                            browseViewModel.updateBoxNumber(null)
-                            showBoxNumberDialog = false
-                        }) {
-                            Text("Clear")
+                    }) {
+                        Text("Clear")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(onClick = {
+                        browseViewModel.updateBoxNumber(boxNumber.ifBlank { null })
+                        scope.launch { boxNumberSheetState.hide() }.invokeOnCompletion {
+                            if (!boxNumberSheetState.isVisible) {
+                                browseViewModel.showBoxNumberDialog = false
+                            }
                         }
+                    }) {
+                        Text("Apply")
                     }
                 }
             }
         }
     }
 
+
     if (browseViewModel.generatingPdf) {
         Dialog(onDismissRequest = {}) {
             Surface(shape = RoundedCornerShape(16.dp), color = Color.White) {
-                Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Text("Generating PDF catalog...")
                     CircularProgressIndicator()
                 }
@@ -376,7 +415,8 @@ fun BrowseScreen(
             object : BroadcastReceiver() {
                 override fun onReceive(context: Context, intent: Intent) {
                     val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
-                    val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+                    val downloadManager =
+                        context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
                     val query = DownloadManager.Query().setFilterById(id)
                     val cursor = downloadManager.query(query)
                     if (cursor.moveToFirst()) {
@@ -385,15 +425,24 @@ fun BrowseScreen(
                             val uriIndex = cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI)
                             if (uriIndex >= 0) {
                                 val uriString = cursor.getString(uriIndex)
-                                val downloadedFileUri = Uri.parse(uriString)
+                                val downloadedFileUri = uriString.toUri()
                                 val file = File(downloadedFileUri.path!!)
-                                val fileUri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+                                val fileUri = FileProvider.getUriForFile(
+                                    context,
+                                    "${context.packageName}.provider",
+                                    file
+                                )
                                 val shareIntent = Intent(Intent.ACTION_SEND).apply {
                                     type = "application/pdf"
                                     putExtra(Intent.EXTRA_STREAM, fileUri)
                                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                 }
-                                context.startActivity(Intent.createChooser(shareIntent, "Share Catalog"))
+                                context.startActivity(
+                                    Intent.createChooser(
+                                        shareIntent,
+                                        "Share Catalog"
+                                    )
+                                )
                                 browseViewModel.onPdfShared()
                             }
                         }
@@ -410,7 +459,8 @@ fun BrowseScreen(
             val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
             val fileName = "Product Catalog-${dateFormat.format(Date())}.pdf"
 
-            val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            val downloadManager =
+                context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
             val request = DownloadManager.Request(url.toUri())
                 .setTitle("Product Catalog")
                 .setDescription("Downloading")
@@ -431,18 +481,27 @@ fun BrowseScreen(
     }
 
 
-    if (browseViewModel.showPriceFilterDialog) {
-        PriceFilterDialog(viewModel = browseViewModel, currentPriceRange = filterParams.priceRange)
+    if (browseViewModel.showPriceFilterSheet) {
+        PriceFilterBottomSheet(
+            viewModel = browseViewModel,
+            currentPriceRange = filterParams.priceRange
+        )
     }
 
-    if (browseViewModel.showDiscountFilterDialog) {
-        DiscountFilterDialog(viewModel = browseViewModel, currentDiscountRange = filterParams.discountRange)
+    if (browseViewModel.showDiscountFilterSheet) {
+        DiscountFilterBottomSheet(
+            viewModel = browseViewModel,
+            currentDiscountRange = filterParams.discountRange
+        )
     }
 
     if (shareViewModel.shareState is ShareViewModel.ShareState.Processing) {
         Dialog(onDismissRequest = {}) {
             Surface(shape = RoundedCornerShape(16.dp), color = Color.White) {
-                Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Text("Preparing images...")
                     CircularProgressIndicator()
                 }
@@ -522,16 +581,16 @@ fun BrowseScreen(
 
             FilterChip(
                 label = filterParams.boxNumber ?: "Box Number",
-                onClick = { showBoxNumberDialog = true }
+                onClick = { browseViewModel.showBoxNumberDialog = true }
             )
 
             FilterChip(
                 label = "₹${filterParams.priceRange.start.toInt()}-₹${filterParams.priceRange.endInclusive.toInt()}",
-                onClick = { browseViewModel.showPriceFilterDialog = true })
+                onClick = { browseViewModel.showPriceFilterSheet = true })
 
             FilterChip(
                 label = "${filterParams.discountRange.start.toInt()}%-${filterParams.discountRange.endInclusive.toInt()}%",
-                onClick = { browseViewModel.showDiscountFilterDialog = true }
+                onClick = { browseViewModel.showDiscountFilterSheet = true }
             )
 
             Box {
@@ -658,23 +717,68 @@ fun FilterChip(label: String, onClick: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PriceFilterDialog(viewModel: BrowseViewModel, currentPriceRange: ClosedFloatingPointRange<Float>) {
-    Dialog(onDismissRequest = { viewModel.showPriceFilterDialog = false }) {
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = Color.White
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(text = "Price Range", fontSize = 20.sp)
-                RangeSlider(
-                    value = currentPriceRange,
-                    onValueChange = { viewModel.updatePriceRange(it) },
-                    valueRange = 0f..5000f,
-                    steps = 100
+fun PriceFilterBottomSheet(
+    viewModel: BrowseViewModel,
+    currentPriceRange: ClosedFloatingPointRange<Float>
+) {
+    val sheetState = rememberModalBottomSheetState()
+    val scope = rememberCoroutineScope()
+
+    ModalBottomSheet(
+        onDismissRequest = { viewModel.showPriceFilterSheet = false },
+        sheetState = sheetState
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Price Range",
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "₹${currentPriceRange.start.toInt()}",
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Start
                 )
-                Text(text = "₹${currentPriceRange.start.toInt()}-₹${currentPriceRange.endInclusive.toInt()}")
-                Button(onClick = { viewModel.showPriceFilterDialog = false }) {
+                Text(
+                    text = "₹${currentPriceRange.endInclusive.toInt()}",
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.End
+                )
+            }
+
+            RangeSlider(
+                value = currentPriceRange,
+                onValueChange = { viewModel.updatePriceRange(it) },
+                valueRange = 0f..5000f,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                TextButton(onClick = {
+                    viewModel.updatePriceRange(0f..5000f)
+                }) {
+                    Text("Reset")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(onClick = {
+                    scope.launch { sheetState.hide() }.invokeOnCompletion {
+                        if (!sheetState.isVisible) {
+                            viewModel.showPriceFilterSheet = false
+                        }
+                    }
+                }) {
                     Text("Done")
                 }
             }
@@ -682,23 +786,68 @@ fun PriceFilterDialog(viewModel: BrowseViewModel, currentPriceRange: ClosedFloat
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DiscountFilterDialog(viewModel: BrowseViewModel, currentDiscountRange: ClosedFloatingPointRange<Float>) {
-    Dialog(onDismissRequest = { viewModel.showDiscountFilterDialog = false }) {
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = Color.White
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(text = "Discount Range", fontSize = 20.sp)
-                RangeSlider(
-                    value = currentDiscountRange,
-                    onValueChange = { viewModel.updateDiscountRange(it) },
-                    valueRange = 0f..100f,
-                    steps = 100
+fun DiscountFilterBottomSheet(
+    viewModel: BrowseViewModel,
+    currentDiscountRange: ClosedFloatingPointRange<Float>
+) {
+    val sheetState = rememberModalBottomSheetState()
+    val scope = rememberCoroutineScope()
+
+    ModalBottomSheet(
+        onDismissRequest = { viewModel.showDiscountFilterSheet = false },
+        sheetState = sheetState
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Discount Range",
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "${currentDiscountRange.start.toInt()}%",
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Start
                 )
-                Text(text = "${currentDiscountRange.start.toInt()}%-${currentDiscountRange.endInclusive.toInt()}%")
-                Button(onClick = { viewModel.showDiscountFilterDialog = false }) {
+                Text(
+                    text = "${currentDiscountRange.endInclusive.toInt()}%",
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.End
+                )
+            }
+
+            RangeSlider(
+                value = currentDiscountRange,
+                onValueChange = { viewModel.updateDiscountRange(it) },
+                valueRange = 0f..100f,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                TextButton(onClick = {
+                    viewModel.updateDiscountRange(0f..100f)
+                }) {
+                    Text("Reset")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(onClick = {
+                    scope.launch { sheetState.hide() }.invokeOnCompletion {
+                        if (!sheetState.isVisible) {
+                            viewModel.showDiscountFilterSheet = false
+                        }
+                    }
+                }) {
                     Text("Done")
                 }
             }
