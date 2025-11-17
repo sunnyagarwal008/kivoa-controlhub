@@ -69,7 +69,16 @@ data class ApiProduct(
     val title : String?,
     val description : String?,
     val handle: String?,
-    val flagged: Boolean
+    val flagged: Boolean,
+    val weight: Int?,
+    val dimensions: Dimensions?,
+    val size: String?
+)
+
+data class Dimensions(
+    val length: Int?,
+    val breadth: Int?,
+    val height: Int?
 )
 
 data class CategoryDetails(

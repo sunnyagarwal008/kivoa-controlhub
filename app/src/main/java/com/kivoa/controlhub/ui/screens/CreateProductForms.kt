@@ -1,5 +1,6 @@
 package com.kivoa.controlhub.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -74,7 +75,12 @@ data class ProductFormState(
     var boxNumber: String = "",
     var tags: List<String> = emptyList(),
     var promptId: Long? = null,
-    var promptText: String = ""
+    var promptText: String = "",
+    var weight: String = "",
+    var length: String = "",
+    var breadth: String = "",
+    var height: String = "",
+    var size: String = ""
 ) {
     val isValid: Boolean
         get() = mrp.isNotBlank() &&
@@ -184,6 +190,7 @@ fun ProductForm(
     var boxNumberError by remember { mutableStateOf(false) }
     val categories by createViewModel.categories.collectAsState()
     val prompts by createViewModel.prompts.collectAsState()
+    var expanded by remember { mutableStateOf(false) }
 
 
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -197,7 +204,10 @@ fun ProductForm(
                 contentScale = ContentScale.Crop
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 OutlinedTextField(
                     value = productFormState.mrp,
                     onValueChange = { newValue ->
@@ -210,7 +220,9 @@ fun ProductForm(
                                 onUpdateField(
                                     productFormState.copy(
                                         mrp = newValue,
-                                        price = sellingPrice.setScale(2, RoundingMode.HALF_UP).toPlainString()
+                                        price = sellingPrice
+                                            .setScale(2, RoundingMode.HALF_UP)
+                                            .toPlainString()
                                     )
                                 )
                             } else {
@@ -237,7 +249,9 @@ fun ProductForm(
                                 onUpdateField(
                                     productFormState.copy(
                                         discount = newValue,
-                                        price = sellingPrice.setScale(2, RoundingMode.HALF_UP).toPlainString()
+                                        price = sellingPrice
+                                            .setScale(2, RoundingMode.HALF_UP)
+                                            .toPlainString()
                                     )
                                 )
                             } else {
@@ -254,7 +268,10 @@ fun ProductForm(
                 )
             }
             Spacer(modifier = Modifier.height(4.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 OutlinedTextField(
                     value = productFormState.price,
                     onValueChange = {},
@@ -282,7 +299,10 @@ fun ProductForm(
                 )
             }
             Spacer(modifier = Modifier.height(4.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 OutlinedTextField(
                     value = productFormState.purchaseMonth,
                     onValueChange = { newValue ->
@@ -312,7 +332,10 @@ fun ProductForm(
                 )
             }
             Spacer(modifier = Modifier.height(4.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 var expanded by remember { mutableStateOf(false) }
                 val icon =
                     if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
@@ -415,20 +438,6 @@ fun ProductForm(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                OutlinedTextField(
-                    value = productFormState.boxNumber,
-                    onValueChange = { newValue ->
-                        if (newValue.all { it.isDigit() }) {
-                            onUpdateField(productFormState.copy(boxNumber = newValue))
-                        }
-                        onValidationChange(productFormState.isValid)
-                    },
-                    label = { Text("Box Number") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.weight(1f),
-                    isError = boxNumberError,
-                    supportingText = { if (boxNumberError) Text("Field cannot be empty") }
-                )
                 Row(
                     modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically,
@@ -484,6 +493,92 @@ fun ProductForm(
                             disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     )
+                }
+            }
+            Column {
+                var additionalDetailsExpanded by remember { mutableStateOf(false) }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { additionalDetailsExpanded = !additionalDetailsExpanded }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Additional Details", style = MaterialTheme.typography.titleMedium)
+                    Icon(
+                        imageVector = if (additionalDetailsExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                        contentDescription = "Expand or collapse"
+                    )
+                }
+                AnimatedVisibility(visible = additionalDetailsExpanded) {
+                    Column(modifier = Modifier.padding(top = 8.dp)) {
+                        OutlinedTextField(
+                            value = productFormState.boxNumber,
+                            onValueChange = { newValue ->
+                                if (newValue.all { it.isDigit() }) {
+                                    onUpdateField(productFormState.copy(boxNumber = newValue))
+                                }
+                                onValidationChange(productFormState.isValid)
+                            },
+                            label = { Text("Box Number") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth(),
+                            isError = boxNumberError,
+                            supportingText = { if (boxNumberError) Text("Field cannot be empty") }
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        OutlinedTextField(
+                            value = productFormState.weight,
+                            onValueChange = { newValue ->
+                                onUpdateField(productFormState.copy(weight = newValue))
+                            },
+                            label = { Text("Weight (grams)") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = productFormState.length,
+                                onValueChange = { newValue ->
+                                    onUpdateField(productFormState.copy(length = newValue))
+                                },
+                                label = { Text("Length (mm)") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.weight(1f)
+                            )
+                            OutlinedTextField(
+                                value = productFormState.breadth,
+                                onValueChange = { newValue ->
+                                    onUpdateField(productFormState.copy(breadth = newValue))
+                                },
+                                label = { Text("Breadth (mm)") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.weight(1f)
+                            )
+                            OutlinedTextField(
+                                value = productFormState.height,
+                                onValueChange = { newValue ->
+                                    onUpdateField(productFormState.copy(height = newValue))
+                                },
+                                label = { Text("Height (mm)") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        OutlinedTextField(
+                            value = productFormState.size,
+                            onValueChange = { newValue ->
+                                onUpdateField(productFormState.copy(size = newValue))
+                            },
+                            label = { Text("Size") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
             }
         }

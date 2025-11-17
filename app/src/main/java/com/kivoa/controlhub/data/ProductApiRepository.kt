@@ -48,7 +48,12 @@ class ProductApiRepository(private val apiService: ApiService) {
                 isRawImage = formState.isRawImage,
                 boxNumber = formState.boxNumber.toIntOrNull(),
                 tags = formState.tags.joinToString(","),
-                promptId = formState.promptId
+                promptId = formState.promptId,
+                weight = formState.weight.toIntOrNull(),
+                length = formState.length.toIntOrNull(),
+                breadth = formState.breadth.toIntOrNull(),
+                height = formState.height.toIntOrNull(),
+                size = formState.size
             )
         }
         val bulkProductRequest = BulkProductRequest(products = productDetails)

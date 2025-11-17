@@ -25,4 +25,9 @@ data class ProductDetailRequest(
     val tags: String,
     @Json(name = "prompt_id")
     val promptId: Long?,
+    val weight: Int?,
+    val length: Int?,
+    val breadth: Int?,
+    val height: Int?,
+    val size: String?
 )

@@ -468,6 +468,17 @@ fun ProductDetailScreen(
                         product.boxNumber?.let {
                             ProductDetailRow(label = "Box Number", value = it.toString())
                         }
+                        product.weight?.let {
+                            ProductDetailRow(label = "Weight", value = "$it grams")
+                        }
+                        product.dimensions?.let {
+                            val dimensions =
+                                "${it.length} x ${it.breadth} x ${it.height} mm"
+                            ProductDetailRow(label = "Dimensions", value = dimensions)
+                        }
+                        product.size?.let {
+                            ProductDetailRow(label = "Size", value = it)
+                        }
                         Spacer(modifier = Modifier.height(16.dp))
 
                         val outOfStock = !product.inStock
@@ -559,6 +570,7 @@ fun PlaceOrderForm(
         modifier = Modifier
             .padding(16.dp)
             .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
     ) {
         Text("Place Order", style = MaterialTheme.typography.titleLarge)
         Spacer(modifier = Modifier.height(16.dp))
