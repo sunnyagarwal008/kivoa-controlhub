@@ -318,7 +318,7 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable(
-                            route = Screen.OrderDetail.route + "/{orderJson}",
+                            route = Screen.OrderDetail.route,
                             arguments = listOf(navArgument("orderJson") { type = NavType.StringType })
                         ) {
                             val orderJson = it.arguments?.getString("orderJson")
@@ -327,7 +327,11 @@ class MainActivity : ComponentActivity() {
                                 com.kivoa.controlhub.data.shopify.order.Order::class.java
                             )
                             if (order != null) {
-                                OrderDetailScreen(order = order)
+                                OrderDetailScreen(
+                                    order = order,
+                                    navController = navController,
+                                    appBarViewModel = appBarViewModel
+                                )
                             }
                         }
                     }
@@ -364,7 +368,7 @@ sealed class Screen(val route: String, val icon: ImageVector? = null) {
     object CreatePrompt : Screen("Settings/Categories/{categoryName}/CreatePrompt")
     object Catalogs : Screen("Catalogs")
     object Orders : Screen("Orders", Icons.Default.ShoppingBasket)
-    object OrderDetail : Screen("OrderDetail")
+    object OrderDetail : Screen("OrderDetail/{orderJson}")
 
     fun withArgs(vararg args: Any): String {
         var finalRoute = route

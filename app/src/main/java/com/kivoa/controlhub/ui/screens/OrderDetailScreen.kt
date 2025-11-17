@@ -2,16 +2,40 @@ package com.kivoa.controlhub.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.kivoa.controlhub.data.shopify.order.Order
+import androidx.navigation.NavController
+import com.kivoa.controlhub.AppBarState
+import com.kivoa.controlhub.AppBarViewModel
 import com.kivoa.controlhub.data.shopify.order.LineItem
+import com.kivoa.controlhub.data.shopify.order.Order
 
 @Composable
-fun OrderDetailScreen(order: Order) {
+fun OrderDetailScreen(
+    order: Order,
+    navController: NavController,
+    appBarViewModel: AppBarViewModel
+) {
+    LaunchedEffect(Unit) {
+        appBarViewModel.setAppBarState(
+            AppBarState(
+                title = { Text("Order Detail") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        )
+    }
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -19,9 +43,9 @@ fun OrderDetailScreen(order: Order) {
     ) {
         item {
             Column(modifier = Modifier.padding(bottom = 16.dp)) {
-                Text(text = "Order #${order.orderNumber}")
-                Text(text = "Created at: ${order.createdAt}")
-                Text(text = "Status: ${order.financialStatus}")
+                Text(text = "#${order.orderNumber}")
+                Text(text = order.createdAt)
+                Text(text = order.financialStatus)
                 order.customer?.firstName?.let { firstName ->
                     order.customer.lastName?.let { lastName ->
                         Text(text = "Customer: $firstName $lastName")
@@ -33,7 +57,7 @@ fun OrderDetailScreen(order: Order) {
             }
         }
         items(order.lineItems.size) { index ->
-            order.lineItems[index]?.let { lineItem ->
+            order.lineItems[index].let { lineItem ->
                 LineItemView(lineItem = lineItem)
             }
         }

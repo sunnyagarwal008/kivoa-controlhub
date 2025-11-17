@@ -75,9 +75,9 @@ fun OrderItem(order: Order, onClick: () -> Unit) {
             .clickable(onClick = onClick)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = "Order #${order.orderNumber}")
-            Text(text = "Created at: ${order.createdAt}")
-            Text(text = "Status: ${order.financialStatus}")
+            Text(text = "#${order.orderNumber}")
+            Text(text = order.createdAt)
+            Text(text = order.financialStatus)
             order.customer?.firstName?.let { firstName ->
                 order.customer.lastName?.let { lastName ->
                     Text(text = "Customer: $firstName $lastName")
