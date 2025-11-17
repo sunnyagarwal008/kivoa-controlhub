@@ -57,6 +57,9 @@ class BrowseViewModel : ViewModel() {
     private val _discountAppliedMessage = MutableStateFlow<String?>(null)
     val discountAppliedMessage: StateFlow<String?> = _discountAppliedMessage.asStateFlow()
 
+    private val _totalProducts = MutableStateFlow(0)
+    val totalProducts: StateFlow<Int> = _totalProducts.asStateFlow()
+
     var generatingPdf by mutableStateOf(false)
 
     init {
@@ -77,7 +80,10 @@ class BrowseViewModel : ViewModel() {
                 sortOrder = params.sortOrder,
                 tags = params.selectedTags.joinToString(","),
                 boxNumber = params.boxNumber,
-                flagged = params.flagged
+                flagged = params.flagged,
+                onTotalCount = {
+                    _totalProducts.value = it
+                }
             )
         }.flow
     }.cachedIn(viewModelScope)

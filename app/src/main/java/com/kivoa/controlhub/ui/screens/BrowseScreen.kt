@@ -152,6 +152,7 @@ fun BrowseScreen(
     val filterParams by browseViewModel.filterParams.collectAsState()
     val pdfCatalogUrl by browseViewModel.pdfCatalogUrl.collectAsState()
     val discountAppliedMessage by browseViewModel.discountAppliedMessage.collectAsState()
+    val totalProducts by browseViewModel.totalProducts.collectAsState()
 
     var showPdfNameDialog by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
@@ -159,14 +160,22 @@ fun BrowseScreen(
     var showSearchSheet by remember { mutableStateOf(false) }
 
 
-    LaunchedEffect(browseViewModel.selectionMode, browseViewModel.selectedProducts.size) {
+    LaunchedEffect(browseViewModel.selectionMode, browseViewModel.selectedProducts.size, totalProducts) {
         appBarViewModel.setAppBarState(
             AppBarState(
                 title = {
                     if (browseViewModel.selectionMode) {
                         Text("${browseViewModel.selectedProducts.size} selected")
                     } else {
-                        Text(Screen.Browse.route)
+                        Column {
+                            Text(Screen.Browse.route)
+                            if (totalProducts > 0) {
+                                Text(
+                                    "$totalProducts products",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
                     }
                 },
                 navigationIcon = {

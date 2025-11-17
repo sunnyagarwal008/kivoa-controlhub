@@ -17,7 +17,8 @@ class ProductPagingSource(
     private val sortOrder: String?,
     private val tags: String?,
     private val boxNumber: String?,
-    private val flagged: Boolean?
+    private val flagged: Boolean?,
+    private val onTotalCount: (Int) -> Unit
 ) : PagingSource<Int, ApiProduct>() {
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, ApiProduct> {
@@ -37,6 +38,9 @@ class ProductPagingSource(
                 boxNumber = boxNumber,
                 flagged = flagged
             )
+            if (page == 1) {
+                onTotalCount(response.pagination.total)
+            }
             val products = response.data
             LoadResult.Page(
                 data = products,
