@@ -42,8 +42,7 @@ import androidx.navigation.navArgument
 import com.google.gson.Gson
 import com.kivoa.controlhub.api.RetrofitInstance
 import com.kivoa.controlhub.data.Prompt
-import com.kivoa.controlhub.ui.screens.BrowseScreen
-import com.kivoa.controlhub.ui.screens.BrowseViewModel
+import com.kivoa.controlhub.ui.screens.ProductsViewModel
 import com.kivoa.controlhub.ui.screens.CatalogsScreen
 import com.kivoa.controlhub.ui.screens.CreateScreen
 import com.kivoa.controlhub.ui.screens.EditProductScreen
@@ -53,6 +52,7 @@ import com.kivoa.controlhub.ui.screens.OrdersScreen
 import com.kivoa.controlhub.ui.screens.OrdersViewModel
 import com.kivoa.controlhub.ui.screens.OrdersViewModelFactory
 import com.kivoa.controlhub.ui.screens.ProductDetailScreen
+import com.kivoa.controlhub.ui.screens.ProductsScreen
 import com.kivoa.controlhub.ui.screens.ReorderImagesScreen
 import com.kivoa.controlhub.ui.screens.ShareViewModel
 import com.kivoa.controlhub.ui.screens.ShareViewModelFactory
@@ -112,7 +112,7 @@ class MainActivity : ComponentActivity() {
                 val shareViewModelFactoryForDetail =
                     remember { ShareViewModelFactory(application, apiService, null) }
 
-                val browseViewModel: BrowseViewModel = viewModel()
+                val productsViewModel: ProductsViewModel = viewModel()
                 val appBarViewModel: AppBarViewModel = viewModel()
                 val appBarState by appBarViewModel.appBarState.collectAsState()
 
@@ -122,7 +122,7 @@ class MainActivity : ComponentActivity() {
                     bottomBar = {
                         NavigationBar {
                             val items = listOf(
-                                Screen.Browse,
+                                Screen.Products,
                                 Screen.Create,
                                 Screen.Orders,
                                 Screen.Settings,
@@ -148,7 +148,7 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     NavHost(
                         navController,
-                        startDestination = Screen.Browse.route,
+                        startDestination = Screen.Products.route,
                         Modifier.padding(innerPadding)
                     ) {
                         composable(Screen.Search.route) {
@@ -158,10 +158,10 @@ class MainActivity : ComponentActivity() {
                                 appBarViewModel = appBarViewModel
                             )
                         }
-                        composable(Screen.Browse.route) {
-                            BrowseScreen(
+                        composable(Screen.Products.route) {
+                            ProductsScreen(
                                 navController = navController,
-                                browseViewModel = browseViewModel,
+                                productsViewModel = productsViewModel,
                                 appBarViewModel = appBarViewModel
                             )
                         }
@@ -353,7 +353,7 @@ fun KivoaAppBar(appBarState: AppBarState) {
 
 sealed class Screen(val route: String, val icon: ImageVector? = null) {
     object Search : Screen("Search", Icons.Default.Search)
-    object Browse : Screen("Browse", Icons.Default.ShoppingCart)
+    object Products : Screen("Products", Icons.Default.ShoppingCart)
     object Create : Screen("Create", Icons.Default.AddCircle)
     object ProductDetail : Screen("ProductDetail")
     object EditProduct : Screen("edit_product")

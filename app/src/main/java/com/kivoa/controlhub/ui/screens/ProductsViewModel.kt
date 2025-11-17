@@ -34,7 +34,7 @@ data class FilterParams(
     val flagged: Boolean? = null
 )
 
-class BrowseViewModel : ViewModel() {
+class ProductsViewModel : ViewModel() {
 
     var selectionMode by mutableStateOf(false)
     var selectedProducts by mutableStateOf(emptySet<ApiProduct>())

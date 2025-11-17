@@ -9,7 +9,6 @@ import android.content.IntentFilter
 import android.os.Environment
 import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -94,7 +93,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -111,7 +109,6 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.SubcomposeAsyncImage
 import com.kivoa.controlhub.AppBarState
 import com.kivoa.controlhub.AppBarViewModel
-import com.kivoa.controlhub.R
 import com.kivoa.controlhub.Screen
 import com.kivoa.controlhub.ShimmerEffect
 import com.kivoa.controlhub.api.RetrofitInstance
@@ -127,8 +124,8 @@ import java.util.Locale
     ExperimentalLayoutApi::class
 )
 @Composable
-fun BrowseScreen(
-    browseViewModel: BrowseViewModel = viewModel(),
+fun ProductsScreen(
+    productsViewModel: ProductsViewModel = viewModel(),
     navController: NavController,
     appBarViewModel: AppBarViewModel,
     searchViewModel: SearchViewModel = viewModel()
@@ -137,22 +134,22 @@ fun BrowseScreen(
     val application = context.applicationContext as Application
     val apiService = RetrofitInstance.api
 
-    val lazyPagingItems = browseViewModel.products.collectAsLazyPagingItems()
+    val lazyPagingItems = productsViewModel.products.collectAsLazyPagingItems()
     val shareViewModelFactory =
         remember {
             ShareViewModelFactory(application, apiService, { lazyPagingItems.refresh() }) {
-                browseViewModel.selectionMode = false
-                browseViewModel.selectedProducts = emptySet()
+                productsViewModel.selectionMode = false
+                productsViewModel.selectedProducts = emptySet()
             }
         }
     val shareViewModel: ShareViewModel = viewModel(factory = shareViewModelFactory)
 
-    val categories by browseViewModel.categories.collectAsState()
-    val tags by browseViewModel.tags.collectAsState()
-    val filterParams by browseViewModel.filterParams.collectAsState()
-    val pdfCatalogUrl by browseViewModel.pdfCatalogUrl.collectAsState()
-    val discountAppliedMessage by browseViewModel.discountAppliedMessage.collectAsState()
-    val totalProducts by browseViewModel.totalProducts.collectAsState()
+    val categories by productsViewModel.categories.collectAsState()
+    val tags by productsViewModel.tags.collectAsState()
+    val filterParams by productsViewModel.filterParams.collectAsState()
+    val pdfCatalogUrl by productsViewModel.pdfCatalogUrl.collectAsState()
+    val discountAppliedMessage by productsViewModel.discountAppliedMessage.collectAsState()
+    val totalProducts by productsViewModel.totalProducts.collectAsState()
 
     var showPdfNameDialog by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
@@ -160,15 +157,15 @@ fun BrowseScreen(
     var showSearchSheet by remember { mutableStateOf(false) }
 
 
-    LaunchedEffect(browseViewModel.selectionMode, browseViewModel.selectedProducts.size, totalProducts) {
+    LaunchedEffect(productsViewModel.selectionMode, productsViewModel.selectedProducts.size, totalProducts) {
         appBarViewModel.setAppBarState(
             AppBarState(
                 title = {
-                    if (browseViewModel.selectionMode) {
-                        Text("${browseViewModel.selectedProducts.size} selected")
+                    if (productsViewModel.selectionMode) {
+                        Text("${productsViewModel.selectedProducts.size} selected")
                     } else {
                         Column {
-                            Text(Screen.Browse.route)
+                            Text(Screen.Products.route)
                             if (totalProducts > 0) {
                                 Text(
                                     "$totalProducts products",
@@ -179,10 +176,10 @@ fun BrowseScreen(
                     }
                 },
                 navigationIcon = {
-                    if (browseViewModel.selectionMode) {
+                    if (productsViewModel.selectionMode) {
                         IconButton(onClick = {
-                            browseViewModel.selectionMode = false
-                            browseViewModel.selectedProducts = emptySet()
+                            productsViewModel.selectionMode = false
+                            productsViewModel.selectedProducts = emptySet()
                         }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -192,8 +189,8 @@ fun BrowseScreen(
                     }
                 },
                 actions = {
-                    if (browseViewModel.selectionMode) {
-                        IconButton(onClick = { shareViewModel.shareProducts(browseViewModel.selectedProducts) }) {
+                    if (productsViewModel.selectionMode) {
+                        IconButton(onClick = { shareViewModel.shareProducts(productsViewModel.selectedProducts) }) {
                             Icon(Icons.Default.Share, contentDescription = "Share")
                         }
                     } else {
@@ -215,42 +212,42 @@ fun BrowseScreen(
                                 DropdownMenuItem(
                                     text = { Text("SKU (Ascending)") },
                                     onClick = {
-                                        browseViewModel.updateSort("sku_sequence_number", "asc")
+                                        productsViewModel.updateSort("sku_sequence_number", "asc")
                                         sortExpanded = false
                                     }
                                 )
                                 DropdownMenuItem(
                                     text = { Text("SKU (Descending)") },
                                     onClick = {
-                                        browseViewModel.updateSort("sku_sequence_number", "desc")
+                                        productsViewModel.updateSort("sku_sequence_number", "desc")
                                         sortExpanded = false
                                     }
                                 )
                                 DropdownMenuItem(
                                     text = { Text("Price (Ascending)") },
                                     onClick = {
-                                        browseViewModel.updateSort("price", "asc")
+                                        productsViewModel.updateSort("price", "asc")
                                         sortExpanded = false
                                     }
                                 )
                                 DropdownMenuItem(
                                     text = { Text("Price (Descending)") },
                                     onClick = {
-                                        browseViewModel.updateSort("price", "desc")
+                                        productsViewModel.updateSort("price", "desc")
                                         sortExpanded = false
                                     }
                                 )
                                 DropdownMenuItem(
                                     text = { Text("Created At (Newest First)") },
                                     onClick = {
-                                        browseViewModel.updateSort("created_at", "desc")
+                                        productsViewModel.updateSort("created_at", "desc")
                                         sortExpanded = false
                                     }
                                 )
                                 DropdownMenuItem(
                                     text = { Text("Created At (Oldest First)") },
                                     onClick = {
-                                        browseViewModel.updateSort("created_at", "asc")
+                                        productsViewModel.updateSort("created_at", "asc")
                                         sortExpanded = false
                                     }
                                 )
@@ -282,7 +279,7 @@ fun BrowseScreen(
                                 DropdownMenuItem(
                                     text = { Text("Apply Discount") },
                                     onClick = {
-                                        browseViewModel.showDiscountDialog = true
+                                        productsViewModel.showDiscountDialog = true
                                         showCatalogMenu = false
                                     }
                                 )
@@ -339,7 +336,7 @@ fun BrowseScreen(
                         label = { Text("Catalog Name") }
                     )
                     Button(onClick = {
-                        browseViewModel.generatePdfCatalog(catalogName) {
+                        productsViewModel.generatePdfCatalog(catalogName) {
                             navController.navigate(Screen.Catalogs.route)
                         }
                         showPdfNameDialog = false
@@ -351,10 +348,10 @@ fun BrowseScreen(
         }
     }
 
-    if (browseViewModel.showDiscountDialog) {
+    if (productsViewModel.showDiscountDialog) {
         var discount by remember { mutableStateOf("") }
         ModalBottomSheet(
-            onDismissRequest = { browseViewModel.showDiscountDialog = false },
+            onDismissRequest = { productsViewModel.showDiscountDialog = false },
             sheetState = sheetState
         ) {
             Column(
@@ -373,11 +370,11 @@ fun BrowseScreen(
                     onClick = {
                         val discountValue = discount.toIntOrNull()
                         if (discountValue != null) {
-                            browseViewModel.applyDiscount(discountValue)
+                            productsViewModel.applyDiscount(discountValue)
                         }
                         scope.launch { sheetState.hide() }.invokeOnCompletion {
                             if (!sheetState.isVisible) {
-                                browseViewModel.showDiscountDialog = false
+                                productsViewModel.showDiscountDialog = false
                             }
                         }
                     },
@@ -389,7 +386,7 @@ fun BrowseScreen(
         }
     }
 
-    if (browseViewModel.applyingDiscount) {
+    if (productsViewModel.applyingDiscount) {
         Dialog(onDismissRequest = {}) {
             Surface(shape = RoundedCornerShape(16.dp), color = Color.White) {
                 Column(
@@ -407,15 +404,15 @@ fun BrowseScreen(
         discountAppliedMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_LONG).show()
             lazyPagingItems.refresh()
-            browseViewModel.onDiscountMessageShown()
+            productsViewModel.onDiscountMessageShown()
         }
     }
 
-    if (browseViewModel.showBoxNumberDialog) {
+    if (productsViewModel.showBoxNumberDialog) {
         var boxNumber by remember { mutableStateOf(filterParams.boxNumber ?: "") }
         val boxNumberSheetState = rememberModalBottomSheetState()
         ModalBottomSheet(
-            onDismissRequest = { browseViewModel.showBoxNumberDialog = false },
+            onDismissRequest = { productsViewModel.showBoxNumberDialog = false },
             sheetState = boxNumberSheetState,
         ) {
             Column(
@@ -435,10 +432,10 @@ fun BrowseScreen(
                     horizontalArrangement = Arrangement.End
                 ) {
                     TextButton(onClick = {
-                        browseViewModel.updateBoxNumber(null)
+                        productsViewModel.updateBoxNumber(null)
                         scope.launch { boxNumberSheetState.hide() }.invokeOnCompletion {
                             if (!boxNumberSheetState.isVisible) {
-                                browseViewModel.showBoxNumberDialog = false
+                                productsViewModel.showBoxNumberDialog = false
                             }
                         }
                     }) {
@@ -446,10 +443,10 @@ fun BrowseScreen(
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(onClick = {
-                        browseViewModel.updateBoxNumber(boxNumber.ifBlank { null })
+                        productsViewModel.updateBoxNumber(boxNumber.ifBlank { null })
                         scope.launch { boxNumberSheetState.hide() }.invokeOnCompletion {
                             if (!boxNumberSheetState.isVisible) {
-                                browseViewModel.showBoxNumberDialog = false
+                                productsViewModel.showBoxNumberDialog = false
                             }
                         }
                     }) {
@@ -461,7 +458,7 @@ fun BrowseScreen(
     }
 
 
-    if (browseViewModel.generatingPdf) {
+    if (productsViewModel.generatingPdf) {
         Dialog(onDismissRequest = {}) {
             Surface(shape = RoundedCornerShape(16.dp), color = Color.White) {
                 Column(
@@ -508,7 +505,7 @@ fun BrowseScreen(
                                         "Share Catalog"
                                     )
                                 )
-                                browseViewModel.onPdfShared()
+                                productsViewModel.onPdfShared()
                             }
                         }
                     }
@@ -546,16 +543,16 @@ fun BrowseScreen(
     }
 
 
-    if (browseViewModel.showPriceFilterSheet) {
+    if (productsViewModel.showPriceFilterSheet) {
         PriceFilterBottomSheet(
-            viewModel = browseViewModel,
+            viewModel = productsViewModel,
             currentPriceRange = filterParams.priceRange
         )
     }
 
-    if (browseViewModel.showDiscountFilterSheet) {
+    if (productsViewModel.showDiscountFilterSheet) {
         DiscountFilterBottomSheet(
-            viewModel = browseViewModel,
+            viewModel = productsViewModel,
             currentDiscountRange = filterParams.discountRange
         )
     }
@@ -601,12 +598,12 @@ fun BrowseScreen(
                     onDismissRequest = { categoryExpanded = false })
                 {
                     DropdownMenuItem(text = { Text("All products") }, onClick = {
-                        browseViewModel.updateSelectedCategory("All products")
+                        productsViewModel.updateSelectedCategory("All products")
                         categoryExpanded = false
                     })
                     categories.forEach { category ->
                         DropdownMenuItem(text = { Text(category.name) }, onClick = {
-                            browseViewModel.updateSelectedCategory(category.name)
+                            productsViewModel.updateSelectedCategory(category.name)
                             categoryExpanded = false
                         })
                     }
@@ -632,12 +629,12 @@ fun BrowseScreen(
                                 } else {
                                     currentTags + tag
                                 }
-                                browseViewModel.updateSelectedTags(newTags)
+                                productsViewModel.updateSelectedTags(newTags)
                             },
                             leadingIcon = {
                                 if (filterParams.selectedTags.contains(tag)) {
                                     Icon(Icons.Default.Check, contentDescription = "Selected")
-                                }
+                                 }
                             }
                         )
                     }
@@ -646,16 +643,16 @@ fun BrowseScreen(
 
             FilterChip(
                 label = filterParams.boxNumber ?: "Box Number",
-                onClick = { browseViewModel.showBoxNumberDialog = true }
+                onClick = { productsViewModel.showBoxNumberDialog = true }
             )
 
             FilterChip(
                 label = "₹${filterParams.priceRange.start.toInt()}-₹${filterParams.priceRange.endInclusive.toInt()}",
-                onClick = { browseViewModel.showPriceFilterSheet = true })
+                onClick = { productsViewModel.showPriceFilterSheet = true })
 
             FilterChip(
                 label = "${filterParams.discountRange.start.toInt()}%-${filterParams.discountRange.endInclusive.toInt()}%",
-                onClick = { browseViewModel.showDiscountFilterSheet = true }
+                onClick = { productsViewModel.showDiscountFilterSheet = true }
             )
 
             Box {
@@ -670,14 +667,14 @@ fun BrowseScreen(
                     DropdownMenuItem(
                         text = { Text("All Stock") },
                         onClick = {
-                            browseViewModel.updateExcludeOutOfStock(false)
+                            productsViewModel.updateExcludeOutOfStock(false)
                             inStockExpanded = false
                         }
                     )
                     DropdownMenuItem(
                         text = { Text("In Stock") },
                         onClick = {
-                            browseViewModel.updateExcludeOutOfStock(true)
+                            productsViewModel.updateExcludeOutOfStock(true)
                             inStockExpanded = false
                         }
                     )
@@ -699,21 +696,21 @@ fun BrowseScreen(
                     DropdownMenuItem(
                         text = { Text("All") },
                         onClick = {
-                            browseViewModel.updateFlagged(null)
+                            productsViewModel.updateFlagged(null)
                             flaggedExpanded = false
                         }
                     )
                     DropdownMenuItem(
                         text = { Text("Flagged") },
                         onClick = {
-                            browseViewModel.updateFlagged(true)
+                            productsViewModel.updateFlagged(true)
                             flaggedExpanded = false
                         }
                     )
                     DropdownMenuItem(
                         text = { Text("Not Flagged") },
                         onClick = {
-                            browseViewModel.updateFlagged(false)
+                            productsViewModel.updateFlagged(false)
                             flaggedExpanded = false
                         }
                     )
@@ -740,15 +737,15 @@ fun BrowseScreen(
                     lazyPagingItems[index]?.let { product ->
                         ProductCard(
                             product = product,
-                            isSelected = browseViewModel.selectedProducts.contains(product),
+                            isSelected = productsViewModel.selectedProducts.contains(product),
                             onClick = {
-                                if (browseViewModel.selectionMode) {
-                                    browseViewModel.onProductClicked(product)
+                                if (productsViewModel.selectionMode) {
+                                    productsViewModel.onProductClicked(product)
                                 } else {
                                     navController.navigate(Screen.ProductDetail.route + "/${product.id}")
                                 }
                             },
-                            onLongClick = { browseViewModel.onProductLongClicked(product) }
+                            onLongClick = { productsViewModel.onProductLongClicked(product) }
                         )
                     }
                 }
@@ -954,7 +951,7 @@ fun FilterChip(label: String, onClick: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PriceFilterBottomSheet(
-    viewModel: BrowseViewModel,
+    viewModel: ProductsViewModel,
     currentPriceRange: ClosedFloatingPointRange<Float>
 ) {
     val sheetState = rememberModalBottomSheetState()
@@ -1023,7 +1020,7 @@ fun PriceFilterBottomSheet(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DiscountFilterBottomSheet(
-    viewModel: BrowseViewModel,
+    viewModel: ProductsViewModel,
     currentDiscountRange: ClosedFloatingPointRange<Float>
 ) {
     val sheetState = rememberModalBottomSheetState()
