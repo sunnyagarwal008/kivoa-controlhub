@@ -8,12 +8,11 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ShoppingBasket
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -30,7 +29,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -44,12 +42,16 @@ import androidx.navigation.navArgument
 import com.google.gson.Gson
 import com.kivoa.controlhub.api.RetrofitInstance
 import com.kivoa.controlhub.data.Prompt
-import com.kivoa.controlhub.ui.screens.CatalogsScreen
 import com.kivoa.controlhub.ui.screens.BrowseScreen
 import com.kivoa.controlhub.ui.screens.BrowseViewModel
+import com.kivoa.controlhub.ui.screens.CatalogsScreen
 import com.kivoa.controlhub.ui.screens.CreateScreen
 import com.kivoa.controlhub.ui.screens.EditProductScreen
 import com.kivoa.controlhub.ui.screens.HomeScreen
+import com.kivoa.controlhub.ui.screens.OrderDetailScreen
+import com.kivoa.controlhub.ui.screens.OrdersScreen
+import com.kivoa.controlhub.ui.screens.OrdersViewModel
+import com.kivoa.controlhub.ui.screens.OrdersViewModelFactory
 import com.kivoa.controlhub.ui.screens.ProductDetailScreen
 import com.kivoa.controlhub.ui.screens.ReorderImagesScreen
 import com.kivoa.controlhub.ui.screens.ShareViewModel
@@ -120,9 +122,9 @@ class MainActivity : ComponentActivity() {
                     bottomBar = {
                         NavigationBar {
                             val items = listOf(
-                                Screen.Search,
                                 Screen.Browse,
                                 Screen.Create,
+                                Screen.Orders,
                                 Screen.Settings,
                             )
                             items.forEach { screen ->
@@ -146,11 +148,23 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     NavHost(
                         navController,
-                        startDestination = Screen.Search.route,
+                        startDestination = Screen.Browse.route,
                         Modifier.padding(innerPadding)
                     ) {
-                        composable(Screen.Search.route) { HomeScreen(modifier = Modifier.fillMaxSize(), navController = navController, appBarViewModel = appBarViewModel) }
-                        composable(Screen.Browse.route) { BrowseScreen(navController = navController, browseViewModel = browseViewModel, appBarViewModel = appBarViewModel) }
+                        composable(Screen.Search.route) {
+                            HomeScreen(
+                                modifier = Modifier.fillMaxSize(),
+                                navController = navController,
+                                appBarViewModel = appBarViewModel
+                            )
+                        }
+                        composable(Screen.Browse.route) {
+                            BrowseScreen(
+                                navController = navController,
+                                browseViewModel = browseViewModel,
+                                appBarViewModel = appBarViewModel
+                            )
+                        }
                         composable(
                             route = Screen.Create.route + "?tabIndex={tabIndex}",
                             arguments = listOf(navArgument("tabIndex") {
@@ -165,10 +179,24 @@ class MainActivity : ComponentActivity() {
                                 initialTabIndex = tabIndex
                             )
                         }
-                        composable(Screen.Settings.route) { SettingsScreen(navController = navController, appBarViewModel = appBarViewModel, settingsViewModel = settingsViewModel) }
-                        composable(Screen.SettingsCategories.route) { CategoriesScreen(navController = navController, appBarViewModel = appBarViewModel) }
+                        composable(Screen.Settings.route) {
+                            SettingsScreen(
+                                navController = navController,
+                                appBarViewModel = appBarViewModel,
+                                settingsViewModel = settingsViewModel
+                            )
+                        }
+                        composable(Screen.SettingsCategories.route) {
+                            CategoriesScreen(
+                                navController = navController,
+                                appBarViewModel = appBarViewModel
+                            )
+                        }
                         composable(Screen.CreateCategory.route) {
-                            CreateCategoryScreen(navController = navController, appBarViewModel = appBarViewModel) { navController.popBackStack() }
+                            CreateCategoryScreen(
+                                navController = navController,
+                                appBarViewModel = appBarViewModel
+                            ) { navController.popBackStack() }
                         }
                         composable(Screen.Catalogs.route) {
                             CatalogsScreen(navController = navController, appBarViewModel = appBarViewModel)
@@ -178,8 +206,14 @@ class MainActivity : ComponentActivity() {
                             arguments = listOf(navArgument("productId") { type = NavType.LongType })
                         ) {
                             val productId = it.arguments?.getLong("productId")
-                            val shareViewModelForDetail: ShareViewModel = viewModel(factory = shareViewModelFactoryForDetail)
-                            ProductDetailScreen(productId = productId!!, navController = navController, shareViewModel = shareViewModelForDetail, appBarViewModel = appBarViewModel)
+                            val shareViewModelForDetail: ShareViewModel =
+                                viewModel(factory = shareViewModelFactoryForDetail)
+                            ProductDetailScreen(
+                                productId = productId!!,
+                                navController = navController,
+                                shareViewModel = shareViewModelForDetail,
+                                appBarViewModel = appBarViewModel
+                            )
                         }
                         composable(
                             route = Screen.EditProduct.route + "/{productId}?tabIndex={tabIndex}",
@@ -192,30 +226,49 @@ class MainActivity : ComponentActivity() {
                             )
                         ) { backStackEntry ->
                             val productId = backStackEntry.arguments?.getLong("productId")
-                            EditProductScreen(productId = productId!!, navController = navController, appBarViewModel = appBarViewModel)
+                            EditProductScreen(
+                                productId = productId!!,
+                                navController = navController,
+                                appBarViewModel = appBarViewModel
+                            )
                         }
                         composable(
                             route = Screen.ReorderImages.route + "/{productId}",
                             arguments = listOf(navArgument("productId") { type = NavType.LongType })
                         ) {
                             val productId = it.arguments?.getLong("productId")
-                            ReorderImagesScreen(productId = productId!!, navController = navController, appBarViewModel = appBarViewModel)
+                            ReorderImagesScreen(
+                                productId = productId!!,
+                                navController = navController,
+                                appBarViewModel = appBarViewModel
+                            )
                         }
                         composable(
                             route = Screen.CategoryDetail.route + "/{categoryJson}",
                             arguments = listOf(navArgument("categoryJson") { type = NavType.StringType })
                         ) {
                             val categoryJson = it.arguments?.getString("categoryJson")
-                            CategoryDetailScreen(navController = navController, appBarViewModel = appBarViewModel, categoryJson = categoryJson)
+                            CategoryDetailScreen(
+                                navController = navController,
+                                appBarViewModel = appBarViewModel,
+                                categoryJson = categoryJson
+                            )
                         }
                         composable(
                             route = Screen.EditCategory.route + "/{categoryJson}",
                             arguments = listOf(navArgument("categoryJson") { type = NavType.StringType })
                         ) {
                             val categoryJson = it.arguments?.getString("categoryJson")
-                            val category = Gson().fromJson(categoryJson, com.kivoa.controlhub.data.ApiCategory::class.java)
+                            val category = Gson().fromJson(
+                                categoryJson,
+                                com.kivoa.controlhub.data.ApiCategory::class.java
+                            )
                             if (category != null) {
-                                EditCategoryScreen(navController = navController, appBarViewModel = appBarViewModel, category = category) { navController.popBackStack() }
+                                EditCategoryScreen(
+                                    navController = navController,
+                                    appBarViewModel = appBarViewModel,
+                                    category = category
+                                ) { navController.popBackStack() }
                             }
                         }
                         composable(
@@ -223,7 +276,8 @@ class MainActivity : ComponentActivity() {
                             arguments = listOf(navArgument("categoryName") { type = NavType.StringType })
                         ) {
                             val categoryName = it.arguments?.getString("categoryName")
-                            val viewModel: CategoryPromptsViewModel = viewModel(factory = CategoryPromptsViewModelFactory(apiService))
+                            val viewModel: CategoryPromptsViewModel =
+                                viewModel(factory = CategoryPromptsViewModelFactory(apiService))
                             CategoryPromptsScreen(
                                 navController = navController,
                                 categoryName = categoryName!!,
@@ -253,6 +307,28 @@ class MainActivity : ComponentActivity() {
                                 categoryName = categoryName!!,
                                 appBarViewModel = appBarViewModel
                             )
+                        }
+                        composable(Screen.Orders.route) {
+                            val ordersViewModel: OrdersViewModel =
+                                viewModel(factory = OrdersViewModelFactory(apiService))
+                            OrdersScreen(
+                                navController = navController,
+                                appBarViewModel = appBarViewModel,
+                                ordersViewModel = ordersViewModel
+                            )
+                        }
+                        composable(
+                            route = Screen.OrderDetail.route + "/{orderJson}",
+                            arguments = listOf(navArgument("orderJson") { type = NavType.StringType })
+                        ) {
+                            val orderJson = it.arguments?.getString("orderJson")
+                            val order = Gson().fromJson(
+                                orderJson,
+                                com.kivoa.controlhub.data.shopify.order.Order::class.java
+                            )
+                            if (order != null) {
+                                OrderDetailScreen(order = order)
+                            }
                         }
                     }
                 }
@@ -287,6 +363,8 @@ sealed class Screen(val route: String, val icon: ImageVector? = null) {
     object EditPrompt : Screen("Settings/Prompts/{promptJson}")
     object CreatePrompt : Screen("Settings/Categories/{categoryName}/CreatePrompt")
     object Catalogs : Screen("Catalogs")
+    object Orders : Screen("Orders", Icons.Default.ShoppingBasket)
+    object OrderDetail : Screen("OrderDetail")
 
     fun withArgs(vararg args: Any): String {
         var finalRoute = route

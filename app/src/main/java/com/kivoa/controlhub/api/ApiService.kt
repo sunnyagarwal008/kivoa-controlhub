@@ -44,6 +44,7 @@ import com.kivoa.controlhub.data.UpdateProductStockRequest
 import com.kivoa.controlhub.data.UpdatePromptRequest
 import com.kivoa.controlhub.data.UpdatePromptResponse
 import com.kivoa.controlhub.data.UploadProductImageRequest
+import com.kivoa.controlhub.data.shopify.order.OrdersResponse
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -208,4 +209,15 @@ interface ApiService {
 
     @POST("api/orders/place")
     suspend fun placeOrder(@Body request: PlaceOrderRequest): PlaceOrderResponse
+
+    @GET("api/orders")
+    suspend fun getOrders(
+        @Query("status") status: String? = null,
+        @Query("limit") limit: Int = 10,
+        @Query("page_info") pageInfo: String? = null,
+        @Query("created_at_min") createdAtMin: String? = null,
+        @Query("created_at_max") createdAtMax: String? = null,
+        @Query("financial_status") financialStatus: String? = null,
+        @Query("fulfillment_status") fulfillmentStatus: String? = null
+    ): OrdersResponse
 }
