@@ -11,6 +11,7 @@ import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Shader
 import android.net.Uri
+import android.text.Html
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -101,10 +102,14 @@ class ShareViewModel(application: Application) : AndroidViewModel(application) {
                     "com.kivoa.controlhub.fileprovider",
                     file
                 )
+                val caption = "*${product.title}*\n\n${stripHtml(product.description)}"
+
 
                 val intent = Intent(Intent.ACTION_SEND).apply {
                     type = "image/*"
                     putExtra(Intent.EXTRA_STREAM, uri)
+                    putExtra(Intent.EXTRA_TEXT, caption)
+                    setPackage("com.whatsapp")
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
 
@@ -131,10 +136,13 @@ class ShareViewModel(application: Application) : AndroidViewModel(application) {
                     "com.kivoa.controlhub.fileprovider",
                     gifFile
                 )
+                val caption = "*${product.title}*\n\n${stripHtml(product.description)}"
 
                 val intent = Intent(Intent.ACTION_SEND).apply {
                     type = "image/gif"
                     putExtra(Intent.EXTRA_STREAM, uri)
+                    putExtra(Intent.EXTRA_TEXT, caption)
+                    setPackage("com.whatsapp")
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
 
@@ -231,5 +239,12 @@ class ShareViewModel(application: Application) : AndroidViewModel(application) {
         val fos = FileOutputStream(file)
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos)
         fos.close()
+    }
+
+    private fun stripHtml(html: String?): String {
+        if (html.isNullOrEmpty()) {
+            return ""
+        }
+        return Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY).toString()
     }
 }
