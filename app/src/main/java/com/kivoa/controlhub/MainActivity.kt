@@ -110,7 +110,7 @@ class MainActivity : ComponentActivity() {
                 val application = context.applicationContext as Application
                 val apiService = RetrofitInstance.api
                 val shareViewModelFactoryForDetail =
-                    remember { ShareViewModelFactory(application, apiService, null) }
+                    remember { ShareViewModelFactory(application) }
 
                 val productsViewModel: ProductsViewModel = viewModel()
                 val appBarViewModel: AppBarViewModel = viewModel()

@@ -1,6 +1,9 @@
 package com.kivoa.controlhub.ui.screens
 
+import android.app.DownloadManager
+import android.content.Context
 import android.net.Uri
+import android.os.Environment
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -15,31 +18,30 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.Gif
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -49,7 +51,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -89,7 +90,6 @@ import com.google.accompanist.pager.rememberPagerState
 import com.kivoa.controlhub.AppBarState
 import com.kivoa.controlhub.AppBarViewModel
 import com.kivoa.controlhub.data.ApiProduct
-import com.kivoa.controlhub.data.Prompt
 import com.kivoa.controlhub.ui.components.shimmer
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -108,6 +108,7 @@ fun ProductDetailScreen(
     var showDeleteConfirmationDialog by remember { mutableStateOf(false) }
     var showGenerateImageBottomSheet by remember { mutableStateOf(false) }
     var showDeleteImageConfirmationDialog by remember { mutableStateOf<Long?>(null) }
+    var showShareBottomSheet by remember { mutableStateOf(false) }
     val product by productDetailViewModel.product.collectAsState()
     val isLoading by productDetailViewModel.isLoading.collectAsState()
     val productNotFound by productDetailViewModel.productNotFound.collectAsState()
@@ -149,6 +150,16 @@ fun ProductDetailScreen(
         productDetailViewModel.getProductById(productId)
     }
 
+    if (showShareBottomSheet) {
+        product?.let {
+            ShareBottomSheet(
+                product = it,
+                onDismiss = { showShareBottomSheet = false },
+                shareViewModel = shareViewModel
+            )
+        }
+    }
+
     LaunchedEffect(product) {
         product?.let {
             appBarViewModel.setAppBarState(
@@ -172,12 +183,15 @@ fun ProductDetailScreen(
                             )
                         }
                         IconButton(onClick = {
-                            productDetailViewModel.updateProductFlagged(it.id, !it.flagged)
+                            if (it.images.size > 1) {
+                                showShareBottomSheet = true
+                            } else {
+                                shareViewModel.shareProduct(it)
+                            }
                         }) {
                             Icon(
-                                imageVector = Icons.Default.Flag,
-                                contentDescription = "Flag",
-                                tint = if (it.flagged) Color.Red else Color.Gray
+                                imageVector = Icons.Default.Share,
+                                contentDescription = "Share"
                             )
                         }
                         IconButton(onClick = { showMenu = !showMenu }) {
@@ -191,9 +205,9 @@ fun ProductDetailScreen(
                             onDismissRequest = { showMenu = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Share") },
+                                text = { Text(if (it.flagged) "Unflag" else "Flag") },
                                 onClick = {
-                                    shareViewModel.shareProduct(it)
+                                    productDetailViewModel.updateProductFlagged(it.id, !it.flagged)
                                     showMenu = false
                                 }
                             )
@@ -299,15 +313,10 @@ fun ProductDetailScreen(
 
 
     if (showZoomedImage) {
-        Dialog(onDismissRequest = { showZoomedImage = false }) {
-            ZoomableAsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(product?.images?.get(currentImageIndex)?.imageUrl)
-                    .crossfade(true)
-                    .build(),
-                contentDescription = "Product Image",
-            )
-        }
+        ZoomableImageDialog(
+            imageUrl = product?.images?.get(currentImageIndex)?.imageUrl ?: "",
+            onDismiss = { showZoomedImage = false }
+        )
     }
 
     if (showRawImage) {
@@ -440,7 +449,7 @@ fun ProductDetailScreen(
                             style = MaterialTheme.typography.bodyLarge
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        Divider()
+                        HorizontalDivider()
                         Spacer(modifier = Modifier.height(16.dp))
 
                         ProductDetailRow(label = "SKU", value = product.sku)
@@ -459,7 +468,7 @@ fun ProductDetailScreen(
                         ProductDetailRow(label = "Selling Price", value = "₹${product.price}")
 
                         Spacer(modifier = Modifier.height(16.dp))
-                        Divider()
+                        HorizontalDivider()
                         Spacer(modifier = Modifier.height(16.dp))
 
                         product.tags?.let {
@@ -688,6 +697,7 @@ fun RawImageDialog(imageUrl: String, onDismiss: () -> Unit) {
         }
         finalImageUrl = "https://drive.google.com/uc?export=download&id=$fileId"
     }
+    val context = LocalContext.current
     Dialog(onDismissRequest = onDismiss) {
         Box(modifier = Modifier.fillMaxSize()) {
             SubcomposeAsyncImage(
@@ -705,17 +715,25 @@ fun RawImageDialog(imageUrl: String, onDismiss: () -> Unit) {
                     )
                 }
             )
-            IconButton(
-                onClick = onDismiss,
+            Row(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(8.dp)
             ) {
-                Icon(
-                    Icons.Default.Close,
-                    contentDescription = "Close",
-                    tint = Color.White
-                )
+                IconButton(onClick = { downloadImage(context, finalImageUrl) }) {
+                    Icon(
+                        Icons.Default.Download,
+                        contentDescription = "Download Image",
+                        tint = Color.White
+                    )
+                }
+                IconButton(onClick = onDismiss) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Close",
+                        tint = Color.White
+                    )
+                }
             }
         }
     }
@@ -872,5 +890,134 @@ fun ZoomableAsyncImage(
                 )
             }
         )
+    }
+}
+
+@Composable
+fun ZoomableImageDialog(imageUrl: String, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    Dialog(onDismissRequest = onDismiss) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            ZoomableAsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(imageUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = "Product Image",
+            )
+            Row(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+            ) {
+                IconButton(onClick = { downloadImage(context, imageUrl) }) {
+                    Icon(
+                        Icons.Default.Download,
+                        contentDescription = "Download Image",
+                        tint = Color.White
+                    )
+                }
+                IconButton(onClick = onDismiss) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Close",
+                        tint = Color.White
+                    )
+                }
+            }
+        }
+    }
+}
+
+fun downloadImage(context: Context, url: String) {
+    val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+    val request = DownloadManager.Request(Uri.parse(url))
+        .setTitle("Image Download")
+        .setDescription("Downloading")
+        .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+        .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "${System.currentTimeMillis()}.jpg")
+    downloadManager.enqueue(request)
+    Toast.makeText(context, "Download started", Toast.LENGTH_SHORT).show()
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ShareBottomSheet(
+    product: ApiProduct,
+    onDismiss: () -> Unit,
+    shareViewModel: ShareViewModel
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val context = LocalContext.current
+    var isGeneratingGif by remember { mutableStateOf(false) }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("Share", style = MaterialTheme.typography.titleLarge)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (isGeneratingGif) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CircularProgressIndicator()
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Generating GIF...")
+                }
+            } else {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(product.images) { image ->
+                        SubcomposeAsyncImage(
+                            model = image.imageUrl,
+                            contentDescription = "Product Image",
+                            modifier = Modifier
+                                .size(100.dp)
+                                .clickable {
+                                    shareViewModel.shareProductImage(
+                                        product,
+                                        image.imageUrl,
+                                        context
+                                    )
+                                    onDismiss()
+                                },
+                            loading = {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .shimmer()
+                                )
+                            }
+                        )
+                    }
+                    if (product.images.size > 2) {
+                        item {
+                            Column(
+                                modifier = Modifier
+                                    .size(100.dp)
+                                    .clickable {
+                                        isGeneratingGif = true
+                                        shareViewModel.shareProductAsGif(product, context) {
+                                            isGeneratingGif = false
+                                            onDismiss()
+                                        }
+                                    },
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(Icons.Default.Gif, contentDescription = "Share GIF")
+                                Text("Share as GIF")
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }

@@ -137,10 +137,7 @@ fun ProductsScreen(
     val lazyPagingItems = productsViewModel.products.collectAsLazyPagingItems()
     val shareViewModelFactory =
         remember {
-            ShareViewModelFactory(application, apiService, { lazyPagingItems.refresh() }) {
-                productsViewModel.selectionMode = false
-                productsViewModel.selectedProducts = emptySet()
-            }
+            ShareViewModelFactory(application)
         }
     val shareViewModel: ShareViewModel = viewModel(factory = shareViewModelFactory)
 

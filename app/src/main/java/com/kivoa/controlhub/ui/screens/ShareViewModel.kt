@@ -1,6 +1,7 @@
 package com.kivoa.controlhub.ui.screens
 
 import android.app.Application
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -16,16 +17,16 @@ import androidx.compose.runtime.setValue
 import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.kivoa.controlhub.api.ApiService
 import com.kivoa.controlhub.data.ApiProduct
-import com.kivoa.controlhub.data.UpdateProductStockRequest
+import com.kivoa.controlhub.utils.AnimatedGifEncoder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.net.URL
 
-class ShareViewModel(application: Application, private val apiService: ApiService, private val onRefreshProducts: (() -> Unit)? = null, private val onShareComplete: (() -> Unit)? = null) : AndroidViewModel(application) {
+class ShareViewModel(application: Application) : AndroidViewModel(application) {
 
     sealed class ShareState {
         object Idle : ShareState()
@@ -75,12 +76,101 @@ class ShareViewModel(application: Application, private val apiService: ApiServic
                 getApplication<Application>().startActivity(chooser)
 
                 shareState = ShareState.Idle
-                onShareComplete?.invoke()
 
             } catch (e: Exception) {
                 shareState = ShareState.Error(e.message ?: "An unknown error occurred")
             }
         }
+    }
+
+    fun shareProductImage(product: ApiProduct, imageUrl: String, context: Context) {
+        shareState = ShareState.Processing
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val cachePath = File(context.cacheDir, "images")
+                cachePath.mkdirs()
+                val file = File(cachePath, "${product.sku}_${System.currentTimeMillis()}.jpeg")
+
+                val bitmap = downloadImage(imageUrl)
+                val processedBitmap = addSkuToImage(bitmap, product.sku)
+                val compressedBitmap = compressImage(processedBitmap)
+                saveBitmapToCache(compressedBitmap, file)
+
+                val uri = FileProvider.getUriForFile(
+                    context,
+                    "com.kivoa.controlhub.fileprovider",
+                    file
+                )
+
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "image/*"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+
+                val chooser = Intent.createChooser(intent, "Share Image")
+                chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(chooser)
+
+                shareState = ShareState.Idle
+
+            } catch (e: Exception) {
+                shareState = ShareState.Error(e.message ?: "An unknown error occurred")
+            }
+        }
+    }
+
+    fun shareProductAsGif(product: ApiProduct, context: Context, onComplete: () -> Unit) {
+        shareState = ShareState.Processing
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val bitmaps = product.images.map { downloadImage(it.imageUrl) }
+                val gifFile = createGif(bitmaps, product.sku)
+                val uri = FileProvider.getUriForFile(
+                    context,
+                    "com.kivoa.controlhub.fileprovider",
+                    gifFile
+                )
+
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "image/gif"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+
+                val chooser = Intent.createChooser(intent, "Share GIF")
+                chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(chooser)
+
+                shareState = ShareState.Idle
+                onComplete()
+
+            } catch (e: Exception) {
+                shareState = ShareState.Error(e.message ?: "An unknown error occurred")
+                onComplete()
+            }
+        }
+    }
+
+    private fun createGif(bitmaps: List<Bitmap>, sku: String): File {
+        val cachePath = File(getApplication<Application>().cacheDir, "images")
+        cachePath.mkdirs()
+        val file = File(cachePath, "$sku.gif")
+        val stream = ByteArrayOutputStream()
+        val encoder = AnimatedGifEncoder()
+        encoder.start(stream)
+
+        encoder.setDelay(1000)
+        //encoder.setDispose(2) // Explicitly set disposal method
+        for (bitmap in bitmaps) {
+            encoder.addFrame(bitmap)
+        }
+        encoder.finish()
+        val fos = FileOutputStream(file)
+        fos.write(stream.toByteArray())
+        fos.close()
+
+        return file
     }
 
     private fun downloadImage(imageUrl: String): Bitmap {
@@ -135,5 +225,11 @@ class ShareViewModel(application: Application, private val apiService: ApiServic
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos)
         fos.close()
         return file
+    }
+
+    private fun saveBitmapToCache(bitmap: Bitmap, file: File) {
+        val fos = FileOutputStream(file)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos)
+        fos.close()
     }
 }
