@@ -13,5 +13,10 @@ data class UpdateProductRequest(
     val gst: Double,
     @Json(name = "price_code") val priceCode: String,
     val tags: String,
-    @Json(name = "box_number") val boxNumber: Int? = null
+    @Json(name = "box_number") val boxNumber: Int? = null,
+    val weight: Double?,
+    val length: Double?,
+    val breadth: Double?,
+    val height: Double?,
+    val size: String?
 )

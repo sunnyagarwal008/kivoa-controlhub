@@ -1,7 +1,9 @@
 package com.kivoa.controlhub.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,9 +19,12 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -32,6 +37,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -47,6 +53,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -155,6 +162,13 @@ fun EditProductScreen(
         var boxNumber by remember { mutableStateOf(product!!.boxNumber?.toString() ?: "") }
         var expanded by remember { mutableStateOf(false) }
         var categoryExpanded by remember { mutableStateOf(false) }
+        var additionalDetailsExpanded by remember { mutableStateOf(false) }
+
+        var weight by remember { mutableStateOf(product!!.weight?.toString() ?: "") }
+        var length by remember { mutableStateOf(product!!.dimensions?.length?.toString() ?: "") }
+        var breadth by remember { mutableStateOf(product!!.dimensions?.breadth?.toString() ?: "") }
+        var height by remember { mutableStateOf(product!!.dimensions?.height?.toString() ?: "") }
+        var size by remember { mutableStateOf(product!!.size ?: "") }
 
         Column(
             modifier = Modifier
@@ -377,7 +391,7 @@ fun EditProductScreen(
                                         }
                                     )
                                     Text(text = tag)
-                                 }
+                                }
                             },
                             onClick = {
                                 selectedTags = if (tag in selectedTags) {
@@ -386,6 +400,79 @@ fun EditProductScreen(
                                     selectedTags + tag
                                 }
                             }
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Column {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { additionalDetailsExpanded = !additionalDetailsExpanded }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Additional Details", style = MaterialTheme.typography.titleMedium)
+                    Icon(
+                        imageVector = if (additionalDetailsExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                        contentDescription = "Expand or collapse"
+                    )
+                }
+                AnimatedVisibility(visible = additionalDetailsExpanded) {
+                    Column(modifier = Modifier.padding(top = 8.dp)) {
+                        OutlinedTextField(
+                            value = weight,
+                            onValueChange = { newValue ->
+                                weight = newValue
+                            },
+                            label = { Text("Weight (grams)") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = length,
+                                onValueChange = { newValue ->
+                                    length = newValue
+                                },
+                                label = { Text("Length (mm)") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.weight(1f)
+                            )
+                            OutlinedTextField(
+                                value = breadth,
+                                onValueChange = { newValue ->
+                                    breadth = newValue
+                                },
+                                label = { Text("Breadth (mm)") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.weight(1f)
+                            )
+                            OutlinedTextField(
+                                value = height,
+                                onValueChange = { newValue ->
+                                    height = newValue
+                                },
+                                label = { Text("Height (mm)") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        OutlinedTextField(
+                            value = size,
+                            onValueChange = { newValue ->
+                                size = newValue
+                            },
+                            label = { Text("Size") },
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
                 }
@@ -405,7 +492,12 @@ fun EditProductScreen(
                         gst = gst.toDouble(),
                         priceCode = priceCode,
                         tags = selectedTags.joinToString(","),
-                        boxNumber = boxNumber.toIntOrNull()
+                        boxNumber = boxNumber.toIntOrNull(),
+                        weight = weight.toDoubleOrNull(),
+                        length = length.toDoubleOrNull(),
+                        breadth = breadth.toDoubleOrNull(),
+                        height = height.toDoubleOrNull(),
+                        size = size
                     )
                     editProductViewModel.updateProduct(product!!.id, request)
                 },
