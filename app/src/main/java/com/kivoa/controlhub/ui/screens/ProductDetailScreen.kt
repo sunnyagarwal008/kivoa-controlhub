@@ -41,6 +41,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.DropdownMenu
@@ -950,6 +951,8 @@ fun ShareBottomSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val context = LocalContext.current
     var isGeneratingGif by remember { mutableStateOf(false) }
+    var shareTitle by remember { mutableStateOf(true) }
+    var shareDescription by remember { mutableStateOf(false) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -983,7 +986,9 @@ fun ShareBottomSheet(
                                     shareViewModel.shareProductImage(
                                         product,
                                         image.imageUrl,
-                                        context
+                                        context,
+                                        shareTitle,
+                                        shareDescription
                                     )
                                     onDismiss()
                                 },
@@ -1003,7 +1008,12 @@ fun ShareBottomSheet(
                                     .size(100.dp)
                                     .clickable {
                                         isGeneratingGif = true
-                                        shareViewModel.shareProductAsGif(product, context) {
+                                        shareViewModel.shareProductAsGif(
+                                            product,
+                                            context,
+                                            shareTitle,
+                                            shareDescription
+                                        ) {
                                             isGeneratingGif = false
                                             onDismiss()
                                         }
@@ -1017,6 +1027,21 @@ fun ShareBottomSheet(
                         }
                     }
                 }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable { shareTitle = !shareTitle }
+            ) {
+                Checkbox(checked = shareTitle, onCheckedChange = { shareTitle = it })
+                Text("Share Title")
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable { shareDescription = !shareDescription }
+            ) {
+                Checkbox(checked = shareDescription, onCheckedChange = { shareDescription = it })
+                Text("Share Description")
             }
         }
     }

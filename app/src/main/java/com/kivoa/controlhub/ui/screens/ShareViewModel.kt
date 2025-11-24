@@ -84,7 +84,13 @@ class ShareViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun shareProductImage(product: ApiProduct, imageUrl: String, context: Context) {
+    fun shareProductImage(
+        product: ApiProduct,
+        imageUrl: String,
+        context: Context,
+        shareTitle: Boolean,
+        shareDescription: Boolean
+    ) {
         shareState = ShareState.Processing
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -102,7 +108,15 @@ class ShareViewModel(application: Application) : AndroidViewModel(application) {
                     "com.kivoa.controlhub.fileprovider",
                     file
                 )
-                val caption = "*${product.title}*\n\n${stripHtml(product.description)}"
+                val caption = buildString {
+                    if (shareTitle) {
+                        append("*${product.title}*")
+                    }
+                    if (shareDescription) {
+                        if (isNotEmpty()) append("\n\n")
+                        append(stripHtml(product.description))
+                    }
+                }
 
 
                 val intent = Intent(Intent.ACTION_SEND).apply {
@@ -125,7 +139,13 @@ class ShareViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun shareProductAsGif(product: ApiProduct, context: Context, onComplete: () -> Unit) {
+    fun shareProductAsGif(
+        product: ApiProduct,
+        context: Context,
+        shareTitle: Boolean,
+        shareDescription: Boolean,
+        onComplete: () -> Unit,
+    ) {
         shareState = ShareState.Processing
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -136,7 +156,15 @@ class ShareViewModel(application: Application) : AndroidViewModel(application) {
                     "com.kivoa.controlhub.fileprovider",
                     gifFile
                 )
-                val caption = "*${product.title}*\n\n${stripHtml(product.description)}"
+                val caption = buildString {
+                    if (shareTitle) {
+                        append("*${product.title}*")
+                    }
+                    if (shareDescription) {
+                        if (isNotEmpty()) append("\n\n")
+                        append(stripHtml(product.description))
+                    }
+                }
 
                 val intent = Intent(Intent.ACTION_SEND).apply {
                     type = "image/gif"
