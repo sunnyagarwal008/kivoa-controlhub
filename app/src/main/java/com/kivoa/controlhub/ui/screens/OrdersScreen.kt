@@ -20,6 +20,8 @@ import com.kivoa.controlhub.AppBarState
 import com.kivoa.controlhub.AppBarViewModel
 import com.kivoa.controlhub.Screen
 import com.kivoa.controlhub.data.shopify.order.Order
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun OrdersScreen(
@@ -89,7 +91,7 @@ fun OrderItem(order: Order, onClick: () -> Unit) {
             }
             Column {
                 Text(text = "#${order.orderNumber}")
-                Text(text = order.createdAt)
+                Text(text = formatDateTime(order.createdAt))
                 Text(text = order.financialStatus)
                 order.customer?.firstName?.let { firstName ->
                     order.customer.lastName?.let { lastName ->
@@ -103,5 +105,15 @@ fun OrderItem(order: Order, onClick: () -> Unit) {
                 }
             }
         }
+    }
+}
+
+private fun formatDateTime(dateTimeString: String): String {
+    return try {
+        val offsetDateTime = OffsetDateTime.parse(dateTimeString)
+        val formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy, hh:mm a")
+        offsetDateTime.format(formatter)
+    } catch (e: Exception) {
+        dateTimeString // Return original string if parsing fails
     }
 }
