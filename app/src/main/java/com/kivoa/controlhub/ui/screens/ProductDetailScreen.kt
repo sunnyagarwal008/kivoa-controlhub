@@ -7,6 +7,7 @@ import android.os.Environment
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -184,11 +185,7 @@ fun ProductDetailScreen(
                             )
                         }
                         IconButton(onClick = {
-                            if (it.images.size > 1) {
-                                showShareBottomSheet = true
-                            } else {
-                                shareViewModel.shareProduct(it)
-                            }
+                            showShareBottomSheet = true
                         }) {
                             Icon(
                                 imageVector = Icons.Default.Share,
@@ -953,6 +950,8 @@ fun ShareBottomSheet(
     var isGeneratingGif by remember { mutableStateOf(false) }
     var shareTitle by remember { mutableStateOf(true) }
     var shareDescription by remember { mutableStateOf(false) }
+    var selectedImageIndex by remember { mutableIntStateOf(0) }
+
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -976,13 +975,23 @@ fun ShareBottomSheet(
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(product.images) { image ->
+                    items(product.images.size) { index ->
+                        val image = product.images[index]
+                        val isSelected = selectedImageIndex == index
+                        val borderModifier = if (isSelected) {
+                            Modifier.border(2.dp, MaterialTheme.colorScheme.primary)
+                        } else {
+                            Modifier
+                        }
+
                         SubcomposeAsyncImage(
                             model = image.imageUrl,
                             contentDescription = "Product Image",
                             modifier = Modifier
                                 .size(100.dp)
+                                .then(borderModifier)
                                 .clickable {
+                                    selectedImageIndex = index
                                     shareViewModel.shareProductImage(
                                         product,
                                         image.imageUrl,
