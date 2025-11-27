@@ -132,7 +132,6 @@ fun ProductsScreen(
 ) {
     val context = LocalContext.current
     val application = context.applicationContext as Application
-    val apiService = RetrofitInstance.api
 
     val lazyPagingItems = productsViewModel.products.collectAsLazyPagingItems()
     val shareViewModelFactory =
@@ -790,7 +789,7 @@ fun SearchContent(
                 modifier = Modifier.weight(1f)
             ) {
                 OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
                     readOnly = true,
                     value = selectedPrefix,
                     onValueChange = {},
