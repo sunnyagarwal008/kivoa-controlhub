@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
+import coil.compose.AsyncImage
 import com.google.gson.Gson
 import com.kivoa.controlhub.AppBarState
 import com.kivoa.controlhub.AppBarViewModel
@@ -74,13 +75,31 @@ fun OrderItem(order: Order, onClick: () -> Unit) {
             .padding(vertical = 8.dp)
             .clickable(onClick = onClick)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = "#${order.orderNumber}")
-            Text(text = order.createdAt)
-            Text(text = order.financialStatus)
-            order.customer?.firstName?.let { firstName ->
-                order.customer.lastName?.let { lastName ->
-                    Text(text = "Customer: $firstName $lastName")
+        Row(modifier = Modifier.padding(16.dp)) {
+            if (order.lineItems.size == 1) {
+                order.lineItems[0].productImageUrl?.let { imageUrl ->
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = "Product Image",
+                        modifier = Modifier
+                            .size(100.dp)
+                            .padding(end = 16.dp)
+                    )
+                }
+            }
+            Column {
+                Text(text = "#${order.orderNumber}")
+                Text(text = order.createdAt)
+                Text(text = order.financialStatus)
+                order.customer?.firstName?.let { firstName ->
+                    order.customer.lastName?.let { lastName ->
+                        Text(text = "Customer: $firstName $lastName")
+                    }
+                }
+                if (order.lineItems.size == 1) {
+                    order.lineItems[0].sku?.let { sku ->
+                        Text(text = "SKU: $sku")
+                    }
                 }
             }
         }

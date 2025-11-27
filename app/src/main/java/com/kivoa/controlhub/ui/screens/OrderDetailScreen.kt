@@ -1,5 +1,6 @@
 package com.kivoa.controlhub.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -13,8 +14,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.kivoa.controlhub.AppBarState
 import com.kivoa.controlhub.AppBarViewModel
+import com.kivoa.controlhub.Screen
 import com.kivoa.controlhub.data.shopify.order.LineItem
 import com.kivoa.controlhub.data.shopify.order.Order
 
@@ -58,23 +61,42 @@ fun OrderDetailScreen(
         }
         items(order.lineItems.size) { index ->
             order.lineItems[index].let { lineItem ->
-                LineItemView(lineItem = lineItem)
+                LineItemView(lineItem = lineItem, navController = navController)
             }
         }
     }
 }
 
 @Composable
-fun LineItemView(lineItem: LineItem) {
+fun LineItemView(lineItem: LineItem, navController: NavController) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = "SKU: ${lineItem.sku}")
-            Text(text = "Price: ${lineItem.price}")
-            Text(text = "Quantity: ${lineItem.quantity}")
+        Row(modifier = Modifier.padding(16.dp)) {
+            lineItem.productImageUrl?.let { imageUrl ->
+                AsyncImage(
+                    model = imageUrl,
+                    contentDescription = "Product Image",
+                    modifier = Modifier
+                        .size(100.dp)
+                        .padding(end = 16.dp)
+                        .clickable {
+                            lineItem.productId?.let { productId ->
+                                navController.navigate(Screen.ProductDetail.withArgs(productId))
+                            }
+                        }
+                )
+            }
+            Column {
+                Text(text = lineItem.title)
+                lineItem.sku?.let { sku ->
+                    Text(text = "SKU: $sku")
+                }
+                Text(text = "Price: ${lineItem.price}")
+                Text(text = "Quantity: ${lineItem.quantity}")
+            }
         }
     }
 }

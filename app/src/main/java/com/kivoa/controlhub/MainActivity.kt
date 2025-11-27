@@ -1,6 +1,7 @@
 package com.kivoa.controlhub
 
 import android.app.Application
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -202,7 +203,7 @@ class MainActivity : ComponentActivity() {
                             CatalogsScreen(navController = navController, appBarViewModel = appBarViewModel)
                         }
                         composable(
-                            route = Screen.ProductDetail.route + "/{productId}",
+                            route = Screen.ProductDetail.route,
                             arguments = listOf(navArgument("productId") { type = NavType.LongType })
                         ) {
                             val productId = it.arguments?.getLong("productId")
@@ -355,7 +356,7 @@ sealed class Screen(val route: String, val icon: ImageVector? = null) {
     object Search : Screen("Search", Icons.Default.Search)
     object Products : Screen("Products", Icons.Default.ShoppingCart)
     object Create : Screen("Create", Icons.Default.AddCircle)
-    object ProductDetail : Screen("ProductDetail")
+    object ProductDetail : Screen("ProductDetail/{productId}")
     object EditProduct : Screen("edit_product")
     object ReorderImages : Screen("reorder_images")
     object Settings : Screen("Settings", Icons.Default.Settings)
@@ -373,7 +374,10 @@ sealed class Screen(val route: String, val icon: ImageVector? = null) {
     fun withArgs(vararg args: Any): String {
         var finalRoute = route
         args.forEach { arg ->
-            finalRoute = finalRoute.replaceFirst(Regex("\\{[^}]+\\}"), arg.toString())
+            finalRoute = finalRoute.replaceFirst(
+                Regex("\\{[^}]+\\}"),
+                Uri.encode(arg.toString())
+            )
         }
         return finalRoute
     }

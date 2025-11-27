@@ -53,6 +53,10 @@ data class Customer(
 
 data class LineItem(
     val sku: String?,
+    @Json(name = "product_id")
+    val productId: String?,
+    @Json(name = "product_image_url")
+    val productImageUrl: String?,
     val quantity: Int,
     val price: String,
     val title: String

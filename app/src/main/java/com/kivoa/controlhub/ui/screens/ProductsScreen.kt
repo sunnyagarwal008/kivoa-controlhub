@@ -738,7 +738,7 @@ fun ProductsScreen(
                                 if (productsViewModel.selectionMode) {
                                     productsViewModel.onProductClicked(product)
                                 } else {
-                                    navController.navigate(Screen.ProductDetail.route + "/${product.id}")
+                                    navController.navigate(Screen.ProductDetail.withArgs(product.id))
                                 }
                             },
                             onLongClick = { productsViewModel.onProductLongClicked(product) }
@@ -832,7 +832,7 @@ fun SearchContent(
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(searchResults) { product ->
                     ProductItem(product = product, onClick = {
-                        navController.navigate(Screen.ProductDetail.route + "/${product.id}")
+                        navController.navigate(Screen.ProductDetail.withArgs(product.id))
                         onProductClick()
                     })
                 }
