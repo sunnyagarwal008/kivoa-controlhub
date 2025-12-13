@@ -123,7 +123,6 @@ class ShareViewModel(application: Application) : AndroidViewModel(application) {
                     type = "image/*"
                     putExtra(Intent.EXTRA_STREAM, uri)
                     putExtra(Intent.EXTRA_TEXT, caption)
-                    setPackage("com.whatsapp")
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
 
@@ -170,7 +169,6 @@ class ShareViewModel(application: Application) : AndroidViewModel(application) {
                     type = "image/gif"
                     putExtra(Intent.EXTRA_STREAM, uri)
                     putExtra(Intent.EXTRA_TEXT, caption)
-                    setPackage("com.whatsapp")
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
 

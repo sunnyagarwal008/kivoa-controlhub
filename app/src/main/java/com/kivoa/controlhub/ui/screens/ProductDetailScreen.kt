@@ -961,6 +961,22 @@ fun ShareBottomSheet(
             Text("Share", style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(16.dp))
 
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable { shareTitle = !shareTitle }
+            ) {
+                Checkbox(checked = shareTitle, onCheckedChange = { shareTitle = it })
+                Text("Share Title")
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable { shareDescription = !shareDescription }
+            ) {
+                Checkbox(checked = shareDescription, onCheckedChange = { shareDescription = it })
+                Text("Share Description")
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+
             if (isGeneratingGif) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -992,14 +1008,6 @@ fun ShareBottomSheet(
                                 .then(borderModifier)
                                 .clickable {
                                     selectedImageIndex = index
-                                    shareViewModel.shareProductImage(
-                                        product,
-                                        image.imageUrl,
-                                        context,
-                                        shareTitle,
-                                        shareDescription
-                                    )
-                                    onDismiss()
                                 },
                             loading = {
                                 Box(
@@ -1036,21 +1044,22 @@ fun ShareBottomSheet(
                         }
                     }
                 }
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.clickable { shareTitle = !shareTitle }
-            ) {
-                Checkbox(checked = shareTitle, onCheckedChange = { shareTitle = it })
-                Text("Share Title")
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.clickable { shareDescription = !shareDescription }
-            ) {
-                Checkbox(checked = shareDescription, onCheckedChange = { shareDescription = it })
-                Text("Share Description")
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = {
+                        shareViewModel.shareProductImage(
+                            product,
+                            product.images[selectedImageIndex].imageUrl,
+                            context,
+                            shareTitle,
+                            shareDescription
+                        )
+                        onDismiss()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Share Image")
+                }
             }
         }
     }
