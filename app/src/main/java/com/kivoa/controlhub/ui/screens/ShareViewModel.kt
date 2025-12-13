@@ -1,6 +1,8 @@
 package com.kivoa.controlhub.ui.screens
 
 import android.app.Application
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -118,6 +120,11 @@ class ShareViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 }
 
+                if (caption.isNotEmpty()) {
+                    val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    val clip = ClipData.newPlainText("Product Caption", caption)
+                    clipboardManager.setPrimaryClip(clip)
+                }
 
                 val intent = Intent(Intent.ACTION_SEND).apply {
                     type = "image/*"
@@ -163,6 +170,12 @@ class ShareViewModel(application: Application) : AndroidViewModel(application) {
                         if (isNotEmpty()) append("\n\n")
                         append(stripHtml(product.description))
                     }
+                }
+
+                if (caption.isNotEmpty()) {
+                    val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    val clip = ClipData.newPlainText("Product Caption", caption)
+                    clipboardManager.setPrimaryClip(clip)
                 }
 
                 val intent = Intent(Intent.ACTION_SEND).apply {
