@@ -177,7 +177,7 @@ fun ProductDetailScreen(
                     },
                     actions = {
                         IconButton(onClick = {
-                            navController.navigate("edit_product/${'$'}{it.id}")
+                            navController.navigate("edit_product/${it.id}")
                         }) {
                             Icon(
                                 imageVector = Icons.Default.Edit,
@@ -234,7 +234,7 @@ fun ProductDetailScreen(
                                 DropdownMenuItem(
                                     text = { Text("Reorder Images") },
                                     onClick = {
-                                        navController.navigate("reorder_images/${'$'}{it.id}")
+                                        navController.navigate("reorder_images/${it.id}")
                                         showMenu = false
                                     }
                                 )
@@ -461,9 +461,9 @@ fun ProductDetailScreen(
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.height(8.dp))
-                        ProductDetailRow(label = "MRP", value = "₹${'$'}{product.mrp}")
-                        ProductDetailRow(label = "Discount", value = "${'$'}{product.discount}%")
-                        ProductDetailRow(label = "Selling Price", value = "₹${'$'}{product.price}")
+                        ProductDetailRow(label = "MRP", value = "₹${product.mrp}")
+                        ProductDetailRow(label = "Discount", value = "${product.discount}%")
+                        ProductDetailRow(label = "Selling Price", value = "₹${product.price}")
 
                         Spacer(modifier = Modifier.height(16.dp))
                         HorizontalDivider()
@@ -480,7 +480,7 @@ fun ProductDetailScreen(
                         }
                         product.dimensions?.let {
                             val dimensions =
-                                "${'$'}{it.length} x ${'$'}{it.breadth} x ${'$'}{it.height} mm"
+                                "${it.length} x ${it.breadth} x ${it.height} mm"
                             ProductDetailRow(label = "Dimensions", value = dimensions)
                         }
                         product.size?.let {
@@ -604,6 +604,10 @@ fun PlaceOrderForm(
             .verticalScroll(rememberScrollState())
     ) {
         Text("Place Order", style = MaterialTheme.typography.titleLarge)
+        Spacer(modifier = Modifier.height(16.dp))
+        ProductDetailRow(label = "MRP", value = "₹${product.mrp}")
+        ProductDetailRow(label = "Discount", value = "${product.discount}%")
+        ProductDetailRow(label = "Selling Price", value = "₹${product.price}")
         Spacer(modifier = Modifier.height(16.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -957,7 +961,7 @@ fun downloadImage(context: Context, url: String) {
         .setTitle("Image Download")
         .setDescription("Downloading")
         .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-        .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "${'$'}{System.currentTimeMillis()}.jpg")
+        .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "${System.currentTimeMillis()}.jpg")
     downloadManager.enqueue(request)
     Toast.makeText(context, "Download started", Toast.LENGTH_SHORT).show()
 }
