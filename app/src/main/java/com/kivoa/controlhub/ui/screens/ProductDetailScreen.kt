@@ -177,7 +177,7 @@ fun ProductDetailScreen(
                     },
                     actions = {
                         IconButton(onClick = {
-                            navController.navigate("edit_product/${it.id}")
+                            navController.navigate("edit_product/${'$'}{it.id}")
                         }) {
                             Icon(
                                 imageVector = Icons.Default.Edit,
@@ -234,7 +234,7 @@ fun ProductDetailScreen(
                                 DropdownMenuItem(
                                     text = { Text("Reorder Images") },
                                     onClick = {
-                                        navController.navigate("reorder_images/${it.id}")
+                                        navController.navigate("reorder_images/${'$'}{it.id}")
                                         showMenu = false
                                     }
                                 )
@@ -461,9 +461,9 @@ fun ProductDetailScreen(
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.height(8.dp))
-                        ProductDetailRow(label = "MRP", value = "₹${product.mrp}")
-                        ProductDetailRow(label = "Discount", value = "${product.discount}%")
-                        ProductDetailRow(label = "Selling Price", value = "₹${product.price}")
+                        ProductDetailRow(label = "MRP", value = "₹${'$'}{product.mrp}")
+                        ProductDetailRow(label = "Discount", value = "${'$'}{product.discount}%")
+                        ProductDetailRow(label = "Selling Price", value = "₹${'$'}{product.price}")
 
                         Spacer(modifier = Modifier.height(16.dp))
                         HorizontalDivider()
@@ -480,7 +480,7 @@ fun ProductDetailScreen(
                         }
                         product.dimensions?.let {
                             val dimensions =
-                                "${it.length} x ${it.breadth} x ${it.height} mm"
+                                "${'$'}{it.length} x ${'$'}{it.breadth} x ${'$'}{it.height} mm"
                             ProductDetailRow(label = "Dimensions", value = dimensions)
                         }
                         product.size?.let {
@@ -514,18 +514,42 @@ fun ProductDetailScreen(
                                 }
                             }
                         } else {
-                            Button(
-                                onClick = { showOrderSheet = true },
-                                enabled = !isLoading,
-                                modifier = Modifier.fillMaxWidth()
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                if (isLoading) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(24.dp),
-                                        color = MaterialTheme.colorScheme.onPrimary
-                                    )
-                                } else {
-                                    Text("Place Order")
+                                Button(
+                                    onClick = { showOrderSheet = true },
+                                    enabled = !isLoading,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    if (isLoading) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(24.dp),
+                                            color = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                    } else {
+                                        Text("Place Order")
+                                    }
+                                }
+                                Button(
+                                    onClick = {
+                                        productDetailViewModel.updateProductStock(
+                                            productId,
+                                            false
+                                        )
+                                    },
+                                    enabled = !isLoading,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    if (isLoading) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(24.dp),
+                                            color = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                    } else {
+                                        Text("Mark out of Stock")
+                                    }
                                 }
                             }
                         }
@@ -933,7 +957,7 @@ fun downloadImage(context: Context, url: String) {
         .setTitle("Image Download")
         .setDescription("Downloading")
         .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-        .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "${System.currentTimeMillis()}.jpg")
+        .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "${'$'}{System.currentTimeMillis()}.jpg")
     downloadManager.enqueue(request)
     Toast.makeText(context, "Download started", Toast.LENGTH_SHORT).show()
 }
