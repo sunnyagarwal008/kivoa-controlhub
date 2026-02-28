@@ -1,5 +1,8 @@
+
 package com.kivoa.controlhub.api
 
+import com.kivoa.controlhub.data.AmazonListingResponse
+import com.kivoa.controlhub.data.AmazonSyncRequest
 import com.kivoa.controlhub.data.ApiCategory
 import com.kivoa.controlhub.data.ApplyDiscountRequest
 import com.kivoa.controlhub.data.ApplyDiscountResponse
@@ -99,7 +102,7 @@ interface ApiService {
 
     @POST("api/catalogs")
     suspend fun generatePdfCatalog(@Body request: GeneratePdfCatalogRequest): PdfCatalogResponse
-    
+
     @POST("api/catalogs/apply-discount")
     suspend fun applyDiscount(@Body request: ApplyDiscountRequest): ApplyDiscountResponse
 
@@ -114,6 +117,12 @@ interface ApiService {
 
     @GET("api/products/{product_id}")
     suspend fun getProductById(@Path("product_id") productId: Long): ProductDetailResponse
+
+    @POST("api/products/{product_id}/channels/amazon/sync")
+    suspend fun syncAmazonChannel(
+        @Path("product_id") productId: Long,
+        @Body request: AmazonSyncRequest
+    ): Any
 
     @PUT("api/products/{product_id}")
     suspend fun updateProduct(
@@ -220,4 +229,11 @@ interface ApiService {
         @Query("financial_status") financialStatus: String? = null,
         @Query("fulfillment_status") fulfillmentStatus: String? = null
     ): OrdersResponse
+
+    @GET("api/channels/{channel_name}/listings")
+    suspend fun getChannelListings(
+        @Path("channel_name") channelName: String,
+        @Query("page") page: Int,
+        @Query("per_page") perPage: Int = 20
+    ): AmazonListingResponse
 }

@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.kivoa.controlhub.api.RetrofitInstance
+import com.kivoa.controlhub.data.AmazonSyncRequest
 import com.kivoa.controlhub.data.ApiProduct
 import com.kivoa.controlhub.data.CustomerAddress
 import com.kivoa.controlhub.data.GenerateProductImageRequest
@@ -49,6 +50,20 @@ class ProductDetailViewModel : ViewModel() {
                 _product.value = RetrofitInstance.api.getProductById(productId).data
             } catch (_: Exception) {
                 _productNotFound.value = true
+            }
+        }
+    }
+
+    fun syncWithAmazon(productId: Long, request: AmazonSyncRequest) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                productRepository.syncAmazonChannel(productId, request)
+                getProductById(productId)
+            } catch (e: Exception) {
+                _error.value = "Failed to sync with Amazon: ${e.message}"
+            } finally {
+                _isLoading.value = false
             }
         }
     }

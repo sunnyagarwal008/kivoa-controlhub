@@ -1,3 +1,4 @@
+
 package com.kivoa.controlhub.ui.screens
 
 import android.app.DownloadManager
@@ -32,6 +33,7 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
@@ -91,7 +93,10 @@ import com.google.accompanist.pager.HorizontalPagerIndicator
 import com.google.accompanist.pager.rememberPagerState
 import com.kivoa.controlhub.AppBarState
 import com.kivoa.controlhub.AppBarViewModel
+import com.kivoa.controlhub.data.AmazonSyncRequest
 import com.kivoa.controlhub.data.ApiProduct
+import com.kivoa.controlhub.data.Dimensions
+import com.kivoa.controlhub.data.StoneData
 import com.kivoa.controlhub.ui.components.shimmer
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -111,6 +116,7 @@ fun ProductDetailScreen(
     var showGenerateImageBottomSheet by remember { mutableStateOf(false) }
     var showDeleteImageConfirmationDialog by remember { mutableStateOf<Long?>(null) }
     var showShareBottomSheet by remember { mutableStateOf(false) }
+    var showAmazonSyncBottomSheet by remember { mutableStateOf(false) }
     val product by productDetailViewModel.product.collectAsState()
     val isLoading by productDetailViewModel.isLoading.collectAsState()
     val productNotFound by productDetailViewModel.productNotFound.collectAsState()
@@ -158,6 +164,16 @@ fun ProductDetailScreen(
                 product = it,
                 onDismiss = { showShareBottomSheet = false },
                 shareViewModel = shareViewModel
+            )
+        }
+    }
+
+    if (showAmazonSyncBottomSheet) {
+        product?.let {
+            AmazonSyncBottomSheet(
+                product = it,
+                onDismiss = { showAmazonSyncBottomSheet = false },
+                productDetailViewModel = productDetailViewModel
             )
         }
     }
@@ -488,6 +504,16 @@ fun ProductDetailScreen(
                         }
                         Spacer(modifier = Modifier.height(16.dp))
 
+                        if (!product.syncedChannels.contains("amazon")) {
+                            Button(
+                                onClick = { showAmazonSyncBottomSheet = true },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Sync on Amazon")
+                            }
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
+
                         val outOfStock = !product.inStock
                         if (outOfStock) {
                             Text(
@@ -555,6 +581,238 @@ fun ProductDetailScreen(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AmazonSyncBottomSheet(
+    product: ApiProduct,
+    onDismiss: () -> Unit,
+    productDetailViewModel: ProductDetailViewModel
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val isLoading by productDetailViewModel.isLoading.collectAsState()
+    var title by remember { mutableStateOf(product.title ?: "") }
+    var description by remember { mutableStateOf(product.description ?: "") }
+    var price by remember { mutableStateOf(product.price.toString()) }
+    var mrp by remember { mutableStateOf(product.mrp.toString()) }
+    var weight by remember { mutableStateOf(product.weight?.toString() ?: "") }
+    var color by remember { mutableStateOf("") }
+    var length by remember { mutableStateOf(product.dimensions?.length?.toString() ?: "") }
+    var width by remember { mutableStateOf(product.dimensions?.breadth?.toString() ?: "") }
+    var height by remember { mutableStateOf(product.dimensions?.height?.toString() ?: "") }
+    var selectedGemTypes by remember { mutableStateOf<List<String>>(emptyList()) }
+    var selectedStoneType by remember { mutableStateOf<String?>(null) }
+
+    val gemTypes = listOf(
+        "Created Pearl", "Created Emerald", "Created Ruby", "Created Sapphire",
+        "Cubic Zirconia", "Kundan", "Created Moissanite", "Artificial Stones"
+    )
+    val stoneTypes = listOf("Pearl", "Cubic Zirconia", "Ruby", "Sapphire", "Emerald")
+
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Text("Sync on Amazon", style = MaterialTheme.typography.titleLarge)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            TextField(
+                value = title,
+                onValueChange = { title = it },
+                label = { Text("Title") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            TextField(
+                value = description,
+                onValueChange = { description = it },
+                label = { Text("Description") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                TextField(
+                    value = price,
+                    onValueChange = { price = it },
+                    label = { Text("Price") },
+                    modifier = Modifier.weight(1f)
+                )
+                TextField(
+                    value = mrp,
+                    onValueChange = { mrp = it },
+                    label = { Text("MRP") },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextField(
+                    value = weight,
+                    onValueChange = { weight = it },
+                    label = { Text("Weight (grams)") },
+                    modifier = Modifier.weight(1f)
+                )
+                TextField(
+                    value = color,
+                    onValueChange = { color = it },
+                    label = { Text("Color") },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Dimensions (mm)", style = MaterialTheme.typography.titleMedium)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextField(
+                    value = length,
+                    onValueChange = { length = it },
+                    label = { Text("Length") },
+                    modifier = Modifier.weight(1f)
+                )
+                TextField(
+                    value = width,
+                    onValueChange = { width = it },
+                    label = { Text("Width") },
+                    modifier = Modifier.weight(1f)
+                )
+                TextField(
+                    value = height,
+                    onValueChange = { height = it },
+                    label = { Text("Height") },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            MultiSelectDropDown(options = gemTypes, selectedOptions = selectedGemTypes, onSelectionChanged = { selectedGemTypes = it }, label = "Gem Types")
+            Spacer(modifier = Modifier.height(8.dp))
+            SingleSelectDropDown(options = stoneTypes, selectedOption = selectedStoneType, onSelectionChanged = { selectedStoneType = it }, label = "Stone Type")
+            Spacer(modifier = Modifier.height(16.dp))
+
+
+            Button(
+                onClick = {
+                    val dimensions = if (length.isNotBlank() && width.isNotBlank() && height.isNotBlank()) {
+                        Dimensions(
+                            length = length.toIntOrNull(),
+                            breadth = width.toIntOrNull(),
+                            height = height.toIntOrNull()
+                        )
+                    } else null
+                    val stonesData = selectedStoneType?.let { listOf(StoneData(type = it)) }
+
+                    val amazonSyncRequest = AmazonSyncRequest(
+                        title = title.takeIf { it.isNotBlank() && it != product.title },
+                        description = description.takeIf { it.isNotBlank() && it != product.description },
+                        price = price.toDoubleOrNull().takeIf { it != product.price },
+                        mrp = mrp.toDoubleOrNull().takeIf { it != product.mrp },
+                        weight = weight.toIntOrNull().takeIf { it != product.weight },
+                        color = color.takeIf { it.isNotBlank() },
+                        dimensions = dimensions,
+                        stonesData = stonesData,
+                        gemTypes = selectedGemTypes.takeIf { it.isNotEmpty() }
+                    )
+                    productDetailViewModel.syncWithAmazon(product.id, amazonSyncRequest)
+                    onDismiss()
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isLoading
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Text("Sync")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MultiSelectDropDown(
+    options: List<String>,
+    selectedOptions: List<String>,
+    onSelectionChanged: (List<String>) -> Unit,
+    label: String
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column {
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .clickable { expanded = !expanded })
+        {
+            Text(text = if (selectedOptions.isEmpty()) label else selectedOptions.joinToString(), modifier = Modifier.padding(16.dp))
+            Icon(Icons.Default.ArrowDropDown, contentDescription = "Show options", modifier = Modifier.align(Alignment.CenterEnd))
+        }
+
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(checked = selectedOptions.contains(option), onCheckedChange = null)
+                            Text(option)
+                        }
+                    },
+                    onClick = {
+                        val newSelection = if (selectedOptions.contains(option)) {
+                            selectedOptions.filter { it != option }
+                        } else {
+                            selectedOptions + option
+                        }
+                        onSelectionChanged(newSelection)
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SingleSelectDropDown(
+    options: List<String>,
+    selectedOption: String?,
+    onSelectionChanged: (String) -> Unit,
+    label: String
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column {
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .clickable { expanded = !expanded })
+        {
+            Text(text = selectedOption ?: label, modifier = Modifier.padding(16.dp))
+            Icon(Icons.Default.ArrowDropDown, contentDescription = "Show options", modifier = Modifier.align(Alignment.CenterEnd))
+        }
+
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option) },
+                    onClick = {
+                        onSelectionChanged(option)
+                        expanded = false
+                    }
+                )
             }
         }
     }

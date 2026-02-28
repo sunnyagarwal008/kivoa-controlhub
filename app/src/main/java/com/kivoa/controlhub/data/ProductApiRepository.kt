@@ -1,3 +1,4 @@
+
 package com.kivoa.controlhub.data
 
 import androidx.paging.Pager
@@ -64,6 +65,10 @@ class ProductApiRepository(private val apiService: ApiService) {
     suspend fun getProducts(page: Int, perPage: Int, status: String): List<ApiProduct> {
         val response = apiService.getProducts(page, perPage, status)
         return if (response.success) response.data else emptyList()
+    }
+
+    suspend fun syncAmazonChannel(productId: Long, request: AmazonSyncRequest): Any {
+        return apiService.syncAmazonChannel(productId, request)
     }
 
     suspend fun bulkUpdateProductStatus(productIds: List<Long>, status: String): BulkUpdateProductStatusResponse {

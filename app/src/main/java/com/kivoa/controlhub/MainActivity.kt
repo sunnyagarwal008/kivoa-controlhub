@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingBasket
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Store
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -43,6 +44,7 @@ import androidx.navigation.navArgument
 import com.google.gson.Gson
 import com.kivoa.controlhub.api.RetrofitInstance
 import com.kivoa.controlhub.data.Prompt
+import com.kivoa.controlhub.ui.screens.AmazonProductListScreen
 import com.kivoa.controlhub.ui.screens.ProductsViewModel
 import com.kivoa.controlhub.ui.screens.CatalogsScreen
 import com.kivoa.controlhub.ui.screens.CreateScreen
@@ -125,6 +127,7 @@ class MainActivity : ComponentActivity() {
                             val items = listOf(
                                 Screen.Products,
                                 Screen.Create,
+                                Screen.Amazon,
                                 Screen.Orders,
                                 Screen.Settings,
                             )
@@ -163,6 +166,12 @@ class MainActivity : ComponentActivity() {
                             ProductsScreen(
                                 navController = navController,
                                 productsViewModel = productsViewModel,
+                                appBarViewModel = appBarViewModel
+                            )
+                        }
+                        composable(Screen.Amazon.route) {
+                            AmazonProductListScreen(
+                                navController = navController, 
                                 appBarViewModel = appBarViewModel
                             )
                         }
@@ -355,8 +364,9 @@ fun KivoaAppBar(appBarState: AppBarState) {
 sealed class Screen(val route: String, val icon: ImageVector? = null) {
     object Search : Screen("Search", Icons.Default.Search)
     object Products : Screen("Products", Icons.Default.ShoppingCart)
+    object Amazon : Screen("Amazon", Icons.Default.Store)
     object Create : Screen("Create", Icons.Default.AddCircle)
-    object ProductDetail : Screen("ProductDetail/{productId}")
+    object ProductDetail : Screen("product/{productId}")
     object EditProduct : Screen("edit_product")
     object ReorderImages : Screen("reorder_images")
     object Settings : Screen("Settings", Icons.Default.Settings)

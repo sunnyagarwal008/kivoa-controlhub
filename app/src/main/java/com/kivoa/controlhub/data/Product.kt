@@ -72,7 +72,8 @@ data class ApiProduct(
     val flagged: Boolean,
     val weight: Int?,
     val dimensions: Dimensions?,
-    val size: String?
+    val size: String?,
+    @Json(name = "synced_channels") val syncedChannels: List<String> = emptyList()
 )
 
 data class Dimensions(
